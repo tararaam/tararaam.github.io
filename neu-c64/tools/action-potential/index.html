@@ -87,7 +87,7 @@
     /* APP LAYOUT */
     .app {
       display: grid;
-      grid-template-columns: 1fr 340px;
+      grid-template-columns: 45fr 55fr;
       height: calc(100vh - 53px);
       overflow: hidden;
     }
@@ -141,7 +141,8 @@
     .prev-btn:disabled { opacity: 0.35; cursor: default; }
     .prev-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .next-btn { flex: 1; padding: 7px 16px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.15s; }
-    .next-btn:hover { opacity: 0.88; }
+    .next-btn:hover:not(:disabled) { opacity: 0.88; }
+    .next-btn:disabled { opacity: 0.45; cursor: default; background: #888; }
     .next-btn svg { width: 13px; height: 13px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
     /* RIGHT PANEL */
@@ -169,11 +170,11 @@
     .state-inactivated { background: #FCEBEB; color: #A32D2D; border: 1px solid #F7C1C1; }
 
     /* WHY IT MATTERS */
-    .why-matters { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .why-matters { padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); flex-shrink: 0; }
     .why-text { font-size: 12px; color: var(--text-secondary); line-height: 1.65; font-style: italic; border-left: 2px solid var(--border); padding-left: 0.75rem; }
 
     /* TUTOR */
-    .tutor-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+    .tutor-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; border-top: 1px solid var(--border); }
     .tutor-header { padding: 0.625rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
     .tutor-title { font-size: 11px; font-weight: 500; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; }
     .tutor-dot { width: 6px; height: 6px; border-radius: 50%; background: #0F6E56; }
@@ -314,11 +315,6 @@
       <div class="channel-grid" id="channel-grid"></div>
     </div>
 
-    <div class="why-matters">
-      <div class="section-label">Why this matters</div>
-      <div class="why-text" id="why-text"></div>
-    </div>
-
     <div class="tutor-area">
       <div class="tutor-header">
         <div class="tutor-title"><div class="tutor-dot"></div> AI tutor</div>
@@ -334,6 +330,11 @@
           </button>
         </div>
       </div>
+    </div>
+
+    <div class="why-matters">
+      <div class="section-label">Why this matters</div>
+      <div class="why-text" id="why-text"></div>
     </div>
   </div>
 </div>
@@ -450,6 +451,8 @@ let apiKey = sessionStorage.getItem('neuc64_api_key') || '';
 let chatHistory = [];
 let animFrame = null;
 let ions = [];
+let freeExploration = false; // unlocks after completing all 5 phases
+let answeredCurrentPhase = false; // tracks if student has responded this phase
 
 // ── CANVAS SETUP ──────────────────────────────────────────────────────────────
 const vCanvas = document.getElementById('voltage-canvas');
@@ -757,14 +760,24 @@ function updateUI(phase) {
     btn.classList.remove('active','visited');
     if (i === phase) btn.classList.add('active');
     if (i < phase) btn.classList.add('visited');
+    // In free exploration all phase buttons are fully clickable
+    btn.disabled = false;
+    btn.style.opacity = '';
   });
 
-  document.getElementById('prev-btn').disabled = phase === 0;
+  document.getElementById('prev-btn').disabled = freeExploration ? false : phase === 0;
+
   const nb = document.getElementById('next-btn');
-  if (phase === 4) {
+  if (phase === 4 && freeExploration) {
     nb.innerHTML = 'Start over <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.37"/></svg>';
-  } else {
+    nb.disabled = false;
+  } else if (freeExploration) {
     nb.innerHTML = 'Next phase <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+    nb.disabled = false;
+  } else {
+    // Hard gate — Next disabled until student answers
+    nb.innerHTML = 'Next phase <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+    nb.disabled = !answeredCurrentPhase;
   }
 
   drawTrace(phase);
@@ -773,22 +786,65 @@ function updateUI(phase) {
   // Add prediction prompt
   if (p.prediction) {
     addPredictionPrompt(p.prediction);
-  } else if (phase === 4) {
+  } else if (phase === 4 && !freeExploration) {
     addPredictionPrompt('You\'ve seen the full action potential. Can you explain in your own words why an action potential can only travel in one direction along an axon?');
   }
 }
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
-function goToPhase(p) { currentPhase = p; updateUI(p); }
-function nextPhase() {
-  if (currentPhase === 4) {
-    currentPhase = 0; chatHistory = [];
-    document.getElementById('chat-messages').innerHTML = '';
-    updateUI(0); return;
-  }
-  currentPhase++; updateUI(currentPhase);
+function goToPhase(p) {
+  // Only allow jumping in free exploration mode
+  if (!freeExploration && p !== currentPhase) return;
+  currentPhase = p;
+  answeredCurrentPhase = freeExploration;
+  updateUI(p);
 }
-function prevPhase() { if (currentPhase > 0) { currentPhase--; updateUI(currentPhase); } }
+
+function nextPhase() {
+  if (currentPhase === 4 && freeExploration) {
+    // Start over in free exploration
+    currentPhase = 0;
+    chatHistory = [];
+    document.getElementById('chat-messages').innerHTML = '';
+    answeredCurrentPhase = true;
+    updateUI(0);
+    return;
+  }
+  currentPhase++;
+  answeredCurrentPhase = false;
+  updateUI(currentPhase);
+
+  // Check if we just completed phase 5 for the first time
+  if (currentPhase === 4 && !freeExploration) {
+    // Will unlock after they answer phase 5's question
+  }
+}
+
+function prevPhase() {
+  if (freeExploration && currentPhase > 0) {
+    currentPhase--;
+    answeredCurrentPhase = true;
+    updateUI(currentPhase);
+  } else if (!freeExploration && currentPhase > 0) {
+    currentPhase--;
+    answeredCurrentPhase = true; // going back shouldn't re-gate
+    updateUI(currentPhase);
+  }
+}
+
+function unlockFreeExploration() {
+  freeExploration = true;
+  // Show unlock message in tutor
+  addTutorMessage('You\'ve completed all five phases — great work! You can now explore freely. Jump between phases, revisit any part of the action potential, and ask me anything.');
+  // Update phase buttons to look fully active
+  document.querySelectorAll('.phase-btn').forEach(btn => {
+    btn.style.opacity = '1';
+  });
+  // Enable next button
+  const nb = document.getElementById('next-btn');
+  nb.disabled = false;
+  nb.innerHTML = 'Next phase <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+}
 
 // ── CHAT ──────────────────────────────────────────────────────────────────────
 function addPredictionPrompt(text) {
@@ -878,6 +934,18 @@ Your role:
       thinking.classList.remove('thinking');
       thinking.querySelector('.message-bubble').textContent = reply;
       chatHistory.push({ role: 'assistant', content: reply });
+
+      // Unlock Next button after student has answered
+      if (!freeExploration) {
+        answeredCurrentPhase = true;
+        const nb = document.getElementById('next-btn');
+        nb.disabled = false;
+
+        // If this was phase 5, unlock free exploration
+        if (currentPhase === 4) {
+          setTimeout(() => unlockFreeExploration(), 1200);
+        }
+      }
     }
   } catch(e) {
     thinking.querySelector('.message-bubble').textContent = 'Could not reach the API. Check your key and try again.';
@@ -917,7 +985,10 @@ if (apiKey) {
 }
 
 resizeCanvases();
+answeredCurrentPhase = false;
 updateUI(0);
+// Ensure next is disabled on first load
+document.getElementById('next-btn').disabled = true;
 </script>
 </body>
 </html>
