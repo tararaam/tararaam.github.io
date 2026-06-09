@@ -116,6 +116,7 @@
     .effect-down { background: #E1F5EE; color: #0F6E56; border: 1px solid #9FE1CB; }
     .effect-blocked { background: #EEEDFE; color: #3C3489; border: 1px solid #CECBF6; }
     .effect-normal { background: var(--bg-secondary); color: var(--text-tertiary); border: 1px solid var(--border); }
+    .effect-hidden { background: var(--bg-secondary); color: var(--text-tertiary); border: 1px dashed var(--border); font-style: italic; letter-spacing: 0.05em; }
 
     /* TUTOR */
     .tutor-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; border-top: 1px solid var(--border); }
@@ -299,13 +300,13 @@ const PRESETS = {
     label: 'Normal',
     color: '#6B7280',
     title: 'Normal conditions',
-    description: 'The neuron is in its normal ionic environment. Extracellular Na⁺ and intracellular K⁺ concentrations are at physiological levels, and all channels are functioning normally.',
+    description: 'The neuron is in its normal ionic environment. Extracellular Na⁺ and intracellular K⁺ concentrations are at physiological levels, and all channels are functioning normally. Use this as your reference point.',
     sliderName: 'Condition severity',
     sliderLeft: 'Normal',
     sliderRight: 'N/A',
     clinicalIcon: '✓',
     clinicalTitle: 'Baseline',
-    clinicalText: 'This is the normal physiological state. Use this as your reference point before exploring each condition.',
+    clinicalText: 'This is the normal physiological state. Select a condition above to explore what happens when the ionic environment or channel function is disrupted.',
     prediction: null,
     mechanism: [
       { name: 'Resting membrane potential', effect: 'Normal (−70 mV)', cls: 'effect-normal' },
@@ -319,14 +320,14 @@ const PRESETS = {
     label: 'Hyperkalemia',
     color: '#D97706',
     title: 'Hyperkalemia',
-    description: 'Hyperkalemia means abnormally high extracellular K⁺ concentration. This reduces the K⁺ concentration gradient across the membrane — the force that normally drives K⁺ out and maintains resting potential.',
+    description: 'Hyperkalemia means abnormally high extracellular K⁺. The resting membrane potential is set largely by the K⁺ concentration gradient — the difference between K⁺ inside and outside the cell. Move the slider and predict what happens before you see it.',
     sliderName: 'Extracellular K⁺ concentration',
     sliderLeft: 'Normal (5 mM)',
     sliderRight: 'Severe (12 mM)',
     clinicalIcon: '❤️',
     clinicalTitle: 'Clinical relevance — cardiac arrhythmia',
-    clinicalText: 'Hyperkalemia is most dangerous in the heart. Depolarized cardiac cells can\'t repolarize properly, causing irregular heartbeats (arrhythmia) and, in severe cases, cardiac arrest. It can occur with kidney failure, certain medications, or severe tissue injury.',
-    prediction: 'The extracellular K⁺ concentration is about to increase. The resting membrane potential depends on the K⁺ gradient across the membrane. What do you predict will happen to the resting potential — and will the neuron become more or less excitable?',
+    clinicalText: 'Hyperkalemia is most dangerous in the heart. It can occur with kidney failure, certain medications, or severe tissue injury. Tell the tutor what you observe — then think about why this condition is life-threatening.',
+    prediction: 'Extracellular K⁺ is about to increase. The resting membrane potential depends on the K⁺ gradient — the difference in K⁺ concentration across the membrane. Before you move the slider: what do you predict will happen to the resting potential, and how might that affect the neuron\'s ability to fire?',
     mechanism: [
       { name: 'Resting membrane potential', effect: 'Depolarized ↑', cls: 'effect-up' },
       { name: 'AP threshold', effect: 'Unchanged', cls: 'effect-normal' },
@@ -339,14 +340,14 @@ const PRESETS = {
     label: 'Hyponatremia',
     color: '#2563EB',
     title: 'Hyponatremia',
-    description: 'Hyponatremia means abnormally low extracellular Na⁺ concentration. Since Na⁺ influx drives the rising phase of the action potential, reducing the available Na⁺ gradient reduces the driving force for depolarization.',
+    description: 'Hyponatremia means abnormally low extracellular Na⁺. Recall that the rising phase of the action potential depends on Na⁺ rushing into the cell — driven by both the concentration gradient and the electrical gradient. Move the slider and predict what happens before you see it.',
     sliderName: 'Extracellular Na⁺ concentration',
     sliderLeft: 'Normal (145 mM)',
     sliderRight: 'Severe (110 mM)',
     clinicalIcon: '🧠',
     clinicalTitle: 'Clinical relevance — neurological symptoms',
-    clinicalText: 'Hyponatremia is the most common electrolyte disorder in hospitalized patients. It can result from overhydration, heart failure, or kidney disease. Neurological symptoms — confusion, seizures, coma — occur because neurons can\'t generate normal action potentials when the Na⁺ gradient is reduced.',
-    prediction: 'Extracellular Na⁺ is about to decrease. Na⁺ rushing into the cell drives the rising phase of the AP. What do you predict happens to the AP if there\'s less Na⁺ available outside — will the spike be taller, shorter, or absent?',
+    clinicalText: 'Hyponatremia is the most common electrolyte disorder in hospitalized patients — resulting from overhydration, heart failure, or kidney disease. Tell the tutor what you observe — then think about why this would cause neurological symptoms.',
+    prediction: 'Extracellular Na⁺ is about to decrease. Na⁺ flows into the cell down its concentration gradient during depolarization. Before you move the slider: what do you predict happens to the action potential if that gradient is reduced? What about if it\'s reduced severely?',
     mechanism: [
       { name: 'Resting membrane potential', effect: 'Slightly depolarized', cls: 'effect-up' },
       { name: 'AP threshold', effect: 'Unchanged', cls: 'effect-normal' },
@@ -359,16 +360,16 @@ const PRESETS = {
     label: 'TTX (Na⁺ block)',
     color: '#A32D2D',
     title: 'Tetrodotoxin (TTX)',
-    description: 'Tetrodotoxin (TTX) is a potent neurotoxin found in pufferfish and some other animals. It specifically blocks voltage-gated Na⁺ channels, preventing Na⁺ from entering the cell during depolarization.',
+    description: 'Tetrodotoxin (TTX) is a neurotoxin found in pufferfish. It binds specifically and irreversibly to voltage-gated Na⁺ channels, holding them closed. Na⁺ channels are distinct from Na⁺ leak channels — TTX does not affect the resting membrane potential. Move the slider and predict what happens before you see it.',
     sliderName: 'TTX concentration',
     sliderLeft: 'None',
     sliderRight: 'Full block',
     clinicalIcon: '🐡',
     clinicalTitle: 'Clinical relevance — paralysis and pain research',
-    clinicalText: 'TTX poisoning causes progressive paralysis — muscles can\'t contract because motor neurons can\'t fire. There is no antidote; treatment is supportive. Paradoxically, TTX is also being studied as a painkiller, since blocking Na⁺ channels in pain-sensing neurons could provide powerful analgesia without the side effects of opioids.',
-    prediction: 'TTX specifically blocks voltage-gated Na⁺ channels. Given what you know about the role of Na⁺ in the action potential, what do you predict will happen as TTX concentration increases?',
+    clinicalText: 'TTX poisoning causes progressive paralysis with no antidote. Paradoxically, it\'s being studied as a painkiller — blocking Na⁺ channels in pain-sensing neurons could provide powerful analgesia. Tell the tutor what you observe — then think about why complete Na⁺ channel block is lethal.',
+    prediction: 'TTX is about to block voltage-gated Na⁺ channels. You know Na⁺ influx drives the rising phase of the AP. Before you move the slider: predict what the trace will look like at low TTX concentration versus high — will the change be gradual or sudden?',
     mechanism: [
-      { name: 'Resting membrane potential', effect: 'Normal', cls: 'effect-normal' },
+      { name: 'Resting membrane potential', effect: 'Unchanged', cls: 'effect-normal' },
       { name: 'AP threshold', effect: 'Unchanged', cls: 'effect-normal' },
       { name: 'AP amplitude', effect: 'Blocked ✕', cls: 'effect-blocked' },
       { name: 'Na⁺ channel function', effect: 'Blocked ✕', cls: 'effect-blocked' },
@@ -379,19 +380,19 @@ const PRESETS = {
     label: 'K⁺ channel block',
     color: '#7C3AED',
     title: 'K⁺ channel block',
-    description: 'Blocking voltage-gated K⁺ channels prevents the K⁺ outflow needed for repolarization. The membrane can still depolarize — Na⁺ channels are unaffected — but it can\'t return to resting potential normally.',
+    description: 'Voltage-gated K⁺ channels open during the falling phase to drive repolarization. Unlike Na⁺ channels, they are not involved in depolarization — blocking them leaves the rising phase intact. Move the slider and predict what happens before you see it.',
     sliderName: 'K⁺ channel block severity',
     sliderLeft: 'None',
     sliderRight: 'Full block',
     clinicalIcon: '⚡',
     clinicalTitle: 'Clinical relevance — seizures and MS treatment',
-    clinicalText: 'Impaired K⁺ channel function prolongs the action potential and prevents normal repolarization, which can trigger repetitive firing — a mechanism underlying some seizure disorders. Interestingly, 4-aminopyridine (4-AP), a K⁺ channel blocker, is used therapeutically in multiple sclerosis to improve nerve conduction in demyelinated axons.',
-    prediction: 'Voltage-gated K⁺ channels are about to be blocked. K⁺ outflow drives repolarization. What do you predict will happen to the shape of the action potential — specifically to repolarization and the undershoot?',
+    clinicalText: 'Impaired K⁺ channel function can trigger repetitive firing — a mechanism underlying some seizures. Interestingly, 4-aminopyridine (4-AP), a K⁺ channel blocker, is used in MS to improve conduction in demyelinated axons. Tell the tutor what you observe — then think about why blocking K⁺ channels could have such different effects in different contexts.',
+    prediction: 'Voltage-gated K⁺ channels are about to be blocked. These channels open after the peak to drive repolarization. Before you move the slider: predict how blocking them will change the shape of the AP — think specifically about the falling phase and what happens after.',
     mechanism: [
-      { name: 'Resting membrane potential', effect: 'Normal', cls: 'effect-normal' },
+      { name: 'Resting membrane potential', effect: 'Unchanged', cls: 'effect-normal' },
       { name: 'AP threshold', effect: 'Unchanged', cls: 'effect-normal' },
-      { name: 'AP amplitude', effect: 'Prolonged ↑', cls: 'effect-up' },
-      { name: 'Repolarization', effect: 'Blocked ✕', cls: 'effect-blocked' },
+      { name: 'AP duration', effect: 'Prolonged ↑', cls: 'effect-up' },
+      { name: 'Repolarization', effect: 'Impaired ✕', cls: 'effect-blocked' },
     ],
     traceType: 'kblock',
   },
@@ -411,10 +412,10 @@ function generateTrace(type, severity) {
   if (type === 'normal') return normal;
 
   if (type === 'hyperk') {
-    // Resting depolarizes toward 0, AP amplitude shrinks, repolarization impaired
-    const restShift = s * 20; // resting goes from -70 to -50
-    const ampReduction = s * 50; // peak drops from +40
-    const repolarImpair = s * 15; // incomplete repolarization
+    if (s === 0) return normal;
+    const restShift = s * 20;
+    const ampReduction = s * 50;
+    const repolarImpair = s * 15;
     return [
       [0.00, -70 + restShift],
       [0.18, -70 + restShift],
@@ -422,7 +423,7 @@ function generateTrace(type, severity) {
       [0.32, -55 + restShift * 0.5],
       [0.37, 40 - ampReduction],
       [0.44, -70 + repolarImpair + restShift * 0.3],
-      [0.50, -75 + repolarImpair + restShift * 0.5],
+      [0.50, -80 + repolarImpair + restShift * 0.5],
       [0.65, -72 + restShift * 0.5],
       [0.80, -70 + restShift],
       [1.00, -70 + restShift],
@@ -430,48 +431,54 @@ function generateTrace(type, severity) {
   }
 
   if (type === 'hyponad') {
-    // AP amplitude shrinks, eventually flat
-    const ampReduction = s * 110; // from +40 down to nothing
-    const peak = Math.max(40 - ampReduction, -55);
-    if (s > 0.85) {
-      // No AP — just subthreshold depolarization
+    if (s === 0) return normal;
+    const peak = 40 - s * 110;
+    if (peak < -55) {
+      const hump = -62 + Math.min(s * 5, 6);
       return [
-        [0.00,-70],[0.18,-70],[0.26,-66],[0.40,-62],[0.60,-67],[0.80,-70],[1.00,-70]
+        [0.00,-70],[0.18,-70],[0.26,-66],[0.40, hump],[0.60,-67],[0.80,-70],[1.00,-70]
       ];
     }
+    const undershoot = -80 + s * 20;
     return [
       [0.00,-70],[0.18,-70],[0.26,-68],[0.32,-55],
-      [0.37, peak],[0.44,-70],[0.50,-78],[0.65,-71],[0.80,-70],[1.00,-70]
+      [0.37, peak],[0.44,-70],[0.50, undershoot],[0.65,-71],[0.80,-70],[1.00,-70]
     ];
   }
 
   if (type === 'ttx') {
-    if (s > 0.3) {
-      // Subthreshold only — membrane depolarizes but can't reach threshold spike
-      const depol = Math.min(s * 15, 12);
+    // Below 20%: normal-looking AP with slightly reduced amplitude
+    // 20-50%: spike shrinks progressively toward threshold
+    // Above 50%: no spike, just subthreshold depolarization hump
+    // All transitions are smooth — no hard cutoffs
+    const peak = 40 - s * 95; // +40 at s=0, crosses threshold at ~s=0.5, goes below -55 beyond that
+    if (peak < -55) {
+      // No AP — subthreshold hump only, grows slightly with severity
+      const hump = -58 + Math.min(s * 8, 8);
       return [
-        [0.00,-70],[0.18,-70],[0.26,-68],[0.40,-58+depol],[0.60,-65],[0.80,-70],[1.00,-70]
+        [0.00,-70],[0.18,-70],[0.26,-68],[0.38, hump],[0.58,-66],[0.78,-70],[1.00,-70]
       ];
     }
-    // Partial — reduced amplitude spike
-    const ampReduction = s * 3 * 40;
+    // Spike present but shrinking
+    const undershoot = -80 + s * 30; // undershoot also reduces as spike shrinks
     return [
       [0.00,-70],[0.18,-70],[0.26,-68],[0.32,-55],
-      [0.37, 40 - ampReduction],[0.44,-70],[0.50,-80],[0.65,-72],[0.80,-70],[1.00,-70]
+      [0.37, peak],[0.44,-70],[0.50, undershoot],[0.65,-72],[0.80,-70],[1.00,-70]
     ];
   }
 
   if (type === 'kblock') {
-    // Prolonged repolarization, reduced/absent undershoot
-    const prolongation = s * 0.25; // stretches the repolarization phase rightward
-    const undershootReduction = s * 80; // undershoot disappears
+    if (s === 0) return normal;
+    // As block increases: repolarization slows, undershoot shrinks then disappears
+    const prolongation = s * 0.22;
+    const undershootReduction = s * 80;
+    const stalledV = -70 + s * 55; // where repolarization stalls
     return [
       [0.00,-70],[0.18,-70],[0.26,-68],[0.32,-55],
-      [0.37,40],
-      [0.44 + prolongation*0.5, -20 + s*20],
-      [0.55 + prolongation, -70 + s*20],
-      [0.65 + prolongation, -80 + undershootReduction],
-      [0.80 + prolongation*0.3, -70],
+      [0.37, 40],
+      [0.50 + prolongation, stalledV],
+      [0.70 + prolongation, -80 + undershootReduction],
+      [0.88 + prolongation*0.3, -70],
       [1.00,-70],
     ];
   }
@@ -605,7 +612,9 @@ function setPreset(key) {
   document.getElementById('preset-title').textContent = p.title;
   document.getElementById('preset-description').textContent = p.description;
 
-  // Update slider
+  // Update slider — hide for normal
+  const sliderCard = document.getElementById('slider-card');
+  sliderCard.style.display = key === 'normal' ? 'none' : 'block';
   const slider = document.getElementById('severity-slider');
   slider.value = 0;
   slider.style.accentColor = p.color;
@@ -619,11 +628,14 @@ function setPreset(key) {
   document.getElementById('clinical-title').textContent = p.clinicalTitle;
   document.getElementById('clinical-text').textContent = p.clinicalText;
 
-  // Update mechanism grid
+  // Update mechanism grid — effects hidden until student answers
+  const isNormal = key === 'normal';
   document.getElementById('mechanism-grid').innerHTML = p.mechanism.map(m =>
     `<div class="mechanism-row">
       <span class="mechanism-name">${m.name}</span>
-      <span class="mechanism-effect ${m.cls}">${m.effect}</span>
+      <span class="mechanism-effect ${isNormal ? m.cls : 'effect-hidden'}" data-effect="${m.effect}" data-cls="${m.cls}">
+        ${isNormal ? m.effect : '?'}
+      </span>
     </div>`
   ).join('');
 
@@ -637,6 +649,13 @@ function setPreset(key) {
   } else if (key === 'normal') {
     addTutorMessage('You\'re back to normal conditions. All channels functioning, concentrations at physiological levels. Select a condition above to explore what happens when things go wrong.');
   }
+}
+
+function revealMechanismEffects() {
+  document.querySelectorAll('.mechanism-effect.effect-hidden').forEach(el => {
+    el.textContent = el.dataset.effect;
+    el.className = 'mechanism-effect ' + el.dataset.cls;
+  });
 }
 
 function onSlider(val) {
@@ -739,6 +758,8 @@ Your role:
       thinking.classList.remove('thinking');
       thinking.querySelector('.message-bubble').textContent = reply;
       chatHistory.push({ role: 'assistant', content: reply });
+      // Reveal mechanism effects after first response
+      revealMechanismEffects();
     }
   } catch(e) {
     thinking.querySelector('.message-bubble').textContent = 'Could not reach the API. Check your key and try again.';
@@ -778,6 +799,7 @@ if (apiKey) {
 }
 resizeCanvas();
 drawTrace('normal', 0, '#6B7280');
+document.getElementById('slider-card').style.display = 'none';
 addTutorMessage('Welcome to ion manipulation. Start by selecting a condition above — before you move the slider, tell me what you predict will happen to the action potential.');
 </script>
 </body>
