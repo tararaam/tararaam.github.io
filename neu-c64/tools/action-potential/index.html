@@ -127,7 +127,7 @@
     #voltage-canvas { width: 100%; height: 160px; display: block; border-radius: 6px; }
 
     /* MEMBRANE DIAGRAM */
-    #membrane-canvas { width: 100%; height: 180px; display: block; border-radius: 6px; }
+    #membrane-canvas { width: 100%; height: 200px; display: block; border-radius: 6px; }
 
     /* ION LEGEND */
     .ion-legend { display: flex; gap: 1rem; margin-top: 0.5rem; }
@@ -462,7 +462,7 @@ const mCtx = mCanvas.getContext('2d');
 
 function resizeCanvases() {
   const dpr = window.devicePixelRatio || 1;
-  [{ c: vCanvas, h: 160 }, { c: mCanvas, h: 180 }].forEach(({ c, h }) => {
+  [{ c: vCanvas, h: 160 }, { c: mCanvas, h: 200 }].forEach(({ c, h }) => {
     const w = c.parentElement.clientWidth - 28;
     c.width = w * dpr; c.height = h * dpr;
     c.style.width = w + 'px'; c.style.height = h + 'px';
@@ -656,57 +656,121 @@ function drawMembrane(phase) {
   mCtx.fillStyle = '#f8f8f8';
   mCtx.fillRect(0, 0, w, h);
 
-  const midY = 90;
+  const midY = 95;
   const memH = 12;
   const channels = getChannels(w);
 
-  // Labels
-  mCtx.fillStyle = '#bbb';
-  mCtx.font = '10px DM Sans, sans-serif';
-  mCtx.fillText('Extracellular (high Na⁺)', 8, midY - memH - 14);
-  mCtx.fillText('Intracellular (high K⁺)', 8, midY + memH + 22);
+  // ── CONCENTRATION GRADIENTS ──────────────────────────────────────────────
+  // Static background dots showing resting concentrations
+  // Extracellular: many Na⁺ (blue), few K⁺ (red)
+  // Intracellular: many K⁺ (red), few Na⁺ (blue)
+  const concDots = [
+    // Extracellular Na+ (many, blue) — above membrane
+    { x: w*0.08, y: midY-28, color: '#2563EB', label: 'Na⁺' },
+    { x: w*0.22, y: midY-22, color: '#2563EB', label: 'Na⁺' },
+    { x: w*0.42, y: midY-30, color: '#2563EB', label: 'Na⁺' },
+    { x: w*0.58, y: midY-24, color: '#2563EB', label: 'Na⁺' },
+    { x: w*0.75, y: midY-28, color: '#2563EB', label: 'Na⁺' },
+    { x: w*0.90, y: midY-22, color: '#2563EB', label: 'Na⁺' },
+    // Extracellular K+ (few, red)
+    { x: w*0.88, y: midY-32, color: '#DC2626', label: 'K⁺' },
+    // Intracellular K+ (many, red) — below membrane
+    { x: w*0.08, y: midY+32, color: '#DC2626', label: 'K⁺' },
+    { x: w*0.22, y: midY+26, color: '#DC2626', label: 'K⁺' },
+    { x: w*0.42, y: midY+34, color: '#DC2626', label: 'K⁺' },
+    { x: w*0.58, y: midY+28, color: '#DC2626', label: 'K⁺' },
+    { x: w*0.75, y: midY+32, color: '#DC2626', label: 'K⁺' },
+    { x: w*0.90, y: midY+26, color: '#DC2626', label: 'K⁺' },
+    // Intracellular Na+ (few, blue)
+    { x: w*0.88, y: midY+36, color: '#2563EB', label: 'Na⁺' },
+  ];
 
-  // Membrane top and bottom bands
+  concDots.forEach(d => {
+    mCtx.beginPath();
+    mCtx.arc(d.x, d.y, 3.5, 0, Math.PI*2);
+    mCtx.fillStyle = d.color;
+    mCtx.globalAlpha = 0.2;
+    mCtx.fill();
+    mCtx.globalAlpha = 1;
+    mCtx.fillStyle = d.color;
+    mCtx.font = 'bold 7px DM Sans, sans-serif';
+    mCtx.textAlign = 'center';
+    mCtx.globalAlpha = 0.3;
+    mCtx.fillText(d.label, d.x + 8, d.y + 2.5);
+    mCtx.globalAlpha = 1;
+    mCtx.textAlign = 'left';
+  });
+
+  // ── LABELS ───────────────────────────────────────────────────────────────
+  mCtx.fillStyle = '#aaa';
+  mCtx.font = '10px DM Sans, sans-serif';
+  mCtx.fillText('Extracellular  (high Na⁺, low K⁺)', 8, midY - memH - 16);
+  mCtx.fillText('Intracellular  (high K⁺, low Na⁺)', 8, midY + memH + 24);
+
+  // ── MEMBRANE BANDS ────────────────────────────────────────────────────────
   mCtx.fillStyle = '#c5d8ee';
   mCtx.fillRect(0, midY - memH, w, memH * 0.45);
   mCtx.fillRect(0, midY + memH * 0.55, w, memH * 0.45);
 
-  // Draw channels
+  // ── CHANNELS ─────────────────────────────────────────────────────────────
   channels.forEach(ch => {
     const naState = getChannelState('na', phase);
     const kState = getChannelState('k', phase);
-    const state = ch.type === 'na' ? naState : kState;
+    // Leak is ALWAYS open
+    const state = ch.type === 'leak' ? 'open' : ch.type === 'na' ? naState : kState;
 
     const isOpen = state === 'open' || state === 'opening' || state === 'closing';
     const isInact = state === 'inactivated';
+    const isClosed = !isOpen && !isInact;
 
     const chColor = ch.type === 'na' ? '#2563EB' : ch.type === 'leak' ? '#DB2777' : '#DC2626';
-    const poreGap = isOpen ? 4 : 0;
+    const drawColor = isInact ? '#9CA3AF' : chColor;
 
-    mCtx.strokeStyle = isInact ? '#9CA3AF' : chColor;
+    mCtx.strokeStyle = drawColor;
     mCtx.lineWidth = 2.5;
     mCtx.lineCap = 'round';
 
-    // Draw channel walls (two sides)
-    [-5, 5].forEach(offset => {
+    if (isOpen) {
+      // Open channel: gap in the middle, ions can pass
+      const poreGap = 4;
+      [-5, 5].forEach(offset => {
+        mCtx.beginPath();
+        mCtx.moveTo(ch.x + offset, midY - memH);
+        mCtx.lineTo(ch.x + offset, midY - poreGap);
+        mCtx.stroke();
+        mCtx.beginPath();
+        mCtx.moveTo(ch.x + offset, midY + memH);
+        mCtx.lineTo(ch.x + offset, midY + poreGap);
+        mCtx.stroke();
+      });
+    } else if (isClosed) {
+      // Closed channel: H-shape with a horizontal bar blocking the pore
+      // Two vertical walls all the way through
+      [-5, 5].forEach(offset => {
+        mCtx.beginPath();
+        mCtx.moveTo(ch.x + offset, midY - memH);
+        mCtx.lineTo(ch.x + offset, midY + memH);
+        mCtx.stroke();
+      });
+      // Horizontal bar across the middle — the gate
+      mCtx.strokeStyle = drawColor;
+      mCtx.lineWidth = 2.5;
       mCtx.beginPath();
-      mCtx.moveTo(ch.x + offset, midY - memH);
-      mCtx.lineTo(ch.x + offset, midY - poreGap);
+      mCtx.moveTo(ch.x - 5, midY);
+      mCtx.lineTo(ch.x + 5, midY);
       mCtx.stroke();
-
-      mCtx.beginPath();
-      mCtx.moveTo(ch.x + offset, midY + memH);
-      mCtx.lineTo(ch.x + offset, midY + poreGap);
-      mCtx.stroke();
-    });
-
-    // Inactivation gate (horizontal bar blocking the channel)
-    if (isInact) {
+    } else if (isInact) {
+      // Inactivated: walls with a filled block — distinct from just closed
+      [-5, 5].forEach(offset => {
+        mCtx.beginPath();
+        mCtx.moveTo(ch.x + offset, midY - memH);
+        mCtx.lineTo(ch.x + offset, midY + memH);
+        mCtx.stroke();
+      });
       mCtx.fillStyle = '#9CA3AF';
       mCtx.beginPath();
-      mCtx.roundRect(ch.x - 7, midY - 4, 14, 8, 3);
+      mCtx.roundRect(ch.x - 7, midY - 5, 14, 10, 3);
       mCtx.fill();
-
       mCtx.fillStyle = '#fff';
       mCtx.font = 'bold 7px DM Sans, sans-serif';
       mCtx.textAlign = 'center';
@@ -721,7 +785,7 @@ function drawMembrane(phase) {
     mCtx.fillText(ch.type === 'leak' ? 'K⁺ leak' : ch.label, ch.x, midY - memH - 4);
     mCtx.textAlign = 'left';
 
-    // Open/closed indicator below
+    // State label below
     mCtx.fillStyle = isInact ? '#9CA3AF' : isOpen ? '#0F6E56' : '#9CA3AF';
     mCtx.font = '8px DM Sans, sans-serif';
     mCtx.textAlign = 'center';
