@@ -9,59 +9,915 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --berkeley-blue: #003262; --border: #e5e5e5; --bg: #fff; --bg-secondary: #f8f8f8; --text-primary: #1a1a1a; --text-secondary: #555; --text-tertiary: #999; --teal-light: #E1F5EE; --teal-text: #0F6E56; --radius-md: 8px; --radius-lg: 12px; }
-    body { font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--bg); min-height: 100vh; }
+
+    :root {
+      --berkeley-blue: #003262;
+      --berkeley-gold: #FDB515;
+      --blue-light: #E8EFF7;
+      --teal: #0F6E56;
+      --teal-light: #E1F5EE;
+      --gold-light: #FEF5E0;
+      --gold-text: #A07000;
+      --red-light: #FCEBEB;
+      --text-primary: #1a1a1a;
+      --text-secondary: #555;
+      --text-tertiary: #999;
+      --border: #e5e5e5;
+      --bg: #fff;
+      --bg-secondary: #f8f8f8;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --na-color: #2563EB;
+      --k-color: #DC2626;
+      --phase-0: #6B7280;
+      --phase-1: #D97706;
+      --phase-2: #DC2626;
+      --phase-3: #2563EB;
+      --phase-4: #7C3AED;
+    }
+
+    body { font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--bg); min-height: 100vh; font-size: 15px; line-height: 1.6; }
     a { text-decoration: none; color: inherit; }
-    nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.95); }
-    .logo { display: flex; align-items: center; gap: 10px; }
-    .logo-mark { width: 34px; height: 34px; border-radius: 9px; background: var(--berkeley-blue); display: flex; align-items: center; justify-content: center; }
-    .logo-mark svg { width: 20px; height: 20px; }
-    .logo-text { font-size: 14px; font-weight: 500; line-height: 1.2; }
-    .logo-sub { font-size: 12px; color: var(--text-secondary); }
-    nav ul { list-style: none; display: flex; gap: 0.25rem; }
-    nav ul li a { font-size: 13px; color: var(--text-secondary); padding: 6px 14px; border-radius: var(--radius-md); }
-    nav ul li a:hover { background: var(--bg-secondary); color: var(--text-primary); }
-    .placeholder { max-width: 520px; margin: 5rem auto; text-align: center; padding: 0 2rem; }
-    .placeholder .icon { width: 56px; height: 56px; border-radius: var(--radius-lg); background: var(--teal-light); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; }
-    .placeholder .icon svg { width: 28px; height: 28px; stroke: var(--teal-text); fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
-    .placeholder h1 { font-family: 'DM Serif Display', serif; font-size: 26px; font-weight: 400; margin-bottom: 0.75rem; }
-    .placeholder p { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
-    .back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-tertiary); margin-top: 2rem; }
-    .back svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .back:hover { color: var(--text-primary); }
+
+    /* TOP NAV */
+    .top-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(8px);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: 8px; }
+    .logo-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--berkeley-blue); display: flex; align-items: center; justify-content: center; }
+    .logo-mark svg { width: 17px; height: 17px; }
+    .logo-text { font-size: 13px; font-weight: 500; line-height: 1.2; }
+    .logo-sub { font-size: 11px; color: var(--text-secondary); }
+
+    /* MODE TABS */
+    .mode-tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 3px;
+    }
+    .mode-tab {
+      padding: 5px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .mode-tab:hover { color: var(--text-primary); }
+    .mode-tab.active { background: var(--bg); color: var(--berkeley-blue); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .mode-tab.disabled { opacity: 0.4; cursor: default; }
+
+    .back-link { font-size: 12px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px; }
+    .back-link svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .back-link:hover { color: var(--text-primary); }
+
+    /* APP LAYOUT */
+    .app {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      height: calc(100vh - 53px);
+      overflow: hidden;
+    }
+
+    /* LEFT PANEL */
+    .left-panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow: hidden; }
+
+    .tool-header { padding: 1rem 1.5rem 0.875rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .tool-header h1 { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; margin-bottom: 0.15rem; }
+    .tool-header p { font-size: 12px; color: var(--text-secondary); }
+
+    /* PHASE STEPPER */
+    .phase-stepper { display: flex; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); gap: 4px; flex-shrink: 0; }
+    .phase-btn {
+      flex: 1; padding: 5px 4px; border-radius: var(--radius-md);
+      border: 1.5px solid var(--border); background: var(--bg);
+      cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 10px;
+      font-weight: 500; color: var(--text-secondary); text-align: center;
+      transition: all 0.15s; line-height: 1.3;
+    }
+    .phase-btn:hover { border-color: #bbb; color: var(--text-primary); }
+    .phase-btn.active { color: white; border-color: transparent; }
+    .phase-btn[data-phase="0"].active { background: var(--phase-0); }
+    .phase-btn[data-phase="1"].active { background: var(--phase-1); }
+    .phase-btn[data-phase="2"].active { background: var(--phase-2); }
+    .phase-btn[data-phase="3"].active { background: var(--phase-3); }
+    .phase-btn[data-phase="4"].active { background: var(--phase-4); }
+    .phase-btn.visited { opacity: 0.55; }
+
+    /* VIZ AREA */
+    .viz-area { flex: 1; overflow-y: auto; padding: 1rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+
+    .viz-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0.875rem; }
+    .viz-card-label { font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.625rem; }
+
+    /* VOLTAGE TRACE */
+    #voltage-canvas { width: 100%; height: 160px; display: block; border-radius: 6px; }
+
+    /* MEMBRANE DIAGRAM */
+    #membrane-canvas { width: 100%; height: 180px; display: block; border-radius: 6px; }
+
+    /* ION LEGEND */
+    .ion-legend { display: flex; gap: 1rem; margin-top: 0.5rem; }
+    .ion-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-secondary); }
+    .ion-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* NAV BUTTONS */
+    .nav-btns { display: flex; gap: 8px; padding: 0.75rem 1.5rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .prev-btn { padding: 7px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 5px; transition: background 0.15s; }
+    .prev-btn:hover { background: var(--bg-secondary); }
+    .prev-btn:disabled { opacity: 0.35; cursor: default; }
+    .prev-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .next-btn { flex: 1; padding: 7px 16px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.15s; }
+    .next-btn:hover { opacity: 0.88; }
+    .next-btn svg { width: 13px; height: 13px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* RIGHT PANEL */
+    .right-panel { display: flex; flex-direction: column; overflow: hidden; }
+
+    .phase-info { padding: 1rem 1.25rem 0.875rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .phase-badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 500; padding: 2px 9px; border-radius: 100px; margin-bottom: 0.6rem; color: white; }
+    .phase-badge[data-phase="0"] { background: var(--phase-0); }
+    .phase-badge[data-phase="1"] { background: var(--phase-1); }
+    .phase-badge[data-phase="2"] { background: var(--phase-2); }
+    .phase-badge[data-phase="3"] { background: var(--phase-3); }
+    .phase-badge[data-phase="4"] { background: var(--phase-4); }
+    .phase-title { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; margin-bottom: 0.4rem; }
+    .phase-description { font-size: 12.5px; color: var(--text-secondary); line-height: 1.7; }
+
+    /* CHANNEL STATUS */
+    .channel-status { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .section-label { font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.5rem; }
+    .channel-grid { display: flex; flex-direction: column; gap: 5px; }
+    .channel-row { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; }
+    .channel-name { color: var(--text-secondary); }
+    .channel-state { font-size: 10px; font-weight: 500; padding: 2px 9px; border-radius: 100px; }
+    .state-closed { background: var(--bg-secondary); color: var(--text-tertiary); border: 1px solid var(--border); }
+    .state-open { background: #E1F5EE; color: #0F6E56; border: 1px solid #9FE1CB; }
+    .state-inactivated { background: #FCEBEB; color: #A32D2D; border: 1px solid #F7C1C1; }
+
+    /* WHY IT MATTERS */
+    .why-matters { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .why-text { font-size: 12px; color: var(--text-secondary); line-height: 1.65; font-style: italic; border-left: 2px solid var(--border); padding-left: 0.75rem; }
+
+    /* TUTOR */
+    .tutor-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+    .tutor-header { padding: 0.625rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+    .tutor-title { font-size: 11px; font-weight: 500; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; }
+    .tutor-dot { width: 6px; height: 6px; border-radius: 50%; background: #0F6E56; }
+    .api-key-btn { font-size: 11px; color: var(--text-tertiary); cursor: pointer; background: none; border: none; font-family: 'DM Sans', sans-serif; }
+    .api-key-btn:hover { color: var(--text-primary); }
+
+    .chat-messages { flex: 1; overflow-y: auto; padding: 0.75rem 1.25rem; display: flex; flex-direction: column; gap: 0.625rem; }
+    .message { display: flex; flex-direction: column; gap: 2px; max-width: 93%; }
+    .message.tutor { align-self: flex-start; }
+    .message.student { align-self: flex-end; }
+    .message-sender { font-size: 9px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); padding: 0 4px; }
+    .message-bubble { padding: 0.55rem 0.8rem; border-radius: var(--radius-lg); font-size: 12.5px; line-height: 1.6; }
+    .message.tutor .message-bubble { background: var(--bg-secondary); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .message.student .message-bubble { background: var(--berkeley-blue); color: white; border-bottom-right-radius: 4px; }
+    .message.thinking .message-bubble { color: var(--text-tertiary); font-style: italic; }
+
+    .prediction-prompt { background: var(--gold-light); border: 1px solid #F5D78A; border-radius: var(--radius-lg); padding: 0.65rem 0.8rem; font-size: 12.5px; color: var(--gold-text); line-height: 1.6; align-self: flex-start; max-width: 93%; }
+    .prediction-prompt strong { display: block; font-weight: 500; margin-bottom: 2px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    .input-area { padding: 0.625rem 1.25rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .input-row { display: flex; gap: 7px; align-items: flex-end; }
+    .input-row textarea { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 12.5px; padding: 7px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); resize: none; line-height: 1.5; color: var(--text-primary); background: var(--bg); min-height: 36px; max-height: 90px; transition: border-color 0.15s; overflow-y: auto; }
+    .input-row textarea:focus { outline: none; border-color: var(--berkeley-blue); }
+    .input-row textarea::placeholder { color: var(--text-tertiary); }
+    .send-btn { width: 34px; height: 34px; border-radius: var(--radius-md); background: var(--berkeley-blue); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.15s; }
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: default; }
+    .send-btn svg { width: 14px; height: 14px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--bg); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 380px; width: 90%; border: 1px solid var(--border); }
+    .modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 0.4rem; }
+    .modal p { font-size: 12.5px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 0.875rem; }
+    .modal input { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 0.875rem; color: var(--text-primary); }
+    .modal input:focus { outline: none; border-color: var(--berkeley-blue); }
+    .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-secondary { padding: 6px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 12.5px; cursor: pointer; color: var(--text-secondary); }
+    .btn-primary { padding: 6px 14px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; cursor: pointer; color: white; }
+
+    @media (max-width: 800px) {
+      .app { grid-template-columns: 1fr; height: auto; overflow: visible; }
+      .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
+      .right-panel { height: 580px; }
+      .mode-tabs { display: none; }
+    }
   </style>
 </head>
 <body>
-  <nav>
-    <a href="../../index.html" class="logo">
-      <div class="logo-mark">
-        <svg viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="10" r="3" fill="#FDB515"/>
-          <path d="M10 3 C10 3 14.5 6 14.5 10 C14.5 14 10 17 10 17 C10 17 5.5 14 5.5 10 C5.5 6 10 3 10 3Z" stroke="#FDB515" stroke-width="1.25" fill="none"/>
-          <path d="M3 10 C3 10 6 6 10 6 C14 6 17 10 17 10 C17 10 14 14 10 14 C6 14 3 10 3 10Z" stroke="white" stroke-width="1.25" fill="none" opacity="0.55"/>
-        </svg>
-      </div>
-      <div>
-        <div class="logo-text">NEU C64</div>
-        <div class="logo-sub">UC Berkeley · Summer 2026</div>
-      </div>
-    </a>
-    <ul>
-      <li><a href="../../syllabus/index.html">Syllabus</a></li>
-      <li><a href="../../staff/index.html">Teaching staff</a></li>
-      <li><a href="../index.html">Tools</a></li>
-    </ul>
-  </nav>
-  <div class="placeholder">
-    <div class="icon">
-      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+
+<nav class="top-nav">
+  <a href="../../index.html" class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="3" fill="#FDB515"/>
+        <path d="M10 3C10 3 14.5 6 14.5 10C14.5 14 10 17 10 17C10 17 5.5 14 5.5 10C5.5 6 10 3 10 3Z" stroke="#FDB515" stroke-width="1.25" fill="none"/>
+        <path d="M3 10C3 10 6 6 10 6C14 6 17 10 17 10C17 10 14 14 10 14C6 14 3 10 3 10Z" stroke="white" stroke-width="1.25" fill="none" opacity="0.55"/>
+      </svg>
     </div>
-    <h1>Action potential explorer</h1>
-    <p>This tool is in development and will be available before Week 3. Check back soon.</p>
-    <a href="../index.html" class="back">
-      <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-      Back to tools
-    </a>
+    <div>
+      <div class="logo-text">NEU C64</div>
+      <div class="logo-sub">UC Berkeley</div>
+    </div>
+  </a>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active">AP explorer</button>
+    <button class="mode-tab disabled" onclick="alert('Coming soon — build the ion manipulation module first!')">Ion manipulation</button>
+    <button class="mode-tab disabled" onclick="alert('Coming soon — build the conduction explorer next!')">Conduction</button>
   </div>
+
+  <a href="../index.html" class="back-link">
+    <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Tools
+  </a>
+</nav>
+
+<div class="app">
+
+  <!-- LEFT -->
+  <div class="left-panel">
+    <div class="tool-header">
+      <h1>Action potential explorer</h1>
+      <p>Step through each phase, predict what happens next, and explain your reasoning.</p>
+    </div>
+
+    <div class="phase-stepper">
+      <button class="phase-btn active" data-phase="0" onclick="goToPhase(0)">Resting<br>state</button>
+      <button class="phase-btn" data-phase="1" onclick="goToPhase(1)">Depolarizing<br>phase</button>
+      <button class="phase-btn" data-phase="2" onclick="goToPhase(2)">Rising<br>phase</button>
+      <button class="phase-btn" data-phase="3" onclick="goToPhase(3)">Falling<br>phase</button>
+      <button class="phase-btn" data-phase="4" onclick="goToPhase(4)">Undershoot &amp;<br>refractory</button>
+    </div>
+
+    <div class="viz-area">
+
+      <div class="viz-card">
+        <div class="viz-card-label">Membrane potential (mV)</div>
+        <canvas id="voltage-canvas"></canvas>
+      </div>
+
+      <div class="viz-card">
+        <div class="viz-card-label">Membrane cross-section — ion channels &amp; movement</div>
+        <canvas id="membrane-canvas"></canvas>
+        <div class="ion-legend">
+          <div class="ion-legend-item"><div class="ion-dot" style="background:#2563EB"></div> Na⁺ channels</div>
+          <div class="ion-legend-item"><div class="ion-dot" style="background:#DC2626"></div> K⁺ channels</div>
+          <div class="ion-legend-item"><div class="ion-dot" style="background:#DB2777"></div> K⁺ leak channels</div>
+          <div class="ion-legend-item"><div class="ion-dot" style="background:#9CA3AF; width:12px; height:4px; border-radius:2px;"></div> Inactivated</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="nav-btns">
+      <button class="prev-btn" id="prev-btn" onclick="prevPhase()" disabled>
+        <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Prev
+      </button>
+      <button class="next-btn" id="next-btn" onclick="nextPhase()">
+        Next phase
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-panel">
+    <div class="phase-info">
+      <div class="phase-badge" id="phase-badge" data-phase="0">Phase 1 of 5</div>
+      <div class="phase-title" id="phase-title">Resting state</div>
+      <div class="phase-description" id="phase-description"></div>
+    </div>
+
+    <div class="channel-status">
+      <div class="section-label">Ion channel states</div>
+      <div class="channel-grid" id="channel-grid"></div>
+    </div>
+
+    <div class="why-matters">
+      <div class="section-label">Why this matters</div>
+      <div class="why-text" id="why-text"></div>
+    </div>
+
+    <div class="tutor-area">
+      <div class="tutor-header">
+        <div class="tutor-title"><div class="tutor-dot"></div> AI tutor</div>
+        <button class="api-key-btn" id="api-status-btn" onclick="openModal()">Add API key</button>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="input-area">
+        <div class="input-row">
+          <textarea id="student-input" placeholder="Type your prediction or question…" rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h2>Enter your Anthropic API key</h2>
+    <p>Stored in your browser session only — never sent anywhere except Anthropic's API directly.</p>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-…"/>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveApiKey()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+
+const PHASES = [
+  {
+    name: 'Resting state',
+    color: '#6B7280',
+    description: 'The neuron is at rest. Membrane potential sits at approximately −70 mV, maintained by the Na⁺/K⁺ ATPase pump and the membrane\'s selective permeability to K⁺ through leak channels.',
+    channels: [
+      { name: 'Voltage-gated Na⁺ channels', state: 'Closed', cls: 'state-closed' },
+      { name: 'Voltage-gated K⁺ channels', state: 'Closed', cls: 'state-closed' },
+      { name: 'K⁺ leak channels', state: 'Open', cls: 'state-open' },
+      { name: 'Na⁺/K⁺ ATPase pump', state: 'Active', cls: 'state-open' },
+    ],
+    why: 'Local anesthetics like lidocaine block voltage-gated Na⁺ channels, locking neurons in this resting state. No action potential can fire — which is why you feel nothing after a dental injection.',
+    prediction: 'Before we begin: what do you think has to happen for a neuron to start firing an action potential? What needs to change from this resting state?',
+    ionFlow: { na: null, k: { dir: 'out', speed: 0.3, count: 2 } }, // slow K+ leak out
+  },
+  {
+    name: 'Depolarizing phase',
+    color: '#D97706',
+    description: 'A stimulus depolarizes the membrane toward threshold (approximately −55 mV). Voltage-gated Na⁺ channels begin to open. This is the point of no return — once threshold is reached, the action potential fires completely.',
+    channels: [
+      { name: 'Voltage-gated Na⁺ channels', state: 'Opening', cls: 'state-open' },
+      { name: 'Voltage-gated K⁺ channels', state: 'Closed', cls: 'state-closed' },
+      { name: 'K⁺ leak channels', state: 'Open', cls: 'state-open' },
+      { name: 'Na⁺/K⁺ ATPase pump', state: 'Active', cls: 'state-open' },
+    ],
+    why: 'Threshold is the voltage at which Na⁺ channel opening becomes self-sustaining — a positive feedback loop. Below it, the pump compensates. Above it: an unstoppable cascade. This is the all-or-nothing principle.',
+    prediction: 'The membrane just reached threshold. What do you predict happens to Na⁺ channels next — and how will that affect the membrane voltage?',
+    ionFlow: { na: { dir: 'in', speed: 0.5, count: 3 }, k: { dir: 'out', speed: 0.3, count: 2 } },
+  },
+  {
+    name: 'Rising phase',
+    color: '#DC2626',
+    description: 'Voltage-gated Na⁺ channels open rapidly. Na⁺ floods into the cell, driving membrane potential from −55 mV up to approximately +40 mV. This is the action potential spike.',
+    channels: [
+      { name: 'Voltage-gated Na⁺ channels', state: 'Open', cls: 'state-open' },
+      { name: 'Voltage-gated K⁺ channels', state: 'Closed', cls: 'state-closed' },
+      { name: 'K⁺ leak channels', state: 'Open', cls: 'state-open' },
+      { name: 'Na⁺/K⁺ ATPase pump', state: 'Active', cls: 'state-open' },
+    ],
+    why: 'Tetrodotoxin (TTX), found in pufferfish, specifically blocks these Na⁺ channels — preventing action potentials in nerves and muscles. That\'s why pufferfish poisoning causes paralysis and can be fatal.',
+    prediction: 'The membrane has reached +40 mV and Na⁺ channels are about to inactivate. What needs to happen to bring the voltage back down to resting? Which ions, and which direction?',
+    ionFlow: { na: { dir: 'in', speed: 1.0, count: 6 }, k: null },
+  },
+  {
+    name: 'Falling phase',
+    color: '#2563EB',
+    description: 'Na⁺ channels inactivate (not just close — they enter a blocked state). Simultaneously, voltage-gated K⁺ channels open fully. K⁺ floods out of the cell, rapidly repolarizing the membrane back toward −70 mV.',
+    channels: [
+      { name: 'Voltage-gated Na⁺ channels', state: 'Inactivated', cls: 'state-inactivated' },
+      { name: 'Voltage-gated K⁺ channels', state: 'Open', cls: 'state-open' },
+      { name: 'K⁺ leak channels', state: 'Open', cls: 'state-open' },
+      { name: 'Na⁺/K⁺ ATPase pump', state: 'Active', cls: 'state-open' },
+    ],
+    why: 'Na⁺ channel inactivation — not just closure — is critical. An inactivated channel cannot reopen immediately even if voltage returns to threshold. This creates the absolute refractory period and ensures action potentials travel in only one direction.',
+    prediction: 'K⁺ channels are open and K⁺ is rapidly leaving the cell. Will the membrane stop exactly at −70 mV, or overshoot? Why?',
+    ionFlow: { na: null, k: { dir: 'out', speed: 1.0, count: 6 } },
+  },
+  {
+    name: 'Undershoot & refractory period',
+    color: '#7C3AED',
+    description: 'K⁺ channels close slowly — the membrane briefly hyperpolarizes to around −80 mV (undershoot). During this relative refractory period, the neuron can fire again but needs a stronger-than-normal stimulus. The Na⁺/K⁺ pump gradually restores ion concentrations.',
+    channels: [
+      { name: 'Voltage-gated Na⁺ channels', state: 'Recovering', cls: 'state-closed' },
+      { name: 'Voltage-gated K⁺ channels', state: 'Closing', cls: 'state-closed' },
+      { name: 'K⁺ leak channels', state: 'Open', cls: 'state-open' },
+      { name: 'Na⁺/K⁺ ATPase pump', state: 'Active', cls: 'state-open' },
+    ],
+    why: 'The refractory period limits firing frequency — no neuron fires infinitely fast. A stronger stimulus = higher firing rate, not a bigger AP (all-or-nothing). This frequency coding is how neurons encode stimulus intensity.',
+    prediction: null, // synthesis question added in init
+    ionFlow: { na: null, k: { dir: 'out', speed: 0.4, count: 3 } },
+  },
+];
+
+// Voltage curve: [x_fraction, mV]
+// Shaped to match physiological AP: flat resting, gradual stimulus ramp,
+// near-vertical rise to +30, sharp fall, deep undershoot ~-90, slow recovery
+const V_CURVE = [
+  [0.00, -70],
+  [0.18, -70],
+  [0.26, -68],
+  [0.32, -55],
+  [0.37, 40],
+  [0.44, -70],
+  [0.50, -80],
+  [0.65, -72],
+  [0.80, -70],
+  [1.00, -70],
+];
+const PHASE_X = [0.10, 0.29, 0.37, 0.46, 0.57];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentPhase = 0;
+let apiKey = sessionStorage.getItem('neuc64_api_key') || '';
+let chatHistory = [];
+let animFrame = null;
+let ions = [];
+
+// ── CANVAS SETUP ──────────────────────────────────────────────────────────────
+const vCanvas = document.getElementById('voltage-canvas');
+const vCtx = vCanvas.getContext('2d');
+const mCanvas = document.getElementById('membrane-canvas');
+const mCtx = mCanvas.getContext('2d');
+
+function resizeCanvases() {
+  const dpr = window.devicePixelRatio || 1;
+  [{ c: vCanvas, h: 160 }, { c: mCanvas, h: 180 }].forEach(({ c, h }) => {
+    const w = c.parentElement.clientWidth - 28;
+    c.width = w * dpr; c.height = h * dpr;
+    c.style.width = w + 'px'; c.style.height = h + 'px';
+    c.getContext('2d').scale(dpr, dpr);
+  });
+}
+
+// ── VOLTAGE TRACE ─────────────────────────────────────────────────────────────
+function interpV(xf) {
+  for (let i = 0; i < V_CURVE.length - 1; i++) {
+    const [x0, v0] = V_CURVE[i], [x1, v1] = V_CURVE[i+1];
+    if (xf >= x0 && xf <= x1) {
+      const t = (xf - x0) / (x1 - x0);
+      const e = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+      return v0 + (v1-v0)*e;
+    }
+  }
+  return -70;
+}
+
+function vToY(v, h) {
+  const minV = -95, maxV = 50;
+  return h - ((v - minV) / (maxV - minV)) * h;
+}
+
+function drawTrace(phase) {
+  const w = vCanvas.width / (window.devicePixelRatio||1);
+  const h = vCanvas.height / (window.devicePixelRatio||1);
+  vCtx.clearRect(0,0,w,h);
+
+  // Background
+  vCtx.fillStyle = '#f8f8f8';
+  vCtx.fillRect(0,0,w,h);
+
+  // Grid lines + y-axis labels
+  const gridVs = [-80, -70, -55, 0, 40];
+  gridVs.forEach(v => {
+    const y = vToY(v, h);
+    vCtx.strokeStyle = v === -70 ? '#ccc' : v === -55 ? '#D97706' : '#ebebeb';
+    vCtx.lineWidth = v === -70 ? 1 : v === -55 ? 1 : 0.5;
+    vCtx.setLineDash(v === -70 || v === -55 ? [4,3] : []);
+    vCtx.beginPath(); vCtx.moveTo(28, y); vCtx.lineTo(w, y); vCtx.stroke();
+    vCtx.setLineDash([]);
+    vCtx.fillStyle = v === -55 ? '#D97706' : '#aaa';
+    vCtx.font = '10px DM Sans, sans-serif';
+    vCtx.textAlign = 'right';
+    vCtx.fillText(v > 0 ? '+'+v : v, 24, y + 3.5);
+  });
+
+  // Threshold label (orange)
+  const threshY = vToY(-55, h);
+  vCtx.fillStyle = '#D97706';
+  vCtx.font = '9px DM Sans, sans-serif';
+  vCtx.textAlign = 'left';
+  vCtx.fillText('threshold', 30, threshY - 3);
+
+  // Resting label
+  vCtx.fillStyle = '#999';
+  vCtx.fillText('resting', 30, vToY(-70, h) - 3);
+
+  // Draw trace up to current phase
+  const endXf = PHASE_X[Math.min(phase, 4)];
+  const endPx = endXf * (w - 28) + 28;
+
+  vCtx.beginPath();
+  vCtx.strokeStyle = '#003262';
+  vCtx.lineWidth = 2.5;
+  vCtx.lineJoin = 'round';
+  let started = false;
+  for (let px = 28; px <= endPx; px++) {
+    const xf = (px - 28) / (w - 28);
+    const y = vToY(interpV(xf), h);
+    if (!started) { vCtx.moveTo(px, y); started = true; }
+    else vCtx.lineTo(px, y);
+  }
+  vCtx.stroke();
+
+  // Phase dots
+  for (let i = 0; i <= phase; i++) {
+    const px = PHASE_X[i] * (w - 28) + 28;
+    const y = vToY(interpV(PHASE_X[i]), h);
+    vCtx.beginPath();
+    vCtx.arc(px, y, 4, 0, Math.PI*2);
+    vCtx.fillStyle = PHASES[i].color;
+    vCtx.fill();
+  }
+
+  vCtx.textAlign = 'left';
+}
+
+// ── MEMBRANE & ION ANIMATION ──────────────────────────────────────────────────
+
+// Channel layout: array of {x, type:'na'|'k'|'leak', label}
+function getChannels(w) {
+  return [
+    { x: w*0.15, type:'na', label:'Na⁺' },
+    { x: w*0.32, type:'k',  label:'K⁺'  },
+    { x: w*0.50, type:'na', label:'Na⁺' },
+    { x: w*0.68, type:'k',  label:'K⁺'  },
+    { x: w*0.82, type:'leak', label:'K⁺ leak' },
+  ];
+}
+
+function spawnIons(phase) {
+  ions = [];
+  const flow = PHASES[phase].ionFlow;
+  const w = mCanvas.width / (window.devicePixelRatio||1);
+  const channels = getChannels(w);
+  const midY = 90; // membrane center
+
+  channels.forEach(ch => {
+    let flowData = null;
+    if (ch.type === 'na') flowData = flow.na;
+    else if (ch.type === 'k') flowData = flow.k;
+    else if (ch.type === 'leak') flowData = flow.k; // leak uses k flow
+
+    if (!flowData) return;
+
+    // Only spawn on open channels
+    const chState = getChannelState(ch.type, phase);
+    if (chState === 'inactivated' || chState === 'closed') return;
+
+    for (let i = 0; i < flowData.count; i++) {
+      ions.push({
+        x: ch.x,
+        y: flowData.dir === 'in'
+          ? midY - 35 - Math.random() * 30  // start extracellular
+          : midY + 35 + Math.random() * 30, // start intracellular
+        color: ch.type === 'na' ? '#2563EB' : ch.type === 'leak' ? '#DB2777' : '#DC2626',
+        dir: flowData.dir,
+        speed: flowData.speed * (0.7 + Math.random() * 0.6),
+        channelX: ch.x,
+        phase: 0, // 0=approach, 1=through, 2=exit
+        offset: Math.random() * 100,
+      });
+    }
+  });
+}
+
+function getChannelState(type, phase) {
+  if (type === 'leak') return 'open';
+  const ch = PHASES[phase].channels;
+  if (type === 'na') return ch[0].state.toLowerCase();
+  if (type === 'k') return ch[1].state.toLowerCase();
+  return 'closed';
+}
+
+function animateIons() {
+  drawMembrane(currentPhase);
+  ions.forEach(ion => {
+    ion.offset += ion.speed;
+    // Loop: when ion exits, reset to start
+    if (ion.dir === 'in') {
+      if (ion.y > 115) ion.y = 55 - Math.random()*20;
+      else ion.y += ion.speed * 0.8;
+    } else {
+      if (ion.y < 65) ion.y = 125 + Math.random()*20;
+      else ion.y -= ion.speed * 0.8;
+    }
+  });
+  drawIons();
+  animFrame = requestAnimationFrame(animateIons);
+}
+
+function drawIons() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = mCanvas.width / dpr;
+  ions.forEach(ion => {
+    mCtx.beginPath();
+    mCtx.arc(ion.x + (Math.random()-0.5)*2, ion.y, 4, 0, Math.PI*2);
+    mCtx.fillStyle = ion.color;
+    mCtx.globalAlpha = 0.85;
+    mCtx.fill();
+    mCtx.globalAlpha = 1;
+
+    // Ion label
+    mCtx.fillStyle = ion.color;
+    mCtx.font = 'bold 8px DM Sans, sans-serif';
+    mCtx.textAlign = 'center';
+    mCtx.fillText(ion.color === '#2563EB' ? 'Na⁺' : 'K⁺', ion.x + 9, ion.y + 3);
+    mCtx.textAlign = 'left';
+  });
+}
+
+function drawMembrane(phase) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = mCanvas.width / dpr;
+  const h = mCanvas.height / dpr;
+  mCtx.clearRect(0, 0, w, h);
+
+  mCtx.fillStyle = '#f8f8f8';
+  mCtx.fillRect(0, 0, w, h);
+
+  const midY = 90;
+  const memH = 12;
+  const channels = getChannels(w);
+
+  // Labels
+  mCtx.fillStyle = '#bbb';
+  mCtx.font = '10px DM Sans, sans-serif';
+  mCtx.fillText('Extracellular (high Na⁺)', 8, midY - memH - 14);
+  mCtx.fillText('Intracellular (high K⁺)', 8, midY + memH + 22);
+
+  // Membrane top and bottom bands
+  mCtx.fillStyle = '#c5d8ee';
+  mCtx.fillRect(0, midY - memH, w, memH * 0.45);
+  mCtx.fillRect(0, midY + memH * 0.55, w, memH * 0.45);
+
+  // Draw channels
+  channels.forEach(ch => {
+    const naState = getChannelState('na', phase);
+    const kState = getChannelState('k', phase);
+    const state = ch.type === 'na' ? naState : kState;
+
+    const isOpen = state === 'open' || state === 'opening' || state === 'closing';
+    const isInact = state === 'inactivated';
+
+    const chColor = ch.type === 'na' ? '#2563EB' : ch.type === 'leak' ? '#DB2777' : '#DC2626';
+    const poreGap = isOpen ? 4 : 0;
+
+    mCtx.strokeStyle = isInact ? '#9CA3AF' : chColor;
+    mCtx.lineWidth = 2.5;
+    mCtx.lineCap = 'round';
+
+    // Draw channel walls (two sides)
+    [-5, 5].forEach(offset => {
+      mCtx.beginPath();
+      mCtx.moveTo(ch.x + offset, midY - memH);
+      mCtx.lineTo(ch.x + offset, midY - poreGap);
+      mCtx.stroke();
+
+      mCtx.beginPath();
+      mCtx.moveTo(ch.x + offset, midY + memH);
+      mCtx.lineTo(ch.x + offset, midY + poreGap);
+      mCtx.stroke();
+    });
+
+    // Inactivation gate (horizontal bar blocking the channel)
+    if (isInact) {
+      mCtx.fillStyle = '#9CA3AF';
+      mCtx.beginPath();
+      mCtx.roundRect(ch.x - 7, midY - 4, 14, 8, 3);
+      mCtx.fill();
+
+      mCtx.fillStyle = '#fff';
+      mCtx.font = 'bold 7px DM Sans, sans-serif';
+      mCtx.textAlign = 'center';
+      mCtx.fillText('✕', ch.x, midY + 2.5);
+      mCtx.textAlign = 'left';
+    }
+
+    // Channel type label above
+    mCtx.fillStyle = chColor;
+    mCtx.font = 'bold 9px DM Sans, sans-serif';
+    mCtx.textAlign = 'center';
+    mCtx.fillText(ch.type === 'leak' ? 'K⁺ leak' : ch.label, ch.x, midY - memH - 4);
+    mCtx.textAlign = 'left';
+
+    // Open/closed indicator below
+    mCtx.fillStyle = isInact ? '#9CA3AF' : isOpen ? '#0F6E56' : '#9CA3AF';
+    mCtx.font = '8px DM Sans, sans-serif';
+    mCtx.textAlign = 'center';
+    mCtx.fillText(isInact ? 'inactivated' : isOpen ? 'open' : 'closed', ch.x, midY + memH + 12);
+    mCtx.textAlign = 'left';
+  });
+}
+
+function startAnimation(phase) {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  spawnIons(phase);
+  animateIons();
+}
+
+// ── UI UPDATES ────────────────────────────────────────────────────────────────
+function updateUI(phase) {
+  const p = PHASES[phase];
+
+  const badge = document.getElementById('phase-badge');
+  badge.textContent = `Phase ${phase+1} of 5`;
+  badge.dataset.phase = phase;
+
+  document.getElementById('phase-title').textContent = p.name;
+  document.getElementById('phase-description').textContent = p.description;
+
+  document.getElementById('channel-grid').innerHTML = p.channels.map(c =>
+    `<div class="channel-row">
+      <span class="channel-name">${c.name}</span>
+      <span class="channel-state ${c.cls}">${c.state}</span>
+    </div>`
+  ).join('');
+
+  document.getElementById('why-text').textContent = p.why;
+
+  document.querySelectorAll('.phase-btn').forEach((btn, i) => {
+    btn.classList.remove('active','visited');
+    if (i === phase) btn.classList.add('active');
+    if (i < phase) btn.classList.add('visited');
+  });
+
+  document.getElementById('prev-btn').disabled = phase === 0;
+  const nb = document.getElementById('next-btn');
+  if (phase === 4) {
+    nb.innerHTML = 'Start over <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.37"/></svg>';
+  } else {
+    nb.innerHTML = 'Next phase <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+  }
+
+  drawTrace(phase);
+  startAnimation(phase);
+
+  // Add prediction prompt
+  if (p.prediction) {
+    addPredictionPrompt(p.prediction);
+  } else if (phase === 4) {
+    addPredictionPrompt('You\'ve seen the full action potential. Can you explain in your own words why an action potential can only travel in one direction along an axon?');
+  }
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function goToPhase(p) { currentPhase = p; updateUI(p); }
+function nextPhase() {
+  if (currentPhase === 4) {
+    currentPhase = 0; chatHistory = [];
+    document.getElementById('chat-messages').innerHTML = '';
+    updateUI(0); return;
+  }
+  currentPhase++; updateUI(currentPhase);
+}
+function prevPhase() { if (currentPhase > 0) { currentPhase--; updateUI(currentPhase); } }
+
+// ── CHAT ──────────────────────────────────────────────────────────────────────
+function addPredictionPrompt(text) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'prediction-prompt';
+  el.innerHTML = `<strong>Predict</strong>${text}`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+}
+
+function addTutorMessage(text, thinking=false) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = `message tutor${thinking?' thinking':''}`;
+  el.innerHTML = `<span class="message-sender">Tutor</span><div class="message-bubble">${text}</div>`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+  return el;
+}
+
+function addStudentMessage(text) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'message student';
+  el.innerHTML = `<span class="message-sender">You</span><div class="message-bubble">${text}</div>`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('student-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!apiKey) { openModal(); return; }
+
+  input.value = '';
+  autoResize(input);
+  addStudentMessage(text);
+  const thinking = addTutorMessage('Thinking…', true);
+  document.getElementById('send-btn').disabled = true;
+
+  const p = PHASES[currentPhase];
+  const system = `You are an AI tutor embedded in an action potential simulator for an introductory neuroscience course (NEU C64) at UC Berkeley. Students are undergraduates, most with no prior biology background.
+
+Current phase: "${p.name}"
+Phase description: ${p.description}
+Clinical relevance: ${p.why}
+Channel states: ${p.channels.map(c => c.name+': '+c.state).join(', ')}
+
+Your role:
+- Respond to the student's prediction or question with warmth and Socratic engagement
+- Engage with their specific reasoning, not a generic response
+- If right: affirm what they got right specifically, then add one layer of depth
+- If partially right: acknowledge what's correct and guide toward what's missing with a question
+- If wrong: don't give the answer — ask a question that guides their thinking
+- Keep responses to 2–4 sentences
+- Use plain language appropriate for an intro course
+- Never use bullet points — respond conversationally
+- Reference specific ions, channels, or voltages when relevant`;
+
+  chatHistory.push({ role: 'user', content: text });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        system,
+        messages: chatHistory,
+      }),
+    });
+
+    const data = await res.json();
+    if (data.error) {
+      thinking.querySelector('.message-bubble').textContent = 'API error: ' + data.error.message;
+      chatHistory.pop();
+    } else {
+      const reply = data.content[0].text;
+      thinking.classList.remove('thinking');
+      thinking.querySelector('.message-bubble').textContent = reply;
+      chatHistory.push({ role: 'assistant', content: reply });
+    }
+  } catch(e) {
+    thinking.querySelector('.message-bubble').textContent = 'Could not reach the API. Check your key and try again.';
+    chatHistory.pop();
+  }
+
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('chat-messages').scrollTop = 99999;
+}
+
+function handleKey(e) { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,90)+'px'; }
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal() { document.getElementById('modal-overlay').classList.add('open'); document.getElementById('api-key-input').focus(); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function saveApiKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  if (k) {
+    apiKey = k;
+    sessionStorage.setItem('neuc64_api_key', k);
+    const btn = document.getElementById('api-status-btn');
+    btn.textContent = 'Key saved ✓';
+    btn.style.color = '#0F6E56';
+    closeModal();
+  }
+}
+document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target===document.getElementById('modal-overlay')) closeModal(); });
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => { resizeCanvases(); drawTrace(currentPhase); });
+
+if (apiKey) {
+  const btn = document.getElementById('api-status-btn');
+  btn.textContent = 'Key saved ✓';
+  btn.style.color = '#0F6E56';
+}
+
+resizeCanvases();
+updateUI(0);
+</script>
 </body>
 </html>
