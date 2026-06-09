@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Action Potential Explorer — NEU C64</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --berkeley-blue: #003262; --border: #e5e5e5; --bg: #fff; --bg-secondary: #f8f8f8; --text-primary: #1a1a1a; --text-secondary: #555; --text-tertiary: #999; --teal-light: #E1F5EE; --teal-text: #0F6E56; --radius-md: 8px; --radius-lg: 12px; }
+    body { font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--bg); min-height: 100vh; }
+    a { text-decoration: none; color: inherit; }
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.95); }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-mark { width: 34px; height: 34px; border-radius: 9px; background: var(--berkeley-blue); display: flex; align-items: center; justify-content: center; }
+    .logo-mark svg { width: 20px; height: 20px; }
+    .logo-text { font-size: 14px; font-weight: 500; line-height: 1.2; }
+    .logo-sub { font-size: 12px; color: var(--text-secondary); }
+    nav ul { list-style: none; display: flex; gap: 0.25rem; }
+    nav ul li a { font-size: 13px; color: var(--text-secondary); padding: 6px 14px; border-radius: var(--radius-md); }
+    nav ul li a:hover { background: var(--bg-secondary); color: var(--text-primary); }
+    .placeholder { max-width: 520px; margin: 5rem auto; text-align: center; padding: 0 2rem; }
+    .placeholder .icon { width: 56px; height: 56px; border-radius: var(--radius-lg); background: var(--teal-light); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; }
+    .placeholder .icon svg { width: 28px; height: 28px; stroke: var(--teal-text); fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .placeholder h1 { font-family: 'DM Serif Display', serif; font-size: 26px; font-weight: 400; margin-bottom: 0.75rem; }
+    .placeholder p { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
+    .back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-tertiary); margin-top: 2rem; }
+    .back svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .back:hover { color: var(--text-primary); }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="3" fill="#FDB515"/>
+          <path d="M10 3 C10 3 14.5 6 14.5 10 C14.5 14 10 17 10 17 C10 17 5.5 14 5.5 10 C5.5 6 10 3 10 3Z" stroke="#FDB515" stroke-width="1.25" fill="none"/>
+          <path d="M3 10 C3 10 6 6 10 6 C14 6 17 10 17 10 C17 10 14 14 10 14 C6 14 3 10 3 10Z" stroke="white" stroke-width="1.25" fill="none" opacity="0.55"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">NEU C64</div>
+        <div class="logo-sub">UC Berkeley · Summer 2026</div>
+      </div>
+    </a>
+    <ul>
+      <li><a href="../../syllabus/index.html">Syllabus</a></li>
+      <li><a href="../../staff/index.html">Teaching staff</a></li>
+      <li><a href="../index.html">Tools</a></li>
+    </ul>
+  </nav>
+  <div class="placeholder">
+    <div class="icon">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+    <h1>Action potential explorer</h1>
+    <p>This tool is in development and will be available before Week 3. Check back soon.</p>
+    <a href="../index.html" class="back">
+      <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Back to tools
+    </a>
+  </div>
+</body>
+</html>

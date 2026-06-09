@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Syllabus — NEU C64</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --berkeley-blue: #003262;
+      --berkeley-gold: #FDB515;
+      --blue-light: #E8EFF7;
+      --text-primary: #1a1a1a;
+      --text-secondary: #555;
+      --text-tertiary: #999;
+      --border: #e5e5e5;
+      --bg: #fff;
+      --bg-secondary: #f8f8f8;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+
+    body { font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--bg); min-height: 100vh; font-size: 16px; line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); z-index: 100; }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-mark { width: 34px; height: 34px; border-radius: 9px; background: var(--berkeley-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .logo-mark svg { width: 20px; height: 20px; }
+    .logo-text { font-size: 14px; font-weight: 500; line-height: 1.2; }
+    .logo-sub { font-size: 12px; color: var(--text-secondary); }
+    nav ul { list-style: none; display: flex; gap: 0.25rem; }
+    nav ul li a { font-size: 13px; color: var(--text-secondary); padding: 6px 14px; border-radius: var(--radius-md); transition: background 0.15s, color 0.15s; }
+    nav ul li a:hover, nav ul li a.active { background: var(--bg-secondary); color: var(--text-primary); }
+
+    .page-header { padding: 3rem 2rem 2rem; border-bottom: 1px solid var(--border); max-width: 760px; }
+    .breadcrumb { font-size: 13px; color: var(--text-tertiary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px; }
+    .breadcrumb a { color: var(--text-tertiary); }
+    .breadcrumb a:hover { color: var(--text-primary); }
+    .breadcrumb svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    h1 { font-family: 'DM Serif Display', serif; font-size: 34px; font-weight: 400; margin-bottom: 0.5rem; }
+    .page-desc { font-size: 15px; color: var(--text-secondary); }
+
+    .syllabus-body { display: grid; grid-template-columns: 200px 1fr; gap: 3rem; padding: 2.5rem 2rem; max-width: 900px; align-items: start; }
+
+    .sidebar { position: sticky; top: 80px; }
+    .sidebar nav-inner { display: flex; flex-direction: column; gap: 0.25rem; }
+    .sidebar-label { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.75rem; }
+    .sidebar a { display: block; font-size: 13px; color: var(--text-secondary); padding: 5px 0; transition: color 0.15s; }
+    .sidebar a:hover { color: var(--text-primary); }
+
+    .content section { margin-bottom: 3rem; }
+    .content h2 { font-family: 'DM Serif Display', serif; font-size: 22px; font-weight: 400; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+    .content h3 { font-size: 15px; font-weight: 500; margin: 1.5rem 0 0.5rem; }
+    .content p { font-size: 14px; color: var(--text-secondary); line-height: 1.75; margin-bottom: 0.75rem; }
+    .content ul { font-size: 14px; color: var(--text-secondary); line-height: 1.75; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+    .content ul li { margin-bottom: 0.25rem; }
+
+    .schedule-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 0.5rem; }
+    .schedule-table th { text-align: left; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+    .schedule-table td { padding: 0.75rem; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
+    .schedule-table td:first-child { color: var(--text-tertiary); white-space: nowrap; font-size: 12px; }
+    .schedule-table td:nth-child(2) { color: var(--text-primary); font-weight: 500; }
+    .schedule-table tr:last-child td { border-bottom: none; }
+
+    .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .grade-row:last-child { border-bottom: none; }
+    .grade-row .pct { font-weight: 500; color: var(--berkeley-blue); }
+
+    footer { border-top: 1px solid var(--border); padding: 1.25rem 2rem; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-tertiary); margin-top: 2rem; }
+
+    @media (max-width: 700px) {
+      nav ul { display: none; }
+      .syllabus-body { grid-template-columns: 1fr; gap: 1.5rem; }
+      .sidebar { position: static; }
+      .page-header, .syllabus-body { padding-left: 1.25rem; padding-right: 1.25rem; }
+      footer { flex-direction: column; gap: 0.5rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="../index.html" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="3" fill="#FDB515"/>
+          <path d="M10 3 C10 3 14.5 6 14.5 10 C14.5 14 10 17 10 17 C10 17 5.5 14 5.5 10 C5.5 6 10 3 10 3Z" stroke="#FDB515" stroke-width="1.25" fill="none"/>
+          <path d="M3 10 C3 10 6 6 10 6 C14 6 17 10 17 10 C17 10 14 14 10 14 C6 14 3 10 3 10Z" stroke="white" stroke-width="1.25" fill="none" opacity="0.55"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">NEU C64</div>
+        <div class="logo-sub">UC Berkeley · Summer 2026</div>
+      </div>
+    </a>
+    <ul>
+      <li><a href="index.html" class="active">Syllabus</a></li>
+      <li><a href="../staff/index.html">Teaching staff</a></li>
+      <li><a href="../tools/index.html">Tools</a></li>
+    </ul>
+  </nav>
+
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="../index.html">NEU C64</a>
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      Syllabus
+    </div>
+    <h1>Syllabus</h1>
+    <p class="page-desc">Summer 2026 · Tuesdays &amp; Thursdays · 8 weeks</p>
+  </div>
+
+  <div class="syllabus-body">
+
+    <div class="sidebar">
+      <p class="sidebar-label">On this page</p>
+      <a href="#overview">Overview</a>
+      <a href="#schedule">Schedule</a>
+      <a href="#grading">Grading</a>
+      <a href="#policies">Policies</a>
+      <a href="#materials">Materials</a>
+    </div>
+
+    <div class="content">
+
+      <section id="overview">
+        <h2>Overview</h2>
+        <p>Why do you remember your first day of kindergarten but not what you had for breakfast last week? How does a storm of electrical signals become a thought? This course is an introduction to the science of the brain, from the ions that make a single neuron fire to the circuits that underlie memory, perception, and behavior.</p>
+        <p>No prior biology required.</p>
+        <h3>Course structure</h3>
+        <p>The course is divided into two parts. The first four weeks cover cellular neuroscience: membrane properties, ion channels, action potentials, and synaptic transmission. The second four weeks zoom out to systems: invertebrate circuits, learning and memory, the vertebrate brain, sensory systems, and higher cortical function.</p>
+      </section>
+
+      <section id="schedule">
+        <h2>Schedule</h2>
+        <table class="schedule-table">
+          <thead>
+            <tr>
+              <th>Week</th>
+              <th>Topic</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Week 1</td><td>Introduction &amp; the neuron</td><td>—</td></tr>
+            <tr><td>Week 2</td><td>Membrane potential &amp; ion channels</td><td>—</td></tr>
+            <tr><td>Week 3</td><td>Action potentials</td><td>Tool: Action potential explorer</td></tr>
+            <tr><td>Week 4</td><td>Synaptic transmission</td><td>—</td></tr>
+            <tr><td>Week 5</td><td>Neural circuits &amp; invertebrate systems</td><td>—</td></tr>
+            <tr><td>Week 6</td><td>Learning, memory &amp; modulation</td><td>—</td></tr>
+            <tr><td>Week 7</td><td>Vertebrate brain, spinal cord &amp; sensory systems</td><td>—</td></tr>
+            <tr><td>Week 8</td><td>Visual cortex, development &amp; higher cortical centers</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="grading">
+        <h2>Grading</h2>
+        <!-- Replace with your actual grading breakdown -->
+        <div class="grade-row"><span>Participation &amp; attendance</span><span class="pct">placeholder %</span></div>
+        <div class="grade-row"><span>Weekly problem sets</span><span class="pct">placeholder %</span></div>
+        <div class="grade-row"><span>Midterm exam</span><span class="pct">placeholder %</span></div>
+        <div class="grade-row"><span>Final exam</span><span class="pct">placeholder %</span></div>
+      </section>
+
+      <section id="policies">
+        <h2>Policies</h2>
+        <h3>Attendance</h3>
+        <p>Placeholder — add your attendance policy here.</p>
+        <h3>Late work</h3>
+        <p>Placeholder — add your late work policy here.</p>
+        <h3>Academic integrity</h3>
+        <p>Placeholder — add your academic integrity policy here, including your policy on AI tool use.</p>
+        <h3>Accessibility</h3>
+        <p>Placeholder — add your DSP/accessibility statement here.</p>
+      </section>
+
+      <section id="materials">
+        <h2>Materials</h2>
+        <h3>Required</h3>
+        <p>Placeholder — list required textbooks or readings here.</p>
+        <h3>Recommended</h3>
+        <p>Placeholder — list any recommended supplementary materials here.</p>
+      </section>
+
+    </div>
+  </div>
+
+  <footer>
+    <span>Tara Raam, Ph.D. · UC Berkeley Neuroscience</span>
+    <span>tararaam.github.io/neu-c64</span>
+  </footer>
+
+</body>
+</html>
