@@ -159,7 +159,7 @@
       <div class="logo-sub">UC Berkeley</div>
     </div>
   </a>
-  <div class="mode-tabs" style="display:none;">
+  <div class="mode-tabs" style="display:none;"></div>
   <a href="../../index.html" class="back-link">
     <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     Tools
@@ -249,15 +249,15 @@
       <table class="speed-table">
         <tr>
           <td><span class="speed-dot" style="background:#003262"></span>Myelinated</td>
-          <td><span class="speed-val" id="speed-myelin" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">70–120 m/s</span></td>
+          <td><span class="speed-val" id="speed-myelin" data-value="70–120 m/s">?</span></td>
         </tr>
         <tr>
           <td><span class="speed-dot" style="background:#6B7280"></span>Unmyelinated</td>
-          <td><span class="speed-val" id="speed-unmyelin" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">0.5–2 m/s</span></td>
+          <td><span class="speed-val" id="speed-unmyelin" data-value="0.5–2 m/s">?</span></td>
         </tr>
         <tr>
           <td><span class="speed-dot" style="background:#7C3AED"></span>MS (demyelinated)</td>
-          <td><span class="speed-val" id="speed-ms" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">&lt;5 m/s, unreliable</span></td>
+          <td><span class="speed-val" id="speed-ms" data-value="&lt;5 m/s, unreliable">?</span></td>
         </tr>
       </table>
       <div id="speed-hint" style="margin-top:0.5rem;font-size:11px;color:var(--text-tertiary);line-height:1.5;">Run the simulation to reveal actual speeds.</div>
@@ -710,7 +710,11 @@ function onRaceComplete() {
   // Reveal speed numbers
   ['myelin','unmyelin','ms'].forEach(id => {
     const el = document.getElementById('speed-' + id);
-    if (el) el.style.filter = 'none';
+    if (el) {
+      el.textContent = el.dataset.value;
+      el.style.transition = 'color 0.4s';
+      el.style.color = 'var(--teal)';
+    }
   });
   document.getElementById('speed-hint').style.display = 'none';
   document.getElementById('speed-note').style.display = 'block';
