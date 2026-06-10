@@ -244,26 +244,27 @@
 
   <div class="right-panel">
 
-    <div class="tutor-area" style="border-top: none;">
-      <div class="speed-table-wrap" style="padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0;">
-        <div class="section-label">Reference speeds</div>
-        <table class="speed-table">
-          <tr>
-            <td><span class="speed-dot" style="background:#003262"></span>Myelinated</td>
-            <td><span class="speed-val" id="speed-myelin" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">70–120 m/s</span></td>
-          </tr>
-          <tr>
-            <td><span class="speed-dot" style="background:#6B7280"></span>Unmyelinated</td>
-            <td><span class="speed-val" id="speed-unmyelin" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">0.5–2 m/s</span></td>
-          </tr>
-          <tr>
-            <td><span class="speed-dot" style="background:#7C3AED"></span>MS (demyelinated)</td>
-            <td><span class="speed-val" id="speed-ms" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">&lt;5 m/s, unreliable</span></td>
-          </tr>
-        </table>
-        <div id="speed-hint" style="margin-top:0.5rem;font-size:11px;color:var(--text-tertiary);line-height:1.5;">Run the simulation to reveal actual speeds.</div>
-        <div id="speed-note" style="display:none;margin-top:0.5rem;font-size:11px;color:var(--text-tertiary);line-height:1.5;">Speeds are compressed for visualization. In reality, myelinated axons are ~60–200× faster than unmyelinated axons of the same diameter.</div>
-      </div>
+    <div class="speed-table-wrap" style="padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0;">
+      <div class="section-label">Reference speeds</div>
+      <table class="speed-table">
+        <tr>
+          <td><span class="speed-dot" style="background:#003262"></span>Myelinated</td>
+          <td><span class="speed-val" id="speed-myelin" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">70–120 m/s</span></td>
+        </tr>
+        <tr>
+          <td><span class="speed-dot" style="background:#6B7280"></span>Unmyelinated</td>
+          <td><span class="speed-val" id="speed-unmyelin" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">0.5–2 m/s</span></td>
+        </tr>
+        <tr>
+          <td><span class="speed-dot" style="background:#7C3AED"></span>MS (demyelinated)</td>
+          <td><span class="speed-val" id="speed-ms" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">&lt;5 m/s, unreliable</span></td>
+        </tr>
+      </table>
+      <div id="speed-hint" style="margin-top:0.5rem;font-size:11px;color:var(--text-tertiary);line-height:1.5;">Run the simulation to reveal actual speeds.</div>
+      <div id="speed-note" style="display:none;margin-top:0.5rem;font-size:11px;color:var(--text-tertiary);line-height:1.5;">Speeds are compressed for visualization. In reality, myelinated axons are ~60–200× faster than unmyelinated axons of the same diameter.</div>
+    </div>
+
+    <div class="tutor-area">
       <div class="tutor-header">
         <div class="tutor-title"><div class="tutor-dot"></div> AI tutor</div>
         <button class="api-key-btn" id="api-status-btn" onclick="openModal()">Add API key</button>
