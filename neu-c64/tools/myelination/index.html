@@ -159,14 +159,15 @@
       <div class="logo-sub">UC Berkeley</div>
     </div>
   </a>
-  <div class="mode-tabs" style="display:none;"></div>
-  <a href="../../index.html" class="back-link">
+  <a href="../index.html" class="back-link">
     <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     Tools
   </a>
 </nav>
 
 <div class="app">
+
+  <!-- LEFT PANEL -->
   <div class="left-panel">
     <div class="tool-header">
       <h1>Myelination explorer</h1>
@@ -223,28 +224,29 @@
           <span>10 cm</span>
         </div>
       </div>
-
-      <div class="ms-card" style="margin: 0.75rem 1.5rem 0; flex-shrink: 0;">
-        <div class="ms-card-header">
-          <div class="ms-badge">What is MS?</div>
-          <div class="ms-card-title">Multiple sclerosis</div>
-        </div>
-        <div class="ms-card-text">Multiple sclerosis (MS) is an autoimmune disease in which the immune system mistakenly attacks myelin — the insulating sheath around axons. The damaged regions are called lesions. Without intact myelin, action potentials slow dramatically, become unreliable, or fail to propagate entirely. This explains MS symptoms: muscle weakness, numbness, vision problems, and fatigue — all reflecting disrupted neural signaling across the nervous system.</div>
-      </div>
-
-      <div class="controls">
-        <button class="fire-btn" id="fire-btn" onclick="fireAP()" disabled>
-          <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Fire action potential
-        </button>
-        <button class="reset-btn" onclick="resetRace()">Reset</button>
-      </div>
-
     </div>
 
+    <div class="ms-card" style="margin: 0 1.5rem; border-radius: var(--radius-lg);">
+      <div class="ms-card-header">
+        <div class="ms-badge">What is MS?</div>
+        <div class="ms-card-title">Multiple sclerosis</div>
+      </div>
+      <div class="ms-card-text">Multiple sclerosis (MS) is an autoimmune disease in which the immune system mistakenly attacks myelin — the insulating sheath around axons. The damaged regions are called lesions. Without intact myelin, action potentials slow dramatically, become unreliable, or fail to propagate entirely. This explains MS symptoms: muscle weakness, numbness, vision problems, and fatigue — all reflecting disrupted neural signaling across the nervous system.</div>
+    </div>
+
+    <div class="controls">
+      <button class="fire-btn" id="fire-btn" onclick="fireAP()" disabled>
+        <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Fire action potential
+      </button>
+      <button class="reset-btn" onclick="resetRace()">Reset</button>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
   <div class="right-panel">
 
-    <div class="speed-table-wrap" style="padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0;">
+    <div class="speed-table-wrap">
       <div class="section-label">Reference speeds</div>
       <table class="speed-table">
         <tr>
@@ -257,7 +259,7 @@
         </tr>
         <tr>
           <td><span class="speed-dot" style="background:#7C3AED"></span>MS (demyelinated)</td>
-          <td><span class="speed-val" id="speed-ms" data-value="&lt;5 m/s, unreliable">?</span></td>
+          <td><span class="speed-val" id="speed-ms" data-value="<5 m/s, unreliable">?</span></td>
         </tr>
       </table>
       <div id="speed-hint" style="margin-top:0.5rem;font-size:11px;color:var(--text-tertiary);line-height:1.5;">Run the simulation to reveal actual speeds.</div>
@@ -280,6 +282,7 @@
         </div>
       </div>
     </div>
+
   </div>
 </div>
 
