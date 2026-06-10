@@ -75,7 +75,7 @@
     .ms-card-text { font-size: 12.5px; color: #534AB7; line-height: 1.65; }
 
     /* CONTROLS */
-    .controls { display: flex; gap: 8px; padding: 0.75rem 1.5rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .controls { display: flex; gap: 8px; padding: 0.75rem 1.5rem; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); flex-shrink: 0; }
     .fire-btn { flex: 1; padding: 8px 16px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.15s; }
     .fire-btn:hover:not(:disabled) { opacity: 0.88; }
     .fire-btn:disabled { opacity: 0.45; cursor: default; background: #888; }
@@ -223,48 +223,47 @@
           <span>10 cm</span>
         </div>
       </div>
-    </div>
 
-    <div class="controls">
-      <button class="fire-btn" id="fire-btn" onclick="fireAP()" disabled>
-        <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Fire action potential
-      </button>
-      <button class="reset-btn" onclick="resetRace()">Reset</button>
+      <div class="ms-card" style="margin: 0.75rem 1.5rem 0; flex-shrink: 0;">
+        <div class="ms-card-header">
+          <div class="ms-badge">What is MS?</div>
+          <div class="ms-card-title">Multiple sclerosis</div>
+        </div>
+        <div class="ms-card-text">Multiple sclerosis (MS) is an autoimmune disease in which the immune system mistakenly attacks myelin — the insulating sheath around axons. The damaged regions are called lesions. Without intact myelin, action potentials slow dramatically, become unreliable, or fail to propagate entirely. This explains MS symptoms: muscle weakness, numbness, vision problems, and fatigue — all reflecting disrupted neural signaling across the nervous system.</div>
+      </div>
+
+      <div class="controls">
+        <button class="fire-btn" id="fire-btn" onclick="fireAP()" disabled>
+          <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Fire action potential
+        </button>
+        <button class="reset-btn" onclick="resetRace()">Reset</button>
+      </div>
+
     </div>
-  </div>
 
   <div class="right-panel">
 
-    <div class="ms-card" style="margin: 1rem 1.25rem; border-radius: var(--radius-lg); flex-shrink: 0;">
-      <div class="ms-card-header">
-        <div class="ms-badge">What is MS?</div>
-        <div class="ms-card-title">Multiple sclerosis</div>
+    <div class="tutor-area" style="border-top: none;">
+      <div class="speed-table-wrap" style="padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0;">
+        <div class="section-label">Reference speeds</div>
+        <table class="speed-table">
+          <tr>
+            <td><span class="speed-dot" style="background:#003262"></span>Myelinated</td>
+            <td><span class="speed-val" id="speed-myelin" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">70–120 m/s</span></td>
+          </tr>
+          <tr>
+            <td><span class="speed-dot" style="background:#6B7280"></span>Unmyelinated</td>
+            <td><span class="speed-val" id="speed-unmyelin" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">0.5–2 m/s</span></td>
+          </tr>
+          <tr>
+            <td><span class="speed-dot" style="background:#7C3AED"></span>MS (demyelinated)</td>
+            <td><span class="speed-val" id="speed-ms" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">&lt;5 m/s, unreliable</span></td>
+          </tr>
+        </table>
+        <div id="speed-hint" style="margin-top:0.5rem;font-size:11px;color:var(--text-tertiary);line-height:1.5;">Run the simulation to reveal actual speeds.</div>
+        <div id="speed-note" style="display:none;margin-top:0.5rem;font-size:11px;color:var(--text-tertiary);line-height:1.5;">Speeds are compressed for visualization. In reality, myelinated axons are ~60–200× faster than unmyelinated axons of the same diameter.</div>
       </div>
-      <div class="ms-card-text">Multiple sclerosis (MS) is an autoimmune disease in which the immune system mistakenly attacks myelin — the insulating sheath around axons. The damaged regions are called lesions. Without intact myelin, action potentials slow dramatically, become unreliable, or fail to propagate entirely. This explains MS symptoms: muscle weakness, numbness, vision problems, and fatigue — all reflecting disrupted neural signaling across the nervous system.</div>
-    </div>
-
-    <div class="speed-table-wrap" style="border-top: 1px solid var(--border);">
-      <div class="section-label">Reference speeds</div>
-      <table class="speed-table">
-        <tr>
-          <td><span class="speed-dot" style="background:#003262"></span>Myelinated</td>
-          <td><span class="speed-val" id="speed-myelin" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">70–120 m/s</span></td>
-        </tr>
-        <tr>
-          <td><span class="speed-dot" style="background:#6B7280"></span>Unmyelinated</td>
-          <td><span class="speed-val" id="speed-unmyelin" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">0.5–2 m/s</span></td>
-        </tr>
-        <tr>
-          <td><span class="speed-dot" style="background:#7C3AED"></span>MS (demyelinated)</td>
-          <td><span class="speed-val" id="speed-ms" style="filter:blur(4px); user-select:none; transition: filter 0.5s;">&lt;5 m/s, unreliable</span></td>
-        </tr>
-      </table>
-      <div id="speed-hint" style="margin-top:0.5rem;font-size:11px;color:var(--text-tertiary);line-height:1.5;">Run the simulation to reveal actual speeds.</div>
-      <div id="speed-note" style="display:none;margin-top:0.5rem;font-size:11px;color:var(--text-tertiary);line-height:1.5;">Speeds are compressed for visualization. In reality, myelinated axons are ~60–200× faster than unmyelinated axons of the same diameter.</div>
-    </div>
-
-    <div class="tutor-area">
       <div class="tutor-header">
         <div class="tutor-title"><div class="tutor-dot"></div> AI tutor</div>
         <button class="api-key-btn" id="api-status-btn" onclick="openModal()">Add API key</button>
