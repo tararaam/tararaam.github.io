@@ -127,7 +127,7 @@
     #voltage-canvas { width: 100%; height: 160px; display: block; border-radius: 6px; }
 
     /* MEMBRANE DIAGRAM */
-    #membrane-canvas { width: 100%; height: 200px; display: block; border-radius: 6px; }
+    #membrane-canvas { width: 100%; height: 220px; display: block; border-radius: 6px; }
 
     /* ION LEGEND */
     .ion-legend { display: flex; gap: 1rem; margin-top: 0.5rem; }
@@ -152,26 +152,20 @@
     .phase-badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 500; padding: 2px 9px; border-radius: 100px; margin-bottom: 0.6rem; color: white; }
     .phase-badge[data-phase="0"] { background: var(--phase-0); }
     .phase-badge[data-phase="1"] { background: var(--phase-1); }
-    .phase-badge[data-phase="2"] { background: var(--phase-2); }
-    .phase-badge[data-phase="3"] { background: var(--phase-3); }
-    .phase-badge[data-phase="4"] { background: var(--phase-4); }
     .phase-title { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; margin-bottom: 0.4rem; }
     .phase-description { font-size: 12.5px; color: var(--text-secondary); line-height: 1.7; }
 
-    /* CHANNEL STATUS */
-    .channel-status { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-    .section-label { font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.5rem; }
-    .channel-grid { display: flex; flex-direction: column; gap: 5px; }
+    /* CHANNEL STATUS — collapsible */
+    .channel-status { border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .channel-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 1.25rem; background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); transition: color 0.15s; }
+    .channel-toggle:hover { color: var(--text-primary); }
+    .channel-grid { display: flex; flex-direction: column; gap: 5px; padding: 0 1.25rem 0.75rem; }
     .channel-row { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; }
     .channel-name { color: var(--text-secondary); }
     .channel-state { font-size: 10px; font-weight: 500; padding: 2px 9px; border-radius: 100px; }
     .state-closed { background: var(--bg-secondary); color: var(--text-tertiary); border: 1px solid var(--border); }
     .state-open { background: #E1F5EE; color: #0F6E56; border: 1px solid #9FE1CB; }
     .state-inactivated { background: #FCEBEB; color: #A32D2D; border: 1px solid #F7C1C1; }
-
-    /* WHY IT MATTERS */
-    .why-matters { padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); flex-shrink: 0; }
-    .why-text { font-size: 12px; color: var(--text-secondary); line-height: 1.65; font-style: italic; border-left: 2px solid var(--border); padding-left: 0.75rem; }
 
     /* TUTOR */
     .tutor-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; border-top: 1px solid var(--border); }
@@ -283,6 +277,7 @@
           <div class="ion-legend-item"><div class="ion-dot" style="background:#2563EB"></div> Na⁺ channels</div>
           <div class="ion-legend-item"><div class="ion-dot" style="background:#DC2626"></div> K⁺ channels</div>
           <div class="ion-legend-item"><div class="ion-dot" style="background:#DB2777"></div> K⁺ leak channels</div>
+          <div class="ion-legend-item"><div class="ion-dot" style="background:#7C3AED"></div> Na⁺/K⁺ ATPase pump</div>
           <div class="ion-legend-item"><div class="ion-dot" style="background:#9CA3AF; width:12px; height:4px; border-radius:2px;"></div> Inactivated</div>
         </div>
       </div>
@@ -304,14 +299,16 @@
   <!-- RIGHT -->
   <div class="right-panel">
     <div class="phase-info">
-      <div class="phase-badge" id="phase-badge" data-phase="0">Phase 1 of 5</div>
       <div class="phase-title" id="phase-title">Resting state</div>
       <div class="phase-description" id="phase-description"></div>
     </div>
 
     <div class="channel-status">
-      <div class="section-label">Ion channel states</div>
-      <div class="channel-grid" id="channel-grid"></div>
+      <button class="channel-toggle" id="channel-toggle" onclick="toggleChannels()">
+        <span>Ion channel states</span>
+        <svg id="channel-chevron" viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="channel-grid" id="channel-grid" style="display:none;"></div>
     </div>
 
     <div class="tutor-area">
@@ -329,11 +326,6 @@
           </button>
         </div>
       </div>
-    </div>
-
-    <div class="why-matters">
-      <div class="section-label">Why this matters</div>
-      <div class="why-text" id="why-text"></div>
     </div>
   </div>
 </div>
@@ -461,7 +453,7 @@ const mCtx = mCanvas.getContext('2d');
 
 function resizeCanvases() {
   const dpr = window.devicePixelRatio || 1;
-  [{ c: vCanvas, h: 160 }, { c: mCanvas, h: 200 }].forEach(({ c, h }) => {
+  [{ c: vCanvas, h: 160 }, { c: mCanvas, h: 220 }].forEach(({ c, h }) => {
     const w = c.parentElement.clientWidth - 28;
     c.width = w * dpr; c.height = h * dpr;
     c.style.width = w + 'px'; c.style.height = h + 'px';
@@ -565,6 +557,48 @@ function getChannels(w) {
   ];
 }
 
+// Pump ions are separate — always animating, 3 Na+ out, 2 K+ in
+let pumpIons = [];
+
+function spawnPumpIons(w) {
+  const midY = 95;
+  const px = w * 0.94; // pump x position
+  pumpIons = [];
+  // 3 Na+ moving out (intracellular → extracellular)
+  for (let i = 0; i < 3; i++) {
+    pumpIons.push({
+      x: px - 4 + i * 4,
+      y: midY + 45 + Math.random() * 15,
+      color: '#2563EB', label: 'Na⁺',
+      dir: 'out', speed: 0.35 + Math.random() * 0.2,
+      offset: Math.random() * 60,
+    });
+  }
+  // 2 K+ moving in (extracellular → intracellular)
+  for (let i = 0; i < 2; i++) {
+    pumpIons.push({
+      x: px - 2 + i * 4,
+      y: midY - 45 - Math.random() * 15,
+      color: '#DC2626', label: 'K⁺',
+      dir: 'in', speed: 0.3 + Math.random() * 0.2,
+      offset: Math.random() * 60,
+    });
+  }
+}
+
+function animatePumpIons(w) {
+  const midY = 95;
+  pumpIons.forEach(ion => {
+    if (ion.dir === 'out') {
+      ion.y -= ion.speed * 0.9;
+      if (ion.y < midY - 55) ion.y = midY + 45 + Math.random() * 15;
+    } else {
+      ion.y += ion.speed * 0.9;
+      if (ion.y > midY + 55) ion.y = midY - 45 - Math.random() * 15;
+    }
+  });
+}
+
 function spawnIons(phase) {
   ions = [];
   const flow = PHASES[phase].ionFlow;
@@ -611,9 +645,9 @@ function getChannelState(type, phase) {
 
 function animateIons() {
   drawMembrane(currentPhase);
+  const w = mCanvas.width / (window.devicePixelRatio || 1);
   ions.forEach(ion => {
     ion.offset += ion.speed;
-    // Loop: when ion exits, reset to start
     if (ion.dir === 'in') {
       if (ion.y > 115) ion.y = 55 - Math.random()*20;
       else ion.y += ion.speed * 0.8;
@@ -622,7 +656,9 @@ function animateIons() {
       else ion.y -= ion.speed * 0.8;
     }
   });
+  animatePumpIons(w);
   drawIons();
+  drawPumpIons();
   animFrame = requestAnimationFrame(animateIons);
 }
 
@@ -646,6 +682,22 @@ function drawIons() {
   });
 }
 
+function drawPumpIons() {
+  pumpIons.forEach(ion => {
+    mCtx.beginPath();
+    mCtx.arc(ion.x, ion.y, 4, 0, Math.PI*2);
+    mCtx.fillStyle = ion.color;
+    mCtx.globalAlpha = 0.85;
+    mCtx.fill();
+    mCtx.globalAlpha = 1;
+    mCtx.fillStyle = ion.color;
+    mCtx.font = 'bold 8px DM Sans, sans-serif';
+    mCtx.textAlign = 'center';
+    mCtx.fillText(ion.label, ion.x + 9, ion.y + 3);
+    mCtx.textAlign = 'left';
+  });
+}
+
 function drawMembrane(phase) {
   const dpr = window.devicePixelRatio || 1;
   const w = mCanvas.width / dpr;
@@ -665,46 +717,46 @@ function drawMembrane(phase) {
   // Intracellular: many K⁺ (red), few Na⁺ (blue)
   const concDots = [
     // Extracellular Na+ (many, blue) — above membrane
-    { x: w*0.08, y: midY-28, color: '#2563EB', label: 'Na⁺' },
-    { x: w*0.22, y: midY-22, color: '#2563EB', label: 'Na⁺' },
-    { x: w*0.42, y: midY-30, color: '#2563EB', label: 'Na⁺' },
-    { x: w*0.58, y: midY-24, color: '#2563EB', label: 'Na⁺' },
-    { x: w*0.75, y: midY-28, color: '#2563EB', label: 'Na⁺' },
-    { x: w*0.90, y: midY-22, color: '#2563EB', label: 'Na⁺' },
+    { x: w*0.08, y: midY-42, color: '#2563EB', label: 'Na⁺' },
+    { x: w*0.22, y: midY-36, color: '#2563EB', label: 'Na⁺' },
+    { x: w*0.42, y: midY-44, color: '#2563EB', label: 'Na⁺' },
+    { x: w*0.58, y: midY-38, color: '#2563EB', label: 'Na⁺' },
+    { x: w*0.75, y: midY-42, color: '#2563EB', label: 'Na⁺' },
+    { x: w*0.88, y: midY-36, color: '#2563EB', label: 'Na⁺' },
     // Extracellular K+ (few, red)
-    { x: w*0.88, y: midY-32, color: '#DC2626', label: 'K⁺' },
+    { x: w*0.65, y: midY-46, color: '#DC2626', label: 'K⁺' },
     // Intracellular K+ (many, red) — below membrane
-    { x: w*0.08, y: midY+32, color: '#DC2626', label: 'K⁺' },
-    { x: w*0.22, y: midY+26, color: '#DC2626', label: 'K⁺' },
-    { x: w*0.42, y: midY+34, color: '#DC2626', label: 'K⁺' },
-    { x: w*0.58, y: midY+28, color: '#DC2626', label: 'K⁺' },
-    { x: w*0.75, y: midY+32, color: '#DC2626', label: 'K⁺' },
-    { x: w*0.90, y: midY+26, color: '#DC2626', label: 'K⁺' },
+    { x: w*0.08, y: midY+46, color: '#DC2626', label: 'K⁺' },
+    { x: w*0.22, y: midY+40, color: '#DC2626', label: 'K⁺' },
+    { x: w*0.42, y: midY+48, color: '#DC2626', label: 'K⁺' },
+    { x: w*0.58, y: midY+42, color: '#DC2626', label: 'K⁺' },
+    { x: w*0.75, y: midY+46, color: '#DC2626', label: 'K⁺' },
+    { x: w*0.88, y: midY+40, color: '#DC2626', label: 'K⁺' },
     // Intracellular Na+ (few, blue)
-    { x: w*0.88, y: midY+36, color: '#2563EB', label: 'Na⁺' },
+    { x: w*0.65, y: midY+50, color: '#2563EB', label: 'Na⁺' },
   ];
 
   concDots.forEach(d => {
     mCtx.beginPath();
-    mCtx.arc(d.x, d.y, 3.5, 0, Math.PI*2);
+    mCtx.arc(d.x, d.y, 5, 0, Math.PI*2);
     mCtx.fillStyle = d.color;
-    mCtx.globalAlpha = 0.2;
+    mCtx.globalAlpha = 0.25;
     mCtx.fill();
     mCtx.globalAlpha = 1;
     mCtx.fillStyle = d.color;
-    mCtx.font = 'bold 7px DM Sans, sans-serif';
+    mCtx.font = 'bold 9px DM Sans, sans-serif';
     mCtx.textAlign = 'center';
-    mCtx.globalAlpha = 0.3;
-    mCtx.fillText(d.label, d.x + 8, d.y + 2.5);
+    mCtx.globalAlpha = 0.4;
+    mCtx.fillText(d.label, d.x + 10, d.y + 3.5);
     mCtx.globalAlpha = 1;
     mCtx.textAlign = 'left';
   });
 
-  // ── LABELS ───────────────────────────────────────────────────────────────
+  // ── LABELS — pushed to very top and bottom edges ─────────────────────────
   mCtx.fillStyle = '#aaa';
   mCtx.font = '10px DM Sans, sans-serif';
-  mCtx.fillText('Extracellular  (high Na⁺, low K⁺)', 8, midY - memH - 16);
-  mCtx.fillText('Intracellular  (high K⁺, low Na⁺)', 8, midY + memH + 24);
+  mCtx.fillText('Extracellular  (high Na⁺, low K⁺)', 8, 11);
+  mCtx.fillText('Intracellular  (high K⁺, low Na⁺)', 8, h - 4);
 
   // ── MEMBRANE BANDS ────────────────────────────────────────────────────────
   mCtx.fillStyle = '#c5d8ee';
@@ -779,33 +831,62 @@ function drawMembrane(phase) {
 
     // Channel type label above
     mCtx.fillStyle = chColor;
-    mCtx.font = 'bold 9px DM Sans, sans-serif';
+    mCtx.font = 'bold 10px DM Sans, sans-serif';
     mCtx.textAlign = 'center';
-    mCtx.fillText(ch.type === 'leak' ? 'K⁺ leak' : ch.label, ch.x, midY - memH - 4);
+    mCtx.fillText(ch.type === 'leak' ? 'K⁺ leak' : ch.label, ch.x, midY - memH - 5);
     mCtx.textAlign = 'left';
 
     // State label below
     mCtx.fillStyle = isInact ? '#9CA3AF' : isOpen ? '#0F6E56' : '#9CA3AF';
-    mCtx.font = '8px DM Sans, sans-serif';
+    mCtx.font = '9px DM Sans, sans-serif';
     mCtx.textAlign = 'center';
-    mCtx.fillText(isInact ? 'inactivated' : isOpen ? 'open' : 'closed', ch.x, midY + memH + 12);
+    mCtx.fillText(isInact ? 'inactivated' : isOpen ? 'open' : 'closed', ch.x, midY + memH + 13);
     mCtx.textAlign = 'left';
   });
+
+  // ── Na⁺/K⁺ ATPase PUMP ────────────────────────────────────────────────────
+  const pumpX = w * 0.94;
+  const pumpW = 18;
+  const pumpColor = '#7C3AED'; // green
+
+  // Pump body — clean rectangle, no arrows
+  mCtx.fillStyle = pumpColor;
+  mCtx.globalAlpha = 0.12;
+  mCtx.beginPath();
+  mCtx.roundRect(pumpX - pumpW/2, midY - memH - 2, pumpW, memH * 2 + 4, 4);
+  mCtx.fill();
+  mCtx.globalAlpha = 1;
+
+  mCtx.strokeStyle = pumpColor;
+  mCtx.lineWidth = 2;
+  mCtx.beginPath();
+  mCtx.roundRect(pumpX - pumpW/2, midY - memH - 2, pumpW, memH * 2 + 4, 4);
+  mCtx.stroke();
+
+  // Pump label — well above membrane to clear concentration dots
+  mCtx.fillStyle = pumpColor;
+  mCtx.font = 'bold 9px DM Sans, sans-serif';
+  mCtx.textAlign = 'center';
+  mCtx.fillText('Na⁺/K⁺', pumpX, midY - memH - 18);
+  mCtx.fillText('pump', pumpX, midY - memH - 8);
+  // Active label below
+  mCtx.fillStyle = pumpColor;
+  mCtx.font = '9px DM Sans, sans-serif';
+  mCtx.fillText('active', pumpX, midY + memH + 13);
+  mCtx.textAlign = 'left';
 }
 
 function startAnimation(phase) {
   if (animFrame) cancelAnimationFrame(animFrame);
   spawnIons(phase);
+  const w = mCanvas.width / (window.devicePixelRatio || 1);
+  spawnPumpIons(w);
   animateIons();
 }
 
 // ── UI UPDATES ────────────────────────────────────────────────────────────────
 function updateUI(phase) {
   const p = PHASES[phase];
-
-  const badge = document.getElementById('phase-badge');
-  badge.textContent = `Phase ${phase+1} of 5`;
-  badge.dataset.phase = phase;
 
   document.getElementById('phase-title').textContent = p.name;
   document.getElementById('phase-description').textContent = p.description;
@@ -816,8 +897,6 @@ function updateUI(phase) {
       <span class="channel-state ${c.cls}">${c.state}</span>
     </div>`
   ).join('');
-
-  document.getElementById('why-text').textContent = p.why;
 
   document.querySelectorAll('.phase-btn').forEach((btn, i) => {
     btn.classList.remove('active','visited');
@@ -852,6 +931,15 @@ function updateUI(phase) {
   } else if (phase === 4 && !freeExploration) {
     addPredictionPrompt('You\'ve seen the full action potential. Can you explain in your own words why an action potential can only travel in one direction along an axon?');
   }
+}
+
+// ── CHANNEL TOGGLE ────────────────────────────────────────────────────────────
+function toggleChannels() {
+  const grid = document.getElementById('channel-grid');
+  const chevron = document.getElementById('channel-chevron');
+  const open = grid.style.display !== 'none';
+  grid.style.display = open ? 'none' : 'flex';
+  chevron.style.transform = open ? '' : 'rotate(180deg)';
 }
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
@@ -961,7 +1049,7 @@ Channel states: ${p.channels.map(c => c.name+': '+c.state).join(', ')}
 Your role:
 - Respond to the student's prediction or question with warmth and Socratic engagement
 - Engage with their specific reasoning, not a generic response
-- If right: affirm what they got right specifically, then add one layer of depth
+- If right: affirm what they got right specifically, then follow up with a real-world or clinical application question related to this phase (e.g. why lidocaine works, why TTX is lethal, why the refractory period matters for signal direction). This replaces a separate "why this matters" section — weave it naturally into your response.
 - If partially right: acknowledge what's correct and guide toward what's missing with a question
 - If wrong: don't give the answer — ask a question that guides their thinking
 - Keep responses to 2–4 sentences
