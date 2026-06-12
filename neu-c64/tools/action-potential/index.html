@@ -141,6 +141,14 @@
     .prev-btn:disabled { opacity: 0.35; cursor: default; }
     .prev-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .next-btn { flex: 1; padding: 7px 16px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.15s; }
+    /* MODE TOGGLE */
+    .mode-toggle-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--bg-secondary); }
+    .mode-toggle-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); }
+    .mode-toggle-btns { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 100px; padding: 2px; gap: 2px; }
+    .mode-toggle-btn { padding: 4px 14px; border-radius: 100px; border: none; font-family: "DM Sans", sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--text-secondary); background: transparent; transition: all 0.15s; }
+    .mode-toggle-btn.active { background: var(--berkeley-blue); color: white; }
+    /* SOFT NUDGE */
+    .soft-nudge { font-size: 11px; color: var(--gold-text); background: var(--gold-light); border: 1px solid #F5D78A; border-radius: var(--radius-md); padding: 5px 10px; margin-top: 6px; display: none; }
     .next-btn:hover:not(:disabled) { opacity: 0.88; }
     .next-btn:disabled { opacity: 0.45; cursor: default; background: #888; }
     .next-btn svg { width: 13px; height: 13px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -289,15 +297,25 @@
         <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         Prev
       </button>
-      <button class="next-btn" id="next-btn" onclick="nextPhase()">
-        Next phase
-        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-      </button>
+      <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+        <button class="next-btn" id="next-btn" onclick="nextPhase()">
+          Next phase
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <div class="soft-nudge" id="soft-nudge">Answer the tutor's question to get feedback before moving on</div>
+      </div>
     </div>
   </div>
 
   <!-- RIGHT -->
   <div class="right-panel">
+    <div class="mode-toggle-bar">
+      <span class="mode-toggle-label">Mode</span>
+      <div class="mode-toggle-btns">
+        <button class="mode-toggle-btn active" id="btn-guided" onclick="setMode('guided')">AI guided</button>
+        <button class="mode-toggle-btn" id="btn-explore" onclick="setMode('explore')">Explore</button>
+      </div>
+    </div>
     <div class="phase-info">
       <div class="phase-title" id="phase-title">Resting state</div>
       <div class="phase-description" id="phase-description"></div>
@@ -444,6 +462,7 @@ let animFrame = null;
 let ions = [];
 let freeExploration = false; // unlocks after completing all 5 phases
 let answeredCurrentPhase = false; // tracks if student has responded this phase
+let explorationMode = false; // true = Explore mode, false = AI Guided mode
 
 // ── CANVAS SETUP ──────────────────────────────────────────────────────────────
 const vCanvas = document.getElementById('voltage-canvas');
@@ -884,6 +903,37 @@ function startAnimation(phase) {
   animateIons();
 }
 
+// ── MODE TOGGLE ──────────────────────────────────────────────────────────────────
+function setMode(mode) {
+  explorationMode = mode === 'explore';
+  document.getElementById('btn-guided').classList.toggle('active', !explorationMode);
+  document.getElementById('btn-explore').classList.toggle('active', explorationMode);
+
+  if (explorationMode) {
+    // Unlock everything immediately
+    freeExploration = true;
+    answeredCurrentPhase = true;
+    document.getElementById('soft-nudge').style.display = 'none';
+    document.getElementById('next-btn').disabled = false;
+    document.querySelectorAll('.phase-btn').forEach(btn => {
+      btn.disabled = false;
+      btn.style.opacity = '';
+    });
+    document.getElementById('prev-btn').disabled = currentPhase === 0 ? true : false;
+    // Clear prediction prompts and add explore welcome
+    document.getElementById('chat-messages').innerHTML = '';
+    addTutorMessage('You\'re in Explore mode — jump between phases freely and ask me anything. No prediction prompts, just open exploration.');
+  } else {
+    // Switch back to guided — reset state
+    freeExploration = false;
+    explorationMode = false;
+    answeredCurrentPhase = false;
+    document.getElementById('chat-messages').innerHTML = '';
+    document.getElementById('next-btn').disabled = true;
+    updateUI(currentPhase);
+  }
+}
+
 // ── UI UPDATES ────────────────────────────────────────────────────────────────
 function updateUI(phase) {
   const p = PHASES[phase];
@@ -902,24 +952,28 @@ function updateUI(phase) {
     btn.classList.remove('active','visited');
     if (i === phase) btn.classList.add('active');
     if (i < phase) btn.classList.add('visited');
-    // In free exploration all phase buttons are fully clickable
     btn.disabled = false;
     btn.style.opacity = '';
   });
 
-  document.getElementById('prev-btn').disabled = freeExploration ? false : phase === 0;
+  document.getElementById('prev-btn').disabled = phase === 0;
 
   const nb = document.getElementById('next-btn');
+  const nudge = document.getElementById('soft-nudge');
+
   if (phase === 4 && freeExploration) {
     nb.innerHTML = 'Start over <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.37"/></svg>';
     nb.disabled = false;
-  } else if (freeExploration) {
+    nudge.style.display = 'none';
+  } else if (explorationMode || freeExploration) {
     nb.innerHTML = 'Next phase <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
     nb.disabled = false;
+    nudge.style.display = 'none';
   } else {
-    // Hard gate — Next disabled until student answers
+    // AI Guided — hard gate + nudge
     nb.innerHTML = 'Next phase <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
     nb.disabled = !answeredCurrentPhase;
+    nudge.style.display = answeredCurrentPhase ? 'none' : 'block';
   }
 
   drawTrace(phase);
@@ -944,10 +998,8 @@ function toggleChannels() {
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
 function goToPhase(p) {
-  // Only allow jumping in free exploration mode
-  if (!freeExploration && p !== currentPhase) return;
   currentPhase = p;
-  answeredCurrentPhase = freeExploration;
+  answeredCurrentPhase = explorationMode || freeExploration;
   updateUI(p);
 }
 
@@ -1086,13 +1138,10 @@ Your role:
       thinking.querySelector('.message-bubble').textContent = reply;
       chatHistory.push({ role: 'assistant', content: reply });
 
-      // Unlock Next button after student has answered
-      if (!freeExploration) {
+      // Track answer and hide nudge
+      if (!freeExploration && !explorationMode) {
         answeredCurrentPhase = true;
-        const nb = document.getElementById('next-btn');
-        nb.disabled = false;
-
-        // If this was phase 5, unlock free exploration
+        document.getElementById('soft-nudge').style.display = 'none';
         if (currentPhase === 4) {
           setTimeout(() => unlockFreeExploration(), 1200);
         }
@@ -1138,7 +1187,6 @@ if (apiKey) {
 resizeCanvases();
 answeredCurrentPhase = false;
 updateUI(0);
-// Ensure next is disabled on first load
 document.getElementById('next-btn').disabled = true;
 </script>
 </body>
