@@ -116,6 +116,49 @@
       .week-chips { display: none; }
       footer { flex-direction: column; gap: 0.5rem; }
     }
+
+    /* OPTION B: Floating files button */
+    .files-fab { position: fixed; right: 1.5rem; top: 50%; transform: translateY(-50%); z-index: 200;
+      display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .files-fab-btn { display: flex; align-items: center; gap: 6px; padding: 10px 14px;
+      background: var(--berkeley-blue); color: white; border: none; border-radius: 100px;
+      font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0,50,98,0.25); transition: all 0.15s; white-space: nowrap; }
+    .files-fab-btn:hover { background: #004080; box-shadow: 0 4px 16px rgba(0,50,98,0.35); }
+    .files-fab-btn svg { width: 14px; height: 14px; stroke: white; fill: none; stroke-width: 2;
+      stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+    /* Slide-in panel */
+    .files-panel-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.2);
+      z-index: 300; }
+    .files-panel-overlay.open { display: block; }
+    .files-panel { position: fixed; right: 0; top: 0; bottom: 0; width: 320px; background: white;
+      box-shadow: -4px 0 24px rgba(0,0,0,0.12); z-index: 301; display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform 0.25s ease; }
+    .files-panel-overlay.open .files-panel { transform: translateX(0); }
+    .files-panel-header { padding: 1.25rem 1.25rem 1rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .files-panel-title { font-size: 15px; font-weight: 500; }
+    .files-panel-close { background: none; border: none; cursor: pointer; color: var(--text-tertiary);
+      font-size: 20px; line-height: 1; padding: 4px; }
+    .files-panel-close:hover { color: var(--text-primary); }
+    .files-panel-body { overflow-y: auto; padding: 1rem 1.25rem; flex: 1; display: flex;
+      flex-direction: column; gap: 1.25rem; }
+    .files-group-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.5rem; }
+    .files-item { display: flex; align-items: center; justify-content: space-between;
+      padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .files-item:last-child { border-bottom: none; }
+    .files-item-name { color: var(--text-secondary); }
+    .files-item-link { color: var(--teal); font-size: 12px; text-decoration: underline;
+      text-underline-offset: 2px; }
+    .files-item-soon { font-size: 11px; color: var(--text-tertiary); background: var(--bg-secondary);
+      border: 1px solid var(--border); padding: 2px 8px; border-radius: 100px; }
+
+    @media (max-width: 600px) {
+      .files-fab { right: 1rem; }
+      .files-panel { width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -164,38 +207,46 @@
   <span class="chip chip-reflection">Reflection</span>
 </div>
 
-<div class="files-drawer" id="files-drawer">
-  <div class="files-drawer-header" onclick="toggleDrawer()">
-    <div class="files-drawer-left">
-      <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      <span>Assignments &amp; project files</span>
+<div class="files-fab">
+  <button class="files-fab-btn" onclick="openFilesPanel()">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Assignments & files
+  </button>
+</div>
+
+<div class="files-panel-overlay" id="files-panel-overlay" onclick="closeFilesPanel(event)">
+  <div class="files-panel">
+    <div class="files-panel-header">
+      <span class="files-panel-title">Assignments & project files</span>
+      <button class="files-panel-close" onclick="closeFilesPanel()">×</button>
     </div>
-    <svg class="files-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-  </div>
-  <div class="files-drawer-body">
-    <div class="quick-cards">
-
-      <div class="quick-card">
-        <div class="quick-card-header">
-          <span class="chip chip-hw" style="font-size:12px; padding: 4px 12px;">Homework assignments</span>
+    <div class="files-panel-body">
+      <div>
+        <div class="files-group-label">Homework assignments</div>
+        <div class="files-item">
+          <span class="files-item-name">Homework 1</span>
+          <a href="Homework1.pdf" target="_blank" class="files-item-link">Download →</a>
         </div>
-        <ul class="quick-list">
-          <li><span class="quick-item-name">Homework 1</span><span class="coming-soon-badge">Coming soon</span></li>
-          <li><span class="quick-item-name">Homework 2</span><span class="coming-soon-badge">Coming soon</span></li>
-          <li><span class="quick-item-name">Homework 3</span><span class="coming-soon-badge">Coming soon</span></li>
-        </ul>
-      </div>
-
-      <div class="quick-card">
-        <div class="quick-card-header">
-          <span class="chip chip-project" style="font-size:12px; padding: 4px 12px;">Group project</span>
+        <div class="files-item">
+          <span class="files-item-name">Homework 2</span>
+          <span class="files-item-soon">Coming soon</span>
         </div>
-        <ul class="quick-list">
-          <li><span class="quick-item-name">Project description</span><span class="coming-soon-badge">Coming soon</span></li>
-          <li><span class="quick-item-name">Rubric</span><span class="coming-soon-badge">Coming soon</span></li>
-        </ul>
+        <div class="files-item">
+          <span class="files-item-name">Homework 3</span>
+          <span class="files-item-soon">Coming soon</span>
+        </div>
       </div>
-
+      <div>
+        <div class="files-group-label">Group project</div>
+        <div class="files-item">
+          <span class="files-item-name">Project description</span>
+          <span class="files-item-soon">Coming soon</span>
+        </div>
+        <div class="files-item">
+          <span class="files-item-name">Rubric</span>
+          <span class="files-item-soon">Coming soon</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -516,6 +567,15 @@
 </footer>
 
 <script>
+
+function openFilesPanel() {
+  document.getElementById('files-panel-overlay').classList.add('open');
+}
+function closeFilesPanel(e) {
+  if (!e || e.target === document.getElementById('files-panel-overlay') || e.currentTarget.classList.contains('files-panel-close')) {
+    document.getElementById('files-panel-overlay').classList.remove('open');
+  }
+}
 function toggleWeek(id) {
   document.getElementById(id).classList.toggle('open');
 }
