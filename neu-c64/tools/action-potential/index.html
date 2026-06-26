@@ -116,6 +116,7 @@
     .phase-btn[data-phase="3"].active { background: var(--phase-3); }
     .phase-btn[data-phase="4"].active { background: var(--phase-4); }
     .phase-btn.visited { opacity: 0.55; }
+    .phase-btn:disabled { opacity: 0.35; cursor: default; }
 
     /* VIZ AREA */
     .viz-area { flex: 1; overflow-y: auto; padding: 1rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
@@ -368,7 +369,7 @@ const PHASES = [
   {
     name: 'Resting state',
     color: '#6B7280',
-    description: 'The neuron is at rest. Membrane potential sits at approximately −70 mV, maintained by the Na⁺/K⁺ ATPase pump and the membrane\'s selective permeability to K⁺ through leak channels.',
+    description: 'The neuron is at rest. The Na⁺/K⁺ pump maintains unequal ion concentrations across the membrane: Na⁺ concentrated outside, K⁺ concentrated inside. A small number of K⁺ leak channels are always open.',
     channels: [
       { name: 'Voltage-gated Na⁺ channels', state: 'Closed', cls: 'state-closed' },
       { name: 'Voltage-gated K⁺ channels', state: 'Closed', cls: 'state-closed' },
@@ -376,13 +377,13 @@ const PHASES = [
       { name: 'Na⁺/K⁺ ATPase pump', state: 'Active', cls: 'state-open' },
     ],
     why: 'Local anesthetics like lidocaine block voltage-gated Na⁺ channels, locking neurons in this resting state. No action potential can fire — which is why you feel nothing after a dental injection.',
-    prediction: 'Before we begin: what do you think has to happen for a neuron to start firing an action potential? What needs to change from this resting state?',
+    prediction: 'Before we begin: what do you think needs to happen for this neuron to fire? What would need to change from this resting state for something to actually happen?',
     ionFlow: { na: null, k: { dir: 'out', speed: 0.3, count: 2 } }, // slow K+ leak out
   },
   {
     name: 'Depolarizing phase',
     color: '#D97706',
-    description: 'A stimulus depolarizes the membrane toward threshold (approximately −55 mV). Voltage-gated Na⁺ channels begin to open. This is the point of no return — once threshold is reached, the action potential fires completely.',
+    description: 'A stimulus has depolarized the membrane toward threshold (−55 mV). Voltage-gated Na⁺ channels are sensitive to membrane voltage — their opening probability increases as the membrane depolarizes.',
     channels: [
       { name: 'Voltage-gated Na⁺ channels', state: 'Opening', cls: 'state-open' },
       { name: 'Voltage-gated K⁺ channels', state: 'Closed', cls: 'state-closed' },
@@ -390,13 +391,13 @@ const PHASES = [
       { name: 'Na⁺/K⁺ ATPase pump', state: 'Active', cls: 'state-open' },
     ],
     why: 'Threshold is the voltage at which Na⁺ channel opening becomes self-sustaining — a positive feedback loop. Below it, the pump compensates. Above it: an unstoppable cascade. This is the all-or-nothing principle.',
-    prediction: 'The membrane just reached threshold. What do you predict happens to Na⁺ channels next — and how will that affect the membrane voltage?',
+    prediction: 'The membrane is approaching threshold. What do you predict will happen once it gets there — and why do you think threshold matters at all?',
     ionFlow: { na: { dir: 'in', speed: 0.5, count: 3 }, k: { dir: 'out', speed: 0.3, count: 2 } },
   },
   {
     name: 'Rising phase',
     color: '#DC2626',
-    description: 'Voltage-gated Na⁺ channels open rapidly. Na⁺ floods into the cell, driving membrane potential from −55 mV up to approximately +40 mV. This is the action potential spike.',
+    description: 'Threshold has been crossed. Voltage-gated Na⁺ channels are now open. Na⁺ sits at high concentration outside and the inside of the cell is negatively charged — both forces act on Na⁺ simultaneously. K⁺ leak channels remain open throughout.',
     channels: [
       { name: 'Voltage-gated Na⁺ channels', state: 'Open', cls: 'state-open' },
       { name: 'Voltage-gated K⁺ channels', state: 'Closed', cls: 'state-closed' },
@@ -404,13 +405,13 @@ const PHASES = [
       { name: 'Na⁺/K⁺ ATPase pump', state: 'Active', cls: 'state-open' },
     ],
     why: 'Tetrodotoxin (TTX), found in pufferfish, specifically blocks these Na⁺ channels — preventing action potentials in nerves and muscles. That\'s why pufferfish poisoning causes paralysis and can be fatal.',
-    prediction: 'The membrane has reached +40 mV and Na⁺ channels are about to inactivate. What needs to happen to bring the voltage back down to resting? Which ions, and which direction?',
+    prediction: 'The membrane potential is near its peak. What do you predict has to happen next to bring it back down? Think about which ions are available and which direction they’d move.',
     ionFlow: { na: { dir: 'in', speed: 1.0, count: 6 }, k: null },
   },
   {
     name: 'Falling phase',
     color: '#2563EB',
-    description: 'Na⁺ channels inactivate (not just close — they enter a blocked state). Simultaneously, voltage-gated K⁺ channels open fully. K⁺ floods out of the cell, rapidly repolarizing the membrane back toward −70 mV.',
+    description: 'Na⁺ channels enter an inactivated state — distinct from simply closing, they are blocked and cannot reopen immediately. Voltage-gated K⁺ channels, which respond more slowly to depolarization, are now fully open. K⁺ is concentrated inside the cell and the inside is now positively charged.',
     channels: [
       { name: 'Voltage-gated Na⁺ channels', state: 'Inactivated', cls: 'state-inactivated' },
       { name: 'Voltage-gated K⁺ channels', state: 'Open', cls: 'state-open' },
@@ -418,13 +419,13 @@ const PHASES = [
       { name: 'Na⁺/K⁺ ATPase pump', state: 'Active', cls: 'state-open' },
     ],
     why: 'Na⁺ channel inactivation — not just closure — is critical. An inactivated channel cannot reopen immediately even if voltage returns to threshold. This creates the absolute refractory period and ensures action potentials travel in only one direction.',
-    prediction: 'K⁺ channels are open and K⁺ is rapidly leaving the cell. Will the membrane stop exactly at −70 mV, or overshoot? Why?',
+    prediction: 'K⁺ is now leaving the cell rapidly. Where do you predict the membrane potential will end up — and do you think it will stop exactly at −70 mV?',
     ionFlow: { na: null, k: { dir: 'out', speed: 1.0, count: 6 } },
   },
   {
     name: 'Undershoot & refractory period',
     color: '#7C3AED',
-    description: 'K⁺ channels close slowly — the membrane briefly hyperpolarizes to around −80 mV (undershoot). During this relative refractory period, the neuron can fire again but needs a stronger-than-normal stimulus. The Na⁺/K⁺ pump gradually restores ion concentrations.',
+    description: 'Voltage-gated K⁺ channels close slowly. Na⁺ channels remain inactivated — they cannot reopen until the membrane has returned close to resting potential. The Na⁺/K⁺ pump works to restore the original ion gradients.',
     channels: [
       { name: 'Voltage-gated Na⁺ channels', state: 'Recovering', cls: 'state-closed' },
       { name: 'Voltage-gated K⁺ channels', state: 'Closing', cls: 'state-closed' },
@@ -576,6 +577,43 @@ function getChannels(w) {
   ];
 }
 
+// K+ leak ions — always present, constrained to leak channel at w*0.82
+let leakKIons = [];
+
+function spawnLeakKIons(w) {
+  const midY = 95;
+  const cx = w * 0.82;
+  leakKIons = [];
+  for (let i = 0; i < 3; i++) {
+    leakKIons.push({
+      x: cx + (Math.random()-0.5)*4,
+      y: midY + 20 + Math.random()*25,
+      cx,
+      speed: 0.28 + Math.random()*0.12,
+    });
+  }
+}
+
+function animateLeakKIons() {
+  const midY = 95;
+  leakKIons.forEach(ion => {
+    ion.y -= ion.speed;
+    if (ion.y < midY - 55) {
+      ion.x = ion.cx + (Math.random()-0.5)*3;
+      ion.y = midY + 20 + Math.random()*20;
+    }
+  });
+}
+
+function drawLeakKIons() {
+  leakKIons.forEach(ion => {
+    mCtx.beginPath(); mCtx.arc(ion.x, ion.y, 4, 0, Math.PI*2);
+    mCtx.fillStyle = '#DC2626'; mCtx.globalAlpha = 0.85; mCtx.fill(); mCtx.globalAlpha = 1;
+    mCtx.fillStyle = '#DC2626'; mCtx.font = 'bold 8px DM Sans'; mCtx.textAlign = 'center';
+    mCtx.fillText('K⁺', ion.x + 9, ion.y + 3); mCtx.textAlign = 'left';
+  });
+}
+
 // Pump ions are separate — always animating, 3 Na+ out, 2 K+ in
 let pumpIons = [];
 
@@ -676,8 +714,16 @@ function animateIons() {
     }
   });
   animatePumpIons(w);
+  // Leak K+ ions visible in phases 0, 1, 2 (resting, depolarizing, rising)
+  if (currentPhase <= 2) {
+    if (leakKIons.length === 0) spawnLeakKIons(w);
+    animateLeakKIons();
+  } else {
+    leakKIons = [];
+  }
   drawIons();
   drawPumpIons();
+  if (currentPhase <= 2 && leakKIons.length > 0) drawLeakKIons();
   animFrame = requestAnimationFrame(animateIons);
 }
 
@@ -952,8 +998,14 @@ function updateUI(phase) {
     btn.classList.remove('active','visited');
     if (i === phase) btn.classList.add('active');
     if (i < phase) btn.classList.add('visited');
-    btn.disabled = false;
-    btn.style.opacity = '';
+    // In guided mode, lock future phases
+    if (!explorationMode && !freeExploration && i > phase) {
+      btn.disabled = true;
+      btn.style.opacity = '0.35';
+    } else {
+      btn.disabled = false;
+      btn.style.opacity = '';
+    }
   });
 
   document.getElementById('prev-btn').disabled = phase === 0;
@@ -998,6 +1050,8 @@ function toggleChannels() {
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
 function goToPhase(p) {
+  // In guided mode, only allow jumping to already-visited phases
+  if (!explorationMode && !freeExploration && p > currentPhase) return;
   currentPhase = p;
   answeredCurrentPhase = explorationMode || freeExploration;
   updateUI(p);
