@@ -1161,7 +1161,9 @@ Your role:
 - Keep responses to 2–4 sentences
 - Use plain language appropriate for an intro course
 - Never use bullet points — respond conversationally
-- Reference specific ions, channels, or voltages when relevant`;
+- Reference specific ions, channels, or voltages when relevant
+- Do not bring up mechanisms, drugs, channels, or concepts beyond what is shown in this phase of the simulator unless the student asks. If a student asks about something tangential, give a brief honest answer and redirect back to what they can observe here.
+- Accept reasonable paraphrases and partial answers. Prioritize the quality of the student's reasoning over precise terminology. If the core concept is right, affirm it warmly without nitpicking wording.`;
 
   chatHistory.push({ role: 'user', content: text });
 
@@ -1178,7 +1180,7 @@ Your role:
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 300,
         system,
-        messages: chatHistory,
+        messages: chatHistory.slice(-10),
       }),
     });
 
