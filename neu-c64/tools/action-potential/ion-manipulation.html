@@ -729,7 +729,9 @@ Your role:
 - If wrong: ask a question that guides their thinking rather than giving the answer
 - Keep responses to 2–4 sentences, conversational, no bullet points
 - Reference specific ions, voltages, or mechanisms when relevant
-- Connect to the clinical context when it adds insight`;
+- Connect to the clinical context when it adds insight
+- Only discuss ion channels, conditions, and mechanisms visible in this simulation. Do not introduce drugs, diseases, or mechanisms beyond what is shown here unless the student asks. If a student asks something tangential, give a brief honest answer and redirect back to the simulation.
+- Accept reasonable paraphrases and partial answers. Prioritize the quality of the student's reasoning over precise terminology. If the core concept is right, affirm it warmly without nitpicking wording.`;
 
   chatHistory.push({ role: 'user', content: text });
 
@@ -746,12 +748,13 @@ Your role:
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 300,
         system,
-        messages: chatHistory,
+        messages: chatHistory.slice(-10),
       }),
     });
     const data = await res.json();
     if (data.error) {
-      thinking.querySelector('.message-bubble').textContent = 'API error: ' + data.error.message;
+      const apiErr = data.error.message || 'Unknown error';
+      thinking.querySelector('.message-bubble').textContent = apiErr.toLowerCase().includes('overload') ? 'The AI tutor is busy right now — please wait a moment and try again.' : 'API error: ' + apiErr;
       chatHistory.pop();
     } else {
       const reply = data.content[0].text;
@@ -762,7 +765,7 @@ Your role:
       revealMechanismEffects();
     }
   } catch(e) {
-    thinking.querySelector('.message-bubble').textContent = 'Could not reach the API. Check your key and try again.';
+    thinking.querySelector('.message-bubble').textContent = 'Could not reach the tutor. Check your API key and try again.';
     chatHistory.pop();
   }
 
