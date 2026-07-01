@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resting Membrane Potential Explorer — NEU C64</title>
+  <title>Resting Membrane Potential Explorer - NEU C64</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
@@ -192,7 +192,7 @@
   <div class="left-panel">
     <div class="tool-header">
       <h1>Resting membrane potential explorer</h1>
-      <p>Discover why neurons sit at −70 mV — and what happens when that balance is disturbed.</p>
+      <p>Discover why neurons sit at −70 mV - and what happens when that balance is disturbed.</p>
     </div>
 
     <div class="mode-stepper">
@@ -204,7 +204,7 @@
 
     <div class="viz-area">
       <div class="viz-card">
-        <div class="viz-card-label" id="membrane-label">Membrane — ion concentrations</div>
+        <div class="viz-card-label" id="membrane-label">Membrane - ion concentrations</div>
         <canvas id="membrane-canvas"></canvas>
         <div class="ion-legend">
           <div class="ion-legend-item"><div class="ion-dot" style="background:#2563EB"></div> Na⁺ (sodium)</div>
@@ -240,7 +240,7 @@
 
       <!-- Voltmeter for modes 0-1 -->
       <div class="viz-card" id="voltmeter-card">
-        <div class="viz-card-label">Membrane potential — qualitative</div>
+        <div class="viz-card-label">Membrane potential - qualitative</div>
         <canvas id="voltmeter-canvas"></canvas>
       </div>
 
@@ -293,7 +293,7 @@
       </div>
       <div class="soft-nudge" id="soft-nudge">Answer the tutor's question to get feedback before moving on</div>
       <a href="../action-potential/index.html" class="forward-link" id="forward-link">
-        This −70 mV is where the action potential begins — explore what happens next
+        This −70 mV is where the action potential begins - explore what happens next
         <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </a>
     </div>
@@ -351,22 +351,22 @@ const MODES = [
   {
     name: 'Concentration gradients',
     color: '#6B7280',
-    description: 'Neurons maintain an unequal distribution of ions across their membrane — Na⁺ is concentrated outside, K⁺ inside. This is called a concentration gradient. The Na⁺/K⁺ ATPase pump uses ATP to actively move ions across the membrane. What do you think would happen if the pump stopped working?',
+    description: 'Neurons maintain an unequal distribution of ions across their membrane - Na⁺ is concentrated outside, K⁺ inside. This is called a concentration gradient. The Na⁺/K⁺ ATPase pump uses ATP to actively move ions across the membrane. What do you think would happen if the pump stopped working?',
     prediction: 'The Na⁺/K⁺ pump creates the concentration gradients you see here. Before you turn it off: what do you predict will happen to the ion distributions if the pump stops working?',
-    system: 'You are an AI tutor for an introductory neuroscience course. Topic: concentration gradients and the Na/K ATPase pump. The student is learning that the pump creates and maintains Na+ outside and K+ inside the cell. If the pump stops, gradients dissipate over time. Clinical: cardiac glycosides like digitalis block the Na/K pump — used carefully in heart failure but toxic in overdose.',
+    system: 'You are an AI tutor for an introductory neuroscience course. Topic: concentration gradients and the Na/K ATPase pump. The student is learning that the pump creates and maintains Na+ outside and K+ inside the cell. If the pump stops, gradients dissipate over time. Do not bring up mechanisms, channels, or concepts not shown in this simulation unless the student asks. If a student asks about something beyond the scope of the simulation, give a brief honest answer and then gently redirect them back to what they can observe here. Accept reasonable paraphrases and partial answers - prioritize the quality of the student\'s reasoning over precise terminology. If the core concept is correct, affirm it warmly without nitpicking wording.',
   },
   {
     name: 'Selective permeability & equilibrium',
     color: '#0F6E56',
-    description: 'At rest, the membrane is much more permeable to K⁺ than Na⁺, because K⁺ leak channels are open. K⁺ sits at high concentration inside the cell. What do you think will happen when the channels open? Will K⁺ keep flowing indefinitely — or will something stop it?',
-    prediction: 'Before you start the animation: K⁺ is concentrated inside the cell and the membrane is mostly permeable to K⁺. What do you predict will happen when K⁺ starts to flow out — and will it keep flowing indefinitely?',
-    system: 'You are an AI tutor for an introductory neuroscience course. Topic: selective permeability and the K+ equilibrium potential. At rest the membrane is ~10-30x more permeable to K+ than Na+. K+ flows out down concentration gradient, creating negative charge inside. The electrical force eventually opposes and balances the concentration force — this is the K+ equilibrium potential (~-90mV). The actual resting potential (-70mV) is slightly depolarized because of small Na+ permeability. IMPORTANT: the animation shows these forces sequentially for clarity, but in reality both forces act simultaneously from the very first ion that crosses. Only mention this simplification AFTER the student has correctly explained what they observed — frame it as a deeper insight reward.',
+    description: 'At rest, the membrane is much more permeable to K⁺ than Na⁺, because K⁺ leak channels are open. K⁺ sits at high concentration inside the cell. What do you think will happen when the channels open? Will K⁺ keep flowing indefinitely - or will something stop it?',
+    prediction: 'Before you start the animation: K⁺ is concentrated inside the cell and the membrane is mostly permeable to K⁺. What do you predict will happen when K⁺ starts to flow out - and will it keep flowing indefinitely?',
+    system: 'You are an AI tutor for an introductory neuroscience course. Topic: selective permeability and the K+ equilibrium potential. At rest the membrane is ~10-30x more permeable to K+ than Na+. K+ flows out down concentration gradient, creating negative charge inside. The electrical force eventually opposes and balances the concentration force - this is the K+ equilibrium potential (~-90mV). The actual resting potential (-70mV) is slightly depolarized because of small Na+ permeability. IMPORTANT: the animation shows these forces sequentially for clarity, but in reality both forces act simultaneously from the very first ion that crosses. Only mention this simplification AFTER the student has correctly explained what they observed - frame it as a deeper insight reward. Do not bring up mechanisms, channels, or concepts not shown in this simulation unless the student asks. If a student asks about something beyond the scope of the simulation, give a brief honest answer and then gently redirect them back to what they can observe here. Accept reasonable paraphrases and partial answers - prioritize the quality of the student\'s reasoning over precise terminology. If the core concept is correct, affirm it warmly without nitpicking wording.',
   },
   {
     name: 'What sets −70 mV?',
     color: '#003262',
-    description: 'The resting potential isn\'t a fixed biological constant — it depends on the concentration of ions and how permeable the membrane is to each one. Use the sliders to explore how changing these conditions affects the membrane potential. What do you predict will happen if you raise extracellular K⁺? What about making Na⁺ and K⁺ equally permeable?',
-    prediction: 'Before you move the sliders: if you raise extracellular K⁺ concentration, what do you predict happens to the resting membrane potential — and in which direction does it shift? Think about what would happen to the K⁺ concentration gradient.',
+    description: 'The resting potential isn\'t a fixed biological constant - it depends on the concentration of ions and how permeable the membrane is to each one. Use the sliders to explore how changing these conditions affects the membrane potential. What do you predict will happen if you raise extracellular K⁺? What about making Na⁺ and K⁺ equally permeable?',
+    prediction: 'Before you move the sliders: if you raise extracellular K⁺ concentration, what do you predict happens to the resting membrane potential - and in which direction does it shift? Think about what would happen to the K⁺ concentration gradient.',
     system: `You are an AI tutor for an introductory neuroscience course. Topic: what determines resting membrane potential.
 
 Background knowledge:
@@ -385,9 +385,9 @@ After the student correctly answers the initial prediction about extracellular K
 3. After they answer that correctly, ask them to predict what happens if they increase Na+ permeability
 4. Only after all four sliders have been explored, offer a clinical connection (hyperkalemia → cardiac arrhythmia) as a synthesis question
 
-IMPORTANT: After affirming each correct answer and before posing the next slider question, always remind the student to click "Reset to baseline" first — so each slider's effect is tested from the same starting point and the results aren't confounded by a previous change.
+IMPORTANT: After affirming each correct answer and before posing the next slider question, always remind the student to click "Reset to baseline" first - so each slider's effect is tested from the same starting point and the results aren't confounded by a previous change.
 
-Keep each follow-up question focused on the next slider only. Do not skip ahead or combine sliders. Be warm, specific, and Socratic — affirm correct reasoning before moving on.`,
+Keep each follow-up question focused on the next slider only. Do not skip ahead or combine sliders. Be warm, specific, and Socratic - affirm correct reasoning before moving on. Do not bring up mechanisms, channels, or concepts not shown in this simulation unless the student asks. If a student asks about something beyond the scope of the simulation, give a brief honest answer and then gently redirect them back to what they can observe here. Accept reasonable paraphrases and partial answers - prioritize the quality of the student's reasoning over precise terminology. If the core concept is correct, affirm it warmly without nitpicking wording.`,
   },
 ];
 
@@ -424,7 +424,7 @@ let sliderstouched = { ek: false, ena: false, pk: false, pna: false };
 // Equilibration crossing ions (pump off)
 let equilIons = [];
 
-// Each equilIon IS the background dot — it moves from its dot position
+// Each equilIon IS the background dot - it moves from its dot position
 // to the channel, crosses out, then parks outside as a new extracellular dot.
 // Phases: 'wait' → 'drift' → 'cross' → 'parked' (outside)
 function initEquilIons(w, midY) {
@@ -502,7 +502,7 @@ function updateEquilIons(midY) {
         ion.y += (dy / dist) * ion.speed;
       }
     }
-    // 'parked' — stays put
+    // 'parked' - stays put
   });
 }
 
@@ -641,7 +641,7 @@ function drawVoltmeter(normalizedV) {
   vmCtx.lineWidth = 14;
   vmCtx.stroke();
 
-  // Needle — angle: Math.PI = far left (most negative), 0 = far right (depolarized)
+  // Needle - angle: Math.PI = far left (most negative), 0 = far right (depolarized)
   // normalizedV: -1 = most negative (normal), 0 = depolarized
   const angle = Math.PI + (normalizedV + 1) * Math.PI;
   const nx = cx + (r - 10) * Math.cos(angle);
@@ -660,7 +660,7 @@ function drawVoltmeter(normalizedV) {
   vmCtx.fillStyle = '#1a1a1a';
   vmCtx.fill();
 
-  // Labels — outside arc. Arc outer edge = cx ± (r + 7) since lineWidth=14
+  // Labels - outside arc. Arc outer edge = cx ± (r + 7) since lineWidth=14
   // Add 8px gap from outer edge
   vmCtx.font = '8px DM Sans'; vmCtx.fillStyle = '#555';
   vmCtx.textAlign = 'right';
@@ -709,24 +709,24 @@ function drawMembrane() {
   const intY = midY + 45;
   const spacing = w / 10;
 
-  // Na+ outside — scales with slEna slider in mode 2 (baseline 145mM = 8 dots)
+  // Na+ outside - scales with slEna slider in mode 2 (baseline 145mM = 8 dots)
   const naOutCount = currentMode === 2 ? Math.round(2 + (slEna / 200) * 6) : 8;
   for (let i = 0; i < naOutCount; i++) {
     const x = spacing * (i + 0.5) + (i % 2) * 5;
     if (x < w * 0.8) drawDot(mCtx, x, extY - (i % 2) * 12, '#2563EB', 4.5, 'Na⁺');
   }
-  // K+ outside — scales with slEk slider in mode 2 (baseline 5mM = 2 dots)
+  // K+ outside - scales with slEk slider in mode 2 (baseline 5mM = 2 dots)
   const kOutCount = currentMode === 2 ? Math.round(1 + (slEk / 20) * 5) : 2;
   for (let i = 0; i < kOutCount; i++) {
     const x = spacing * (i * (8 / Math.max(kOutCount, 1)) * 0.9 + 0.5);
     if (x < w * 0.8) drawDot(mCtx, x, extY + 10, '#DC2626', 4.5, 'K⁺');
   }
-  // Na+ inside — always fixed (2 dots, low inside)
+  // Na+ inside - always fixed (2 dots, low inside)
   for (let i = 0; i < 2; i++) {
     const x = spacing * (i * 3 + 1.5);
     if (x < w * 0.8) drawDot(mCtx, x, intY - 10, '#2563EB', 4.5, 'Na⁺');
   }
-  // K+ inside — pump off: only 'wait' phase ions drawn; pump on: all 8 fixed dots
+  // K+ inside - pump off: only 'wait' phase ions drawn; pump on: all 8 fixed dots
   if (currentMode === 0 && !pumpOn) {
     // Draw animated ions (wait phase) + always show last 2 that never leave
     equilIons.forEach(ion => {
@@ -747,13 +747,13 @@ function drawMembrane() {
     }
   }
 
-  // Draw A- inside (always, fixed — large impermeable anions)
+  // Draw A- inside (always, fixed - large impermeable anions)
   for (let i = 0; i < 6; i++) {
     const x = spacing * (i * 1.4 + 0.3);
     if (x < w - 20) drawDot(mCtx, x, intY + 28, '#7C3AED', 4, 'A⁻');
   }
 
-  // Mode 0: 1 K+ leak channel (slow) + pump — balanced steady state
+  // Mode 0: 1 K+ leak channel (slow) + pump - balanced steady state
   if (currentMode === 0) {
     const cx = w * 0.38;
     mCtx.strokeStyle = '#DB2777';
@@ -849,7 +849,7 @@ function drawMode1Overlay(ctx, w, midY, memH) {
   // 1 pump on the right
   drawPump(ctx, w * 0.85, midY, memH, true);
 
-  // Vertical balance bar — sequential phases
+  // Vertical balance bar - sequential phases
   const barX = w - 42;
   const barH = 90;
   const barTop = midY - barH/2;
@@ -1001,7 +1001,7 @@ function drawPumpIons(ctx) {
   });
 }
 
-// ── K+ LEAK IONS (Mode 1) — bidirectional based on forceBalance ──────────────
+// ── K+ LEAK IONS (Mode 1) - bidirectional based on forceBalance ──────────────
 let leakKIons = [];
 
 function initLeakKIons(channelXs, midY, baseSpeed) {
@@ -1125,7 +1125,7 @@ function animate() {
         nv = -1;
       } else {
         // Continuous: each ion contributes based on how far it has traveled
-        // from startY (inside) to parkY (outside) — no discrete jumps
+        // from startY (inside) to parkY (outside) - no discrete jumps
         let total = 0;
         equilIons.forEach(ion => {
           if (ion.phase === 'wait') {
@@ -1173,12 +1173,12 @@ function setPump(on) {
   if (!on) {
     equilibrating = true;
     // Add tutor message when pump is disabled
-    addTutorMessage('The pump is off. Watch what happens to the K⁺ distribution and the membrane potential. Once you’ve observed it — why do you think the membrane becomes less negative over time, even though positive ions (K⁺) are leaving the cell?');
+    addTutorMessage('The pump is off. Watch what happens to the K⁺ distribution and the membrane potential. Once you’ve observed it - why do you think the membrane becomes less negative over time, even though positive ions (K⁺) are leaving the cell?');
   } else {
     equilibrating = false;
     equilibrationProgress = 0;
     equilIons = [];
-    addTutorMessage('Pump back on — the gradients are being restored. This is why the pump runs continuously and uses so much of the brain\'s energy.');
+    addTutorMessage('Pump back on - the gradients are being restored. This is why the pump runs continuously and uses so much of the brain\'s energy.');
   }
 }
 
@@ -1262,7 +1262,7 @@ function updateUI(m) {
   document.getElementById('phase-title').textContent = p.name;
   document.getElementById('phase-description').textContent = p.description;
 
-  // Mode stepper — gate future modes in guided mode
+  // Mode stepper - gate future modes in guided mode
   document.querySelectorAll('.mode-btn').forEach((btn, i) => {
     btn.classList.remove('active','visited');
     if (i === m) btn.classList.add('active');
@@ -1294,6 +1294,16 @@ function updateUI(m) {
   }
   document.getElementById('slider-card').style.display = m === 2 ? 'block' : 'none';
   document.getElementById('voltage-card').style.display = m === 2 ? 'block' : 'none';
+  if (m === 2) {
+    // Re-scale voltage bar canvas now that it's visible
+    setTimeout(() => {
+      const dpr = window.devicePixelRatio || 1;
+      const vw = vCanvas.parentElement.clientWidth - 28;
+      vCanvas.width = vw * dpr; vCanvas.height = 80 * dpr;
+      vCanvas.style.width = vw + 'px'; vCanvas.style.height = '80px';
+      vCtx.scale(dpr, dpr);
+    }, 50);
+  }
   document.getElementById('voltmeter-card').style.display = m < 2 ? 'block' : 'none';
   document.getElementById('forward-link').style.display = (m === 2 && freeExploration) ? 'flex' : 'none';
 
@@ -1336,7 +1346,7 @@ function setExploreMode(mode) {
     answeredCurrentMode = true;
     document.getElementById('soft-nudge').style.display = 'none';
     document.getElementById('chat-messages').innerHTML = '';
-    addTutorMessage('You\'re in Explore mode. Move between sections freely and ask me anything — no prediction prompts, just open exploration.');
+    addTutorMessage('You\'re in Explore mode. Move between sections freely and ask me anything - no prediction prompts, just open exploration.');
     const pumpOffBtnEx = document.getElementById('btn-pump-off');
     if (pumpOffBtnEx) pumpOffBtnEx.disabled = false;
     const startBtnEx = document.getElementById('btn-start-mode1');
@@ -1356,7 +1366,7 @@ function setExploreMode(mode) {
 function unlockFreeExploration() {
   freeExploration = true;
   document.getElementById('forward-link').style.display = 'flex';
-  addTutorMessage('You\'ve worked through all three sections — well done. You can now explore freely, or head to the Action Potential Explorer to see what happens once the neuron is at −70 mV.');
+  addTutorMessage('You\'ve worked through all three sections - well done. You can now explore freely, or head to the Action Potential Explorer to see what happens once the neuron is at −70 mV.');
   updateUI(currentMode);
 }
 
@@ -1405,15 +1415,18 @@ async function sendMessage() {
 
   chatHistory.push({ role: 'user', content: text });
 
+  const trimmedHistory = chatHistory.slice(-10); // keep last 10 messages
+
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 300, system, messages: chatHistory }),
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 300, system, messages: trimmedHistory }),
     });
     const data = await res.json();
     if (data.error) {
-      thinking.querySelector('.message-bubble').textContent = 'API error: ' + data.error.message;
+      const apiErrMsg = data.error.message || '';
+      thinking.querySelector('.message-bubble').textContent = apiErrMsg.toLowerCase().includes('overload') ? 'The AI tutor is busy right now — please wait a moment and try again.' : 'API error: ' + apiErrMsg;
       chatHistory.pop();
     } else {
       const reply = data.content[0].text;
@@ -1441,7 +1454,8 @@ async function sendMessage() {
       }
     }
   } catch(e) {
-    thinking.querySelector('.message-bubble').textContent = 'Could not reach the API. Check your key and try again.';
+    const errMsg = error.message || '';
+    thinking.querySelector('.message-bubble').textContent = errMsg.includes('overload') ? 'The AI tutor is busy right now — please wait a moment and try again.' : 'Could not reach the tutor. Check your API key and try again.';
     chatHistory.pop();
   }
 
