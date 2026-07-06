@@ -1198,6 +1198,11 @@ Your role:
       if (!freeExploration && !explorationMode) {
         answeredCurrentPhase = true;
         document.getElementById('soft-nudge').style.display = 'none';
+        document.getElementById('next-btn').disabled = false;
+        // Unlock next phase button in stepper
+        document.querySelectorAll('.phase-btn').forEach((btn, i) => {
+          if (i <= currentPhase + 1) { btn.disabled = false; btn.style.opacity = ''; }
+        });
         if (currentPhase === 4) {
           setTimeout(() => unlockFreeExploration(), 1200);
         }
