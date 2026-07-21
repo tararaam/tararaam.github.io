@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual Receptive Fields Explorer — NEU C64</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --berkeley-blue: #003262; --berkeley-gold: #FDB515;
+      --blue-light: #E8EFF7; --gold-light: #FEF5E0; --gold-text: #A07000;
+      --teal: #0F6E56; --teal-light: #E1F5EE;
+      --purple: #7C3AED; --purple-light: #EEEDFE;
+      --text-primary: #1a1a1a; --text-secondary: #555; --text-tertiary: #999;
+      --border: #e5e5e5; --bg: #fff; --bg-secondary: #f8f8f8;
+      --radius-md: 8px; --radius-lg: 12px;
+      --on-color: #F59E0B;   /* amber for ON */
+      --off-color: #6366F1;  /* indigo for OFF */
+      --spike-color: #1a1a1a;
+    }
+    body { font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--bg); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+
+    .top-nav { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.97); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 100; }
+    .logo { display: flex; align-items: center; gap: 8px; }
+    .logo-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--berkeley-blue); display: flex; align-items: center; justify-content: center; }
+    .logo-mark svg { width: 17px; height: 17px; }
+    .logo-text { font-size: 13px; font-weight: 500; line-height: 1.2; }
+    .logo-sub { font-size: 11px; color: var(--text-secondary); }
+    .back-link { font-size: 12px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px; }
+    .back-link svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .back-link:hover { color: var(--text-primary); }
+
+    .app { display: grid; grid-template-columns: 60fr 40fr; height: calc(100vh - 53px); overflow: hidden; }
+
+    /* LEFT */
+    .left-panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow: hidden; }
+    .tool-header { padding: 1rem 1.5rem 0.875rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .tool-header h1 { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; margin-bottom: 0.15rem; }
+    .tool-header p { font-size: 12px; color: var(--text-secondary); }
+
+    .section-stepper { display: flex; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); gap: 4px; flex-shrink: 0; }
+    .section-btn { flex: 1; padding: 5px 4px; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 500; color: var(--text-secondary); text-align: center; transition: all 0.15s; line-height: 1.3; }
+    .section-btn:hover { border-color: #bbb; color: var(--text-primary); }
+    .section-btn.active { background: var(--berkeley-blue); color: white; border-color: transparent; }
+    .section-btn:disabled { opacity: 0.35; cursor: default; }
+
+    .viz-area { flex: 1; overflow-y: auto; padding: 1rem 1.5rem; display: flex; flex-direction: column; gap: 0.875rem; }
+    .viz-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0.875rem; }
+    .viz-card-label { font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.5rem; }
+
+    canvas { display: block; border-radius: 6px; }
+    #rf-canvas { width: 100%; height: 240px; cursor: crosshair; }
+    #v1-canvas { width: 100%; height: 300px; cursor: crosshair; }
+    #raster-canvas { width: 100%; height: 80px; background: #12121c; }
+    #v1-raster-canvas { width: 100%; height: 80px; background: #12121c; }
+    #tuning-canvas { width: 100%; height: 120px; background: #fafafa; }
+
+    /* CONTROLS */
+    .ctrl-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 0.5rem; }
+    .ctrl-btn { padding: 6px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+    .ctrl-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+    .ctrl-btn.active-on { background: var(--on-color); color: white; border-color: var(--on-color); }
+    .ctrl-btn.active-off { background: var(--off-color); color: white; border-color: var(--off-color); }
+    .ctrl-btn.active-blue { background: var(--berkeley-blue); color: white; border-color: var(--berkeley-blue); }
+    .ctrl-btn:disabled { opacity: 0.4; cursor: default; }
+
+    .slider-row { display: flex; align-items: center; gap: 10px; margin-top: 0.5rem; }
+    .slider-row label { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+    .slider-row input[type=range] { flex: 1; }
+    .slider-val { font-size: 11px; color: var(--text-secondary); min-width: 32px; text-align: right; }
+
+    .legend-row { display: flex; gap: 1rem; margin-top: 0.375rem; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-secondary); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* NAV BUTTONS */
+    .nav-btns { padding: 0.75rem 1.5rem; border-top: 1px solid var(--border); flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; }
+    .nav-row { display: flex; gap: 8px; }
+    .prev-btn { padding: 7px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 5px; }
+    .prev-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .prev-btn:disabled { opacity: 0.35; cursor: default; }
+    .next-btn { flex: 1; padding: 7px 16px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .next-btn svg { width: 13px; height: 13px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .next-btn:disabled { opacity: 0.45; cursor: default; background: #888; }
+    .soft-nudge { font-size: 11px; color: var(--gold-text); background: var(--gold-light); border: 1px solid #F5D78A; border-radius: var(--radius-md); padding: 5px 10px; display: none; }
+
+    /* RIGHT PANEL */
+    .right-panel { display: flex; flex-direction: column; overflow: hidden; }
+    .mode-toggle-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--bg-secondary); }
+    .mode-toggle-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); }
+    .mode-toggle-btns { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 100px; padding: 2px; gap: 2px; }
+    .mode-toggle-btn { padding: 4px 14px; border-radius: 100px; border: none; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--text-secondary); background: transparent; transition: all 0.15s; }
+    .mode-toggle-btn.active { background: var(--berkeley-blue); color: white; }
+
+    .phase-info { padding: 1rem 1.25rem 0.875rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .phase-title { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; margin-bottom: 0.4rem; }
+    .phase-description { font-size: 12.5px; color: var(--text-secondary); line-height: 1.7; }
+
+    .tutor-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; border-top: 1px solid var(--border); }
+    .tutor-header { padding: 0.625rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+    .tutor-title { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; display: flex; align-items: center; gap: 8px; }
+    .tutor-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); flex-shrink: 0; }
+    .api-key-btn { font-size: 11px; color: var(--text-tertiary); cursor: pointer; background: none; border: none; font-family: 'DM Sans', sans-serif; }
+    .api-key-btn:hover { color: var(--text-primary); }
+
+    .chat-messages { flex: 1; overflow-y: auto; padding: 0.75rem 1.25rem; display: flex; flex-direction: column; gap: 0.625rem; }
+    .message { display: flex; flex-direction: column; gap: 2px; max-width: 93%; }
+    .message.tutor { align-self: flex-start; }
+    .message.student { align-self: flex-end; }
+    .message-sender { font-size: 9px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); padding: 0 4px; }
+    .message-bubble { padding: 0.55rem 0.8rem; border-radius: var(--radius-lg); font-size: 12.5px; line-height: 1.6; }
+    .message.tutor .message-bubble { background: var(--bg-secondary); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .message.student .message-bubble { background: var(--berkeley-blue); color: white; border-bottom-right-radius: 4px; }
+    .message.thinking .message-bubble { color: var(--text-tertiary); font-style: italic; }
+    .prediction-prompt { background: var(--gold-light); border: 1px solid #F5D78A; border-radius: var(--radius-lg); padding: 0.65rem 0.8rem; font-size: 12.5px; color: var(--gold-text); line-height: 1.6; align-self: flex-start; max-width: 93%; }
+    .prediction-prompt strong { display: block; font-weight: 500; margin-bottom: 2px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    .input-area { padding: 0.625rem 1.25rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .input-row { display: flex; gap: 7px; align-items: flex-end; }
+    .input-row textarea { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 12.5px; padding: 7px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); resize: none; line-height: 1.5; min-height: 36px; max-height: 90px; }
+    .input-row textarea:focus { outline: none; border-color: var(--berkeley-blue); }
+    .input-row textarea::placeholder { color: var(--text-tertiary); }
+    .send-btn { width: 34px; height: 34px; border-radius: var(--radius-md); background: var(--berkeley-blue); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: default; }
+    .send-btn svg { width: 14px; height: 14px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--bg); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 380px; width: 90%; border: 1px solid var(--border); }
+    .modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 0.4rem; }
+    .modal p { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 0.875rem; }
+    .modal input { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 0.875rem; }
+    .modal input:focus { outline: none; border-color: var(--berkeley-blue); }
+    .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-secondary { padding: 6px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 12.5px; cursor: pointer; color: var(--text-secondary); }
+    .btn-primary { padding: 6px 14px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; cursor: pointer; color: white; }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="../../index.html" class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="3" fill="#FDB515"/>
+        <path d="M10 3C10 3 14.5 6 14.5 10C14.5 14 10 17 10 17C10 17 5.5 14 5.5 10C5.5 6 10 3 10 3Z" stroke="#FDB515" stroke-width="1.25" fill="none"/>
+        <path d="M3 10C3 10 6 6 10 6C14 6 17 10 17 10C17 10 14 14 10 14C6 14 3 10 3 10Z" stroke="white" stroke-width="1.25" fill="none" opacity="0.55"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">NEU C64</div>
+      <div class="logo-sub">UC Berkeley</div>
+    </div>
+  </a>
+  <a href="../index.html" class="back-link">
+    <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Tools
+  </a>
+</nav>
+
+<div class="app">
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="tool-header">
+      <h1>Visual receptive fields explorer</h1>
+      <p>From light on the retina to oriented edges in V1 — how the visual system extracts features.</p>
+    </div>
+
+    <div class="section-stepper">
+      <button class="section-btn active" onclick="goToSection(0)">Center-surround<br>receptive fields</button>
+      <button class="section-btn" onclick="goToSection(1)" id="sec-btn-1" disabled>Orientation<br>selectivity in V1</button>
+    </div>
+
+    <div class="viz-area" id="viz-area">
+
+      <!-- SECTION 0 -->
+      <div id="sec0-content">
+        <div class="viz-card">
+          <div class="viz-card-label">Retinal ganglion cell — receptive field</div>
+          <canvas id="rf-canvas"></canvas>
+          <div class="legend-row">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--on-color)"></div> ON region (light excites)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--off-color)"></div> OFF region (light suppresses)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#fff; border:1px solid #ccc;"></div> Your light stimulus</div>
+          </div>
+          <div class="ctrl-row" style="margin-top:0.75rem;">
+            <span style="font-size:11px; font-weight:500; color:var(--text-secondary);">Cell type:</span>
+            <button class="ctrl-btn active-on" id="btn-on" onclick="setCellType('on')">ON-center</button>
+            <button class="ctrl-btn" id="btn-off" onclick="setCellType('off')">OFF-center</button>
+            <button class="ctrl-btn" id="btn-diffuse" onclick="diffuseLight()" style="margin-left:auto;">Diffuse light</button>
+            <button class="ctrl-btn" onclick="clearLight()">Clear</button>
+          </div>
+          <div style="font-size:11px; color:var(--text-tertiary); margin-top:6px;">Click anywhere on the receptive field to place or remove light</div>
+        </div>
+
+        <div class="viz-card">
+          <div class="viz-card-label">Spike raster — retinal ganglion cell</div>
+          <canvas id="raster-canvas"></canvas>
+          <div style="font-size:11px; color:var(--text-tertiary); margin-top:4px;" id="firing-label">Firing rate: <strong id="firing-rate-val">0</strong> spikes/s</div>
+        </div>
+      </div>
+
+      <!-- SECTION 1 -->
+      <div id="sec1-content" style="display:none;">
+        <div class="viz-card">
+          <div class="viz-card-label">How LGN receptive fields build a V1 receptive field</div>
+          <canvas id="v1-canvas"></canvas>
+          <div class="slider-row">
+            <label>Bar orientation</label>
+            <input type="range" id="orientation-slider" min="0" max="179" value="0" oninput="setOrientation(this.value)">
+            <span class="slider-val" id="orientation-val">0°</span>
+          </div>
+          <div class="slider-row">
+            <label>Bar position</label>
+            <input type="range" id="barpos-slider" min="-45" max="45" value="0" oninput="setBarPos(this.value)">
+            <span class="slider-val" id="barpos-val">0</span>
+          </div>
+          <div class="ctrl-row">
+            <button class="ctrl-btn active-blue" id="btn-show-lgn" onclick="toggleLGN()">Hide LGN fields</button>
+            <button class="ctrl-btn" onclick="resetOrientation()">Reset</button>
+          </div>
+          <div class="legend-row">
+            <div class="legend-item"><span class="legend-dot" style="background:#F59E0B"></span>ON zone (+)</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#6366F1"></span>OFF zones (−)</div>
+          </div>
+        </div>
+
+        <div class="viz-card">
+          <div class="viz-card-label">Spike raster — V1 cell</div>
+          <canvas id="v1-raster-canvas"></canvas>
+          <div style="font-size:11px; color:var(--text-tertiary); margin-top:4px;">Firing rate: <strong id="v1-firing-val">0</strong> spikes/s</div>
+        </div>
+
+        <div class="viz-card">
+          <div class="viz-card-label">Orientation tuning curve</div>
+          <canvas id="tuning-canvas"></canvas>
+          <div style="font-size:11px; color:var(--text-tertiary); margin-top:4px;">Polar plot of V1 response vs bar angle — rotate the bar to build it</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="nav-btns">
+      <div class="nav-row">
+        <button class="prev-btn" id="prev-btn" onclick="prevSection()" disabled>
+          <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Prev
+        </button>
+        <button class="next-btn" id="next-btn" onclick="nextSection()" disabled>
+          Next
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+      <div class="soft-nudge" id="soft-nudge">Answer the tutor's question to continue</div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="mode-toggle-bar">
+      <span class="mode-toggle-label">Mode</span>
+      <div class="mode-toggle-btns">
+        <button class="mode-toggle-btn active" id="btn-guided" onclick="setMode('guided')">AI guided</button>
+        <button class="mode-toggle-btn" id="btn-explore" onclick="setMode('explore')">Explore</button>
+      </div>
+    </div>
+
+    <div class="phase-info">
+      <div class="phase-title" id="section-title">Center-surround receptive fields</div>
+      <div class="phase-description" id="section-desc"></div>
+    </div>
+
+    <div class="tutor-area">
+      <div class="tutor-header">
+        <div class="tutor-title"><div class="tutor-dot"></div> AI tutor</div>
+        <button class="api-key-btn" onclick="openModal()" id="api-status-btn">Add API key</button>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="input-area">
+        <div class="input-row">
+          <textarea id="student-input" placeholder="Type your prediction or question…" rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h2>Enter your Anthropic API key</h2>
+    <p>Stored in your browser session only.</p>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-…"/>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveApiKey()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SECTION DATA ──────────────────────────────────────────────────────────────
+const SECTIONS = [
+  {
+    title: 'Center-surround receptive fields',
+    desc: 'Retinal ganglion cells respond to light falling within a specific region of the visual field — their receptive field. The field has two concentric zones: a center and a surround that respond oppositely to light.',
+    prediction: 'You\'re about to explore how a retinal ganglion cell responds to light. Before you click anywhere: what do you think it means for a cell to have a "receptive field"? What kind of information do you think this cell might be extracting from the visual scene?',
+    system: `You are an AI tutor for an introductory neuroscience course. Topic: retinal ganglion cell center-surround receptive fields. Key concepts: ON-center cells are excited by light in the center and suppressed by light in the surround. OFF-center cells are the opposite — suppressed by light in center, excited when light is removed from center (or hits surround). Both cell types are poor detectors of diffuse uniform light — they respond best to contrast (small spots). The student is exploring this by clicking on a receptive field diagram and watching a spike raster. Do not bring up concepts beyond what is shown here unless the student asks. Accept reasonable paraphrases. Prioritize reasoning quality over precise wording. After a correct answer, affirm briefly then cue them to keep exploring or answer their next question. Once they have discovered the ON vs OFF difference through exploration, affirm what they found and unlock the next section. Do not introduce surround suppression. Do not introduce complex cells, hypercolumns, or color processing unless asked.`
+  },
+  {
+    title: 'Orientation selectivity in V1',
+    desc: 'V1 cells receive input from multiple LGN neurons whose receptive fields are aligned in a row. This arrangement means the V1 cell responds strongly to bars of a specific orientation — and weakly or not at all to other angles.',
+    prediction: 'You can see a V1 cell receiving input from 5 LGN cells arranged in a diagonal row. Before you rotate the bar: what orientation do you predict will produce the strongest response from this V1 cell, and why?',
+    system: `You are an AI tutor for an introductory neuroscience course. Topic: V1 orientation selectivity and the Hubel & Wiesel convergence model. Key concepts: A V1 cell receives convergent input from LGN neurons whose center-surround fields are arranged in a line. When a bar of light aligns with this row, it activates all the ON centers simultaneously → strong V1 response. When the bar is perpendicular, it activates a mix of centers and surrounds → weak response. The polar tuning curve shows the orientation preference. Preferred orientation = the angle of the LGN arrangement. Do not bring up concepts beyond what is shown here unless the student asks. Accept reasonable paraphrases. Prioritize reasoning quality over precise wording. After a correct answer, affirm briefly then ask a follow-up or cue them to explore further. Do not use the terms "simple cell" or "complex cell"; just say V1 cell. Do not mention hypercolumns, or color processing unless asked.`
+  }
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentSection = 0;
+let explorationMode = false;
+let freeExploration = false;
+let answeredCurrentSection = false;
+let orientation = 0; // degrees 0-179
+let barPos = 0;       // perpendicular offset of bar from RF centre (px)
+let cellType = 'on'; // 'on' or 'off'
+let lightPixels = new Set(); // set of pixel indices that are lit
+let firingRate = 0;
+let targetFiringRate = 0;
+let chatHistory = [];
+let apiKey = sessionStorage.getItem('neuc64_api_key') || '';
+
+// V1 state
+let showLGN = true;
+let v1FiringRate = 0;
+let v1TargetRate = 0;
+let tuningData = new Array(180).fill(null); // firing rate at each angle
+
+// Spike raster state
+let spikeQueue = []; // times (ms) of upcoming spikes
+let spikeHistory = []; // {t} displayed spikes (relative positions 0-1 on canvas)
+let v1SpikeHistory = [];
+let rasterClock = 0;
+let animFrame = null;
+
+// ── CANVAS SETUP ──────────────────────────────────────────────────────────────
+const rfCanvas = document.getElementById('rf-canvas');
+const rfCtx = rfCanvas.getContext('2d');
+const rasterCanvas = document.getElementById('raster-canvas');
+const rasterCtx = rasterCanvas.getContext('2d');
+const v1Canvas = document.getElementById('v1-canvas');
+const v1Ctx = v1Canvas.getContext('2d');
+const v1RasterCanvas = document.getElementById('v1-raster-canvas');
+const v1RasterCtx = v1RasterCanvas.getContext('2d');
+const tuningCanvas = document.getElementById('tuning-canvas');
+const tuningCtx = tuningCanvas.getContext('2d');
+
+function resizeCanvases() {
+  const dpr = window.devicePixelRatio || 1;
+  [
+    [rfCanvas, rfCtx, rfCanvas.parentElement.clientWidth - 28, 240],
+    [rasterCanvas, rasterCtx, rasterCanvas.parentElement.clientWidth - 28, 80],
+    [v1Canvas, v1Ctx, v1Canvas.parentElement.clientWidth - 28, 300],
+    [v1RasterCanvas, v1RasterCtx, v1RasterCanvas.parentElement.clientWidth - 28, 80],
+    [tuningCanvas, tuningCtx, tuningCanvas.parentElement.clientWidth - 28, 120],
+  ].forEach(([c, ctx, w, h]) => {
+    c.width = w * dpr; c.height = h * dpr;
+    c.style.width = w + 'px'; c.style.height = h + 'px';
+    ctx.scale(dpr, dpr);
+  });
+}
+
+// ── RECEPTIVE FIELD ──────────────────────────────────────────────────────────
+const RF_RADIUS = 85;
+const CENTER_RADIUS = 36;
+
+function getRFCenter() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = rfCanvas.width / dpr, h = rfCanvas.height / dpr;
+  return { cx: w / 2, cy: h / 2 };
+}
+
+function getZone(x, y, cx, cy) {
+  const d = Math.sqrt((x-cx)**2 + (y-cy)**2);
+  if (d < CENTER_RADIUS) return 'center';
+  if (d < RF_RADIUS) return 'surround';
+  return 'outside';
+}
+
+function computeFiringRate() {
+  const { cx, cy } = getRFCenter();
+  let centerLit = 0, surroundLit = 0;
+  let centerTotal = 0, surroundTotal = 0;
+
+  // Sample firing rate from light pixels
+  const dpr = window.devicePixelRatio || 1;
+  const w = rfCanvas.width / dpr, h = rfCanvas.height / dpr;
+
+  // Count lit pixels by zone
+  for (const key of lightPixels) {
+    const [x, y] = key.split(',').map(Number);
+    const zone = getZone(x, y, cx, cy);
+    if (zone === 'center') centerLit++;
+    else if (zone === 'surround') surroundLit++;
+  }
+
+  // Estimate total pixels in each zone
+  for (let x = cx - RF_RADIUS; x <= cx + RF_RADIUS; x += 3) {
+    for (let y = cy - RF_RADIUS; y <= cy + RF_RADIUS; y += 3) {
+      const zone = getZone(x, y, cx, cy);
+      if (zone === 'center') centerTotal++;
+      else if (zone === 'surround') surroundTotal++;
+    }
+  }
+
+  const cFrac = centerTotal > 0 ? centerLit / centerTotal : 0;
+  const sFrac = surroundTotal > 0 ? surroundLit / surroundTotal : 0;
+
+  // Push-pull center/surround. Center and surround are weighted so that
+  // uniform illumination (cFrac ≈ sFrac ≈ 1) nearly cancels: the cell
+  // returns to baseline rather than ramping up.
+  const BASELINE = 1.5;   // spikes/s spontaneous
+  const CENTER_GAIN = 80;
+  const SURROUND_GAIN = 76; // near-balanced -> diffuse light ≈ no net change
+
+  let rate;
+  if (cellType === 'on') {
+    // Light in center excites; light in surround inhibits
+    rate = BASELINE + cFrac * CENTER_GAIN - sFrac * SURROUND_GAIN;
+  } else {
+    // OFF-center: light in center inhibits; light in surround excites
+    rate = BASELINE - cFrac * CENTER_GAIN * 0.9 + sFrac * SURROUND_GAIN;
+  }
+  return Math.max(0, Math.min(100, rate));
+}
+
+function drawRF() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = rfCanvas.width / dpr, h = rfCanvas.height / dpr;
+  const { cx, cy } = getRFCenter();
+
+  rfCtx.clearRect(0, 0, w, h);
+  rfCtx.fillStyle = '#1a1a2e'; // dark retinal background
+  rfCtx.fillRect(0, 0, w, h);
+
+  // Surround
+  const surroundGrad = rfCtx.createRadialGradient(cx, cy, CENTER_RADIUS, cx, cy, RF_RADIUS);
+  const surroundColor = cellType === 'on' ? 'rgba(99,102,241,0.35)' : 'rgba(245,158,11,0.35)';
+  const surroundColorEdge = cellType === 'on' ? 'rgba(99,102,241,0)' : 'rgba(245,158,11,0)';
+  surroundGrad.addColorStop(0, surroundColor);
+  surroundGrad.addColorStop(1, surroundColorEdge);
+  rfCtx.beginPath(); rfCtx.arc(cx, cy, RF_RADIUS, 0, Math.PI*2);
+  rfCtx.fillStyle = surroundGrad; rfCtx.fill();
+
+  // Surround ring outline
+  rfCtx.beginPath(); rfCtx.arc(cx, cy, RF_RADIUS, 0, Math.PI*2);
+  rfCtx.strokeStyle = cellType === 'on' ? 'rgba(99,102,241,0.5)' : 'rgba(245,158,11,0.5)';
+  rfCtx.lineWidth = 1.5; rfCtx.setLineDash([4, 3]); rfCtx.stroke(); rfCtx.setLineDash([]);
+
+  // Center
+  const centerGrad = rfCtx.createRadialGradient(cx, cy, 0, cx, cy, CENTER_RADIUS);
+  const centerColor = cellType === 'on' ? 'rgba(245,158,11,0.55)' : 'rgba(99,102,241,0.55)';
+  const centerColorEdge = cellType === 'on' ? 'rgba(245,158,11,0.15)' : 'rgba(99,102,241,0.15)';
+  centerGrad.addColorStop(0, centerColor);
+  centerGrad.addColorStop(1, centerColorEdge);
+  rfCtx.beginPath(); rfCtx.arc(cx, cy, CENTER_RADIUS, 0, Math.PI*2);
+  rfCtx.fillStyle = centerGrad; rfCtx.fill();
+
+  // Center outline
+  rfCtx.beginPath(); rfCtx.arc(cx, cy, CENTER_RADIUS, 0, Math.PI*2);
+  rfCtx.strokeStyle = cellType === 'on' ? 'rgba(245,158,11,0.8)' : 'rgba(99,102,241,0.8)';
+  rfCtx.lineWidth = 2; rfCtx.stroke();
+
+  // Labels
+  rfCtx.font = 'bold 11px DM Sans'; rfCtx.textAlign = 'center';
+  rfCtx.fillStyle = cellType === 'on' ? '#F59E0B' : '#818CF8';
+  rfCtx.fillText(cellType === 'on' ? 'ON' : 'OFF', cx, cy + 4);
+
+  rfCtx.font = '9px DM Sans';
+  rfCtx.fillStyle = cellType === 'on' ? '#818CF8' : '#F59E0B';
+  rfCtx.fillText(cellType === 'on' ? 'OFF surround' : 'ON surround', cx, cy - RF_RADIUS + 14);
+
+  // Light patches
+  rfCtx.globalAlpha = 0.75;
+  for (const key of lightPixels) {
+    const [x, y] = key.split(',').map(Number);
+    rfCtx.beginPath(); rfCtx.arc(x, y, 5, 0, Math.PI*2);
+    rfCtx.fillStyle = '#fffde7'; rfCtx.fill();
+  }
+  rfCtx.globalAlpha = 1;
+
+  rfCtx.textAlign = 'left';
+}
+
+// Quantize clicks to grid
+function quantize(v, grid = 8) { return Math.round(v / grid) * grid; }
+
+rfCanvas.addEventListener('click', e => {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = rfCanvas.getBoundingClientRect();
+  const x = quantize((e.clientX - rect.left));
+  const y = quantize((e.clientY - rect.top));
+  const { cx, cy } = getRFCenter();
+  if (getZone(x, y, cx, cy) === 'outside') return;
+  const key = `${x},${y}`;
+  if (lightPixels.has(key)) lightPixels.delete(key);
+  else {
+    // Fill a small brush (3x3 grid points)
+    for (let dx = -8; dx <= 8; dx += 8)
+      for (let dy = -8; dy <= 8; dy += 8)
+        lightPixels.add(`${x+dx},${y+dy}`);
+  }
+  targetFiringRate = computeFiringRate();
+});
+
+function clearLight() { lightPixels.clear(); targetFiringRate = 1.5; }
+
+function diffuseLight() {
+  const { cx, cy } = getRFCenter();
+  lightPixels.clear();
+  for (let x = cx - RF_RADIUS; x <= cx + RF_RADIUS; x += 8)
+    for (let y = cy - RF_RADIUS; y <= cy + RF_RADIUS; y += 8)
+      if (getZone(x, y, cx, cy) !== 'outside')
+        lightPixels.add(`${quantize(x)},${quantize(y)}`);
+  targetFiringRate = computeFiringRate();
+}
+
+function setCellType(type) {
+  cellType = type;
+  document.getElementById('btn-on').className = 'ctrl-btn' + (type === 'on' ? ' active-on' : '');
+  document.getElementById('btn-off').className = 'ctrl-btn' + (type === 'off' ? ' active-off' : '');
+  targetFiringRate = computeFiringRate();
+}
+
+// ── RASTER ────────────────────────────────────────────────────────────────────
+const RASTER_WINDOW = 4000; // ms of history shown
+let lastSpikeTime = 0;
+
+function updateRaster(history, canvas, ctx, label) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.width / dpr, h = canvas.height / dpr;
+  ctx.clearRect(0, 0, w, h);
+
+  // Dark recording trace: spikes are bright marks on a dark background, so
+  // there is no ambiguity about which colour means "a spike happened".
+  ctx.fillStyle = '#12121c'; ctx.fillRect(0, 0, w, h);
+
+  const baseY = h - 18, topY = 10;
+
+  // Baseline / time axis
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(36, baseY); ctx.lineTo(w - 8, baseY); ctx.stroke();
+
+  // Time labels
+  ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '8px DM Sans'; ctx.textAlign = 'center';
+  ctx.fillText('−4s', 36, h - 5); ctx.fillText('now', w - 8, h - 5);
+
+  // Cell label
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '9px DM Sans';
+  ctx.fillText(label || 'Cell', 6, 13);
+
+  // Spikes — bright vertical ticks rising from the baseline
+  const now = rasterClock;
+  ctx.lineCap = 'round';
+  history.forEach(s => {
+    const age = now - s.t;
+    if (age > RASTER_WINDOW || age < 0) return;
+    const x = w - 8 - (age / RASTER_WINDOW) * (w - 44);
+    // Fade the oldest spikes slightly so the sweep direction reads clearly
+    const fade = 0.45 + 0.55 * (1 - age / RASTER_WINDOW);
+    ctx.strokeStyle = `rgba(255,255,255,${fade})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, topY); ctx.lineTo(x, baseY); ctx.stroke();
+  });
+  ctx.lineCap = 'butt';
+}
+
+// ── V1 SECTION ────────────────────────────────────────────────────────────────
+const LGN_CELLS = 5;
+const LGN_SPACING = 30;
+const LGN_R_CENTER = 14;
+const LGN_R_SURROUND = 26;
+const PREFERRED_ANGLE = 45; // preferred orientation of this V1 cell
+// V1 simple-cell receptive field: elongated ON zone flanked by OFF zones
+const V1_RF_LENGTH = 78;  // half-length along preferred axis
+const V1_RF_WIDTH = 15;   // half-width across preferred axis
+
+// Layout: panel A (left) = row of overlapping LGN RFs; panel B (right) =
+// resulting V1 simple-cell RF with the movable bar stimulus.
+function getPanels(w, h) {
+  const gap = 14;
+  const pw = (w - gap * 3) / 2;
+  return {
+    A: { x: gap, y: 6, w: pw, h: h - 48 },
+    B: { x: gap * 2 + pw, y: 6, w: pw, h: h - 48 },
+  };
+}
+
+// LGN centers tile along the preferred axis, overlapping heavily so their
+// summed centers form one elongated ON zone.
+function getLGNPositions(panel) {
+  const cx = panel.x + panel.w / 2, cy = panel.y + panel.h / 2;
+  const angle = PREFERRED_ANGLE * Math.PI / 180;
+  const positions = [];
+  const offset = (LGN_CELLS - 1) / 2;
+  for (let i = 0; i < LGN_CELLS; i++) {
+    const t = i - offset;
+    positions.push({
+      x: cx + t * LGN_SPACING * Math.cos(angle),
+      y: cy + t * LGN_SPACING * Math.sin(angle),
+    });
+  }
+  return positions;
+}
+
+// Response depends on BOTH orientation match and how well the bar overlaps
+// the ON stripe (position). Perpendicular offset -> bar falls on OFF flanks.
+function computeV1Rate(angleDeg, pos) {
+  if (pos === undefined) pos = barPos;
+  const barAngle = angleDeg * Math.PI / 180;
+  const prefAngle = PREFERRED_ANGLE * Math.PI / 180;
+  let diff = Math.abs(barAngle - prefAngle) % Math.PI;
+  const norm = diff > Math.PI / 2 ? Math.PI - diff : diff;
+  const sigma = 42 * Math.PI / 180;
+  const orientTerm = Math.exp(-(norm * norm) / (2 * sigma * sigma));
+
+  // Position term: +1 centred on ON stripe, negative over the OFF flanks
+  const d = Math.abs(pos);
+  const onW = V1_RF_WIDTH * 1.15;
+  const posTerm = Math.exp(-(d * d) / (2 * onW * onW))
+                - 0.85 * Math.exp(-((d - V1_RF_WIDTH * 2.1) ** 2) / (2 * (onW * 0.85) ** 2));
+
+  const BASELINE = 1.5;
+  const drive = orientTerm * posTerm;
+  return Math.max(0, BASELINE + drive * (85 - BASELINE));
+}
+
+// Draw one ON/OFF-center LGN receptive field
+function drawLGNField(ctx, x, y, alpha) {
+  const sg = ctx.createRadialGradient(x, y, LGN_R_CENTER, x, y, LGN_R_SURROUND);
+  sg.addColorStop(0, `rgba(99,102,241,${0.28 * alpha})`);
+  sg.addColorStop(1, 'rgba(99,102,241,0)');
+  ctx.beginPath(); ctx.arc(x, y, LGN_R_SURROUND, 0, Math.PI * 2);
+  ctx.fillStyle = sg; ctx.fill();
+  ctx.strokeStyle = `rgba(99,102,241,${0.4 * alpha})`;
+  ctx.lineWidth = 1; ctx.setLineDash([3, 2]);
+  ctx.beginPath(); ctx.arc(x, y, LGN_R_SURROUND, 0, Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([]);
+
+  const cg = ctx.createRadialGradient(x, y, 0, x, y, LGN_R_CENTER);
+  cg.addColorStop(0, `rgba(245,158,11,${0.5 * alpha})`);
+  cg.addColorStop(1, `rgba(245,158,11,${0.12 * alpha})`);
+  ctx.beginPath(); ctx.arc(x, y, LGN_R_CENTER, 0, Math.PI * 2);
+  ctx.fillStyle = cg; ctx.fill();
+  ctx.strokeStyle = `rgba(245,158,11,${0.7 * alpha})`;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(x, y, LGN_R_CENTER, 0, Math.PI * 2); ctx.stroke();
+}
+
+// Draw the elongated simple-cell RF: ON stripe with two OFF flanks
+function drawSimpleRF(ctx, cx, cy, angleRad) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angleRad);
+
+  [-1, 1].forEach(sign => {
+    const off = sign * V1_RF_WIDTH * 2;
+    ctx.beginPath();
+    ctx.ellipse(0, off, V1_RF_LENGTH, V1_RF_WIDTH * 0.85, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(99,102,241,0.18)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(99,102,241,0.5)';
+    ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
+  });
+
+  const g = ctx.createLinearGradient(0, -V1_RF_WIDTH, 0, V1_RF_WIDTH);
+  g.addColorStop(0, 'rgba(245,158,11,0.18)');
+  g.addColorStop(0.5, 'rgba(245,158,11,0.45)');
+  g.addColorStop(1, 'rgba(245,158,11,0.18)');
+  ctx.beginPath();
+  ctx.ellipse(0, 0, V1_RF_LENGTH, V1_RF_WIDTH, 0, 0, Math.PI * 2);
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = 'rgba(245,158,11,0.9)'; ctx.lineWidth = 1.8; ctx.stroke();
+
+  ctx.font = 'bold 9px DM Sans'; ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255,200,90,0.95)'; ctx.fillText('+', 0, 3);
+  ctx.fillStyle = 'rgba(150,158,255,0.95)';
+  ctx.fillText('−', 0, -V1_RF_WIDTH * 2 + 3);
+  ctx.fillText('−', 0, V1_RF_WIDTH * 2 + 3);
+  ctx.restore();
+}
+
+function drawV1Canvas() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = v1Canvas.width / dpr, h = v1Canvas.height / dpr;
+  v1Ctx.clearRect(0, 0, w, h);
+  v1Ctx.fillStyle = '#1a1a2e'; v1Ctx.fillRect(0, 0, w, h);
+
+  const P = getPanels(w, h);
+  const prefRad = PREFERRED_ANGLE * Math.PI / 180;
+
+  // ── Panel A: overlapping LGN receptive fields ──────────────────────────
+  v1Ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  v1Ctx.font = 'bold 10px DM Sans'; v1Ctx.textAlign = 'center';
+  v1Ctx.fillText('Overlapping LGN receptive fields', P.A.x + P.A.w / 2, h - 14);
+  v1Ctx.textAlign = 'left';
+
+  const positions = getLGNPositions(P.A);
+  if (showLGN) {
+    positions.forEach(p => drawLGNField(v1Ctx, p.x, p.y, 1));
+  } else {
+    v1Ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    v1Ctx.font = '10px DM Sans'; v1Ctx.textAlign = 'center';
+    v1Ctx.fillText('(LGN fields hidden)', P.A.x + P.A.w / 2, P.A.y + P.A.h / 2);
+  }
+
+  // Ghost of the resulting simple-cell RF under panel A
+  const aCx = P.A.x + P.A.w / 2, aCy = P.A.y + P.A.h / 2;
+  v1Ctx.save();
+  v1Ctx.globalAlpha = 0.55;
+  v1Ctx.translate(aCx, aCy); v1Ctx.rotate(prefRad);
+  v1Ctx.beginPath();
+  v1Ctx.ellipse(0, 0, V1_RF_LENGTH, V1_RF_WIDTH, 0, 0, Math.PI * 2);
+  v1Ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+  v1Ctx.lineWidth = 1.5; v1Ctx.setLineDash([5, 4]); v1Ctx.stroke(); v1Ctx.setLineDash([]);
+  v1Ctx.restore();
+
+  // ── Connecting arrows: each LGN field projects to the V1 RF ────────────
+  const bCx = P.B.x + P.B.w / 2, bCy = P.B.y + P.B.h / 2;
+  if (showLGN) {
+    positions.forEach((p, i) => {
+      // Target: the corresponding point along the V1 ON stripe, so the
+      // one-to-one mapping of position along the row is visible.
+      const t = (i - (LGN_CELLS - 1) / 2) / ((LGN_CELLS - 1) / 2);
+      const tx = bCx + Math.cos(prefRad) * t * V1_RF_LENGTH * 0.72;
+      const ty = bCy + Math.sin(prefRad) * t * V1_RF_LENGTH * 0.72;
+
+      // Start just outside the LGN surround, aimed at the target
+      const ang = Math.atan2(ty - p.y, tx - p.x);
+      const sx = p.x + Math.cos(ang) * (LGN_R_SURROUND + 2);
+      const sy = p.y + Math.sin(ang) * (LGN_R_SURROUND + 2);
+      // Stop just short of the target
+      const ex = tx - Math.cos(ang) * 10;
+      const ey = ty - Math.sin(ang) * 10;
+
+      // Bow the line outward so the five arrows fan out instead of overlapping
+      const mx = (sx + ex) / 2, my = (sy + ey) / 2;
+      const bow = t * 16;
+      const nx = Math.cos(ang - Math.PI / 2) * bow;
+      const ny = Math.sin(ang - Math.PI / 2) * bow;
+
+      v1Ctx.strokeStyle = 'rgba(245,158,11,0.45)';
+      v1Ctx.lineWidth = 1.4;
+      v1Ctx.beginPath();
+      v1Ctx.moveTo(sx, sy);
+      v1Ctx.quadraticCurveTo(mx + nx, my + ny, ex, ey);
+      v1Ctx.stroke();
+
+      // Arrowhead, aligned to the incoming curve tangent
+      const tang = Math.atan2(ey - (my + ny), ex - (mx + nx));
+      v1Ctx.save();
+      v1Ctx.translate(ex, ey); v1Ctx.rotate(tang);
+      v1Ctx.beginPath();
+      v1Ctx.moveTo(0, 0); v1Ctx.lineTo(-6, -3.2); v1Ctx.lineTo(-6, 3.2);
+      v1Ctx.closePath();
+      v1Ctx.fillStyle = 'rgba(245,158,11,0.75)'; v1Ctx.fill();
+      v1Ctx.restore();
+    });
+
+  }
+
+  // ── Panel B: V1 RF + bar stimulus ──────────────────────────────────────
+  v1Ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  v1Ctx.font = 'bold 10px DM Sans'; v1Ctx.textAlign = 'center';
+  v1Ctx.fillText('V1 cell receptive field', bCx, h - 14);
+  v1Ctx.textAlign = 'left';
+
+  drawSimpleRF(v1Ctx, bCx, bCy, prefRad);
+
+  // Bar stimulus: rotated by `orientation`, displaced perpendicular to the
+  // preferred axis by `barPos`.
+  const barAngle = orientation * Math.PI / 180;
+  const barLen = Math.min(P.B.w, P.B.h) * 0.95;
+  const offX = Math.cos(prefRad + Math.PI / 2) * barPos;
+  const offY = Math.sin(prefRad + Math.PI / 2) * barPos;
+  const bx = Math.cos(barAngle) * barLen / 2;
+  const by = Math.sin(barAngle) * barLen / 2;
+
+  v1Ctx.save();
+  v1Ctx.strokeStyle = 'rgba(255,255,225,0.95)';
+  v1Ctx.lineWidth = 9; v1Ctx.lineCap = 'round';
+  v1Ctx.beginPath();
+  v1Ctx.moveTo(bCx + offX - bx, bCy + offY - by);
+  v1Ctx.lineTo(bCx + offX + bx, bCy + offY + by);
+  v1Ctx.stroke();
+  v1Ctx.restore();
+
+  // Outcome readout, mirroring the textbook figure
+  let verdict, vColor;
+  if (v1FiringRate > 45) { verdict = 'Stimulation'; vColor = '#4ADE80'; }
+  else if (v1FiringRate < 1.2) { verdict = 'Inhibition'; vColor = '#F87171'; }
+  else { verdict = 'No change in output'; vColor = 'rgba(255,255,255,0.6)'; }
+  v1Ctx.fillStyle = vColor;
+  v1Ctx.font = 'bold 11px DM Sans'; v1Ctx.textAlign = 'center';
+  v1Ctx.fillText(verdict, bCx, h - 30);
+
+  v1Ctx.textAlign = 'left';
+}
+function drawTuningCurve() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = tuningCanvas.width / dpr, h = tuningCanvas.height / dpr;
+  tuningCtx.clearRect(0, 0, w, h);
+  tuningCtx.fillStyle = '#f8f9fa'; tuningCtx.fillRect(0, 0, w, h);
+
+  const cx = w / 2, cy = h / 2;
+  const maxR = Math.min(cx, cy) - 16;
+
+  // Grid circles
+  [0.25, 0.5, 0.75, 1].forEach(f => {
+    tuningCtx.beginPath(); tuningCtx.arc(cx, cy, maxR * f, 0, Math.PI * 2);
+    tuningCtx.strokeStyle = '#e5e5e5'; tuningCtx.lineWidth = 1; tuningCtx.stroke();
+  });
+
+  // Orientation lines
+  [0, 45, 90, 135].forEach(a => {
+    const rad = a * Math.PI / 180;
+    tuningCtx.strokeStyle = '#e5e5e5'; tuningCtx.lineWidth = 1;
+    tuningCtx.beginPath();
+    tuningCtx.moveTo(cx + Math.cos(rad)*maxR, cy + Math.sin(rad)*maxR);
+    tuningCtx.lineTo(cx - Math.cos(rad)*maxR, cy - Math.sin(rad)*maxR);
+    tuningCtx.stroke();
+    tuningCtx.fillStyle = '#bbb'; tuningCtx.font = '8px DM Sans'; tuningCtx.textAlign = 'center';
+    tuningCtx.fillText(a + '°', cx + Math.cos(rad)*(maxR+10), cy + Math.sin(rad)*(maxR+10));
+  });
+
+  // Filled tuning data
+  const hasData = tuningData.some(v => v !== null);
+  if (hasData) {
+    tuningCtx.beginPath();
+    let started = false;
+    for (let a = 0; a < 360; a++) {
+      const srcA = a < 180 ? a : a - 180;
+      const r = tuningData[srcA] !== null ? (tuningData[srcA] / 85) * maxR : 0;
+      const rad = a * Math.PI / 180;
+      const x = cx + Math.cos(rad) * r, y = cy + Math.sin(rad) * r;
+      if (!started) { tuningCtx.moveTo(x, y); started = true; }
+      else tuningCtx.lineTo(x, y);
+    }
+    tuningCtx.closePath();
+    tuningCtx.fillStyle = 'rgba(15,110,86,0.2)'; tuningCtx.fill();
+    tuningCtx.strokeStyle = '#0F6E56'; tuningCtx.lineWidth = 2; tuningCtx.stroke();
+  }
+
+  // Current angle marker
+  const curRad = orientation * Math.PI / 180;
+  const curR = (v1FiringRate / 85) * maxR;
+  tuningCtx.beginPath(); tuningCtx.arc(cx + Math.cos(curRad)*curR, cy + Math.sin(curRad)*curR, 4, 0, Math.PI*2);
+  tuningCtx.fillStyle = '#0F6E56'; tuningCtx.fill();
+  // Mirror
+  tuningCtx.beginPath(); tuningCtx.arc(cx - Math.cos(curRad)*curR, cy - Math.sin(curRad)*curR, 4, 0, Math.PI*2);
+  tuningCtx.fillStyle = '#0F6E56'; tuningCtx.fill();
+
+  tuningCtx.textAlign = 'left';
+}
+
+function setOrientation(val) {
+  orientation = parseInt(val);
+  document.getElementById('orientation-val').textContent = orientation + '°';
+  v1TargetRate = computeV1Rate(orientation, barPos);
+  // Only log the tuning curve when the bar is centred on the ON stripe,
+  // otherwise position effects would contaminate the orientation tuning.
+  if (Math.abs(barPos) <= 6) tuningData[orientation] = Math.round(computeV1Rate(orientation, 0));
+}
+
+function toggleLGN() {
+  showLGN = !showLGN;
+  document.getElementById('btn-show-lgn').className = 'ctrl-btn' + (showLGN ? ' active-blue' : '');
+  document.getElementById('btn-show-lgn').textContent = showLGN ? 'Hide LGN fields' : 'Show LGN fields';
+}
+
+function setBarPos(val) {
+  barPos = parseInt(val);
+  document.getElementById('barpos-val').textContent = barPos;
+  v1TargetRate = computeV1Rate(orientation, barPos);
+}
+
+function resetOrientation() {
+  orientation = 0; barPos = 0;
+  document.getElementById('orientation-slider').value = 0;
+  document.getElementById('orientation-val').textContent = '0°';
+  document.getElementById('barpos-slider').value = 0;
+  document.getElementById('barpos-val').textContent = '0';
+  tuningData = new Array(180).fill(null);
+  v1TargetRate = computeV1Rate(0, 0);
+}
+
+// ── ANIMATION LOOP ────────────────────────────────────────────────────────────
+let lastTime = 0;
+
+function animate(ts) {
+  const dt = Math.min(ts - lastTime, 50);
+  lastTime = ts;
+  rasterClock += dt;
+
+  // Smooth firing rates
+  firingRate += (targetFiringRate - firingRate) * 0.08;
+  v1FiringRate += (v1TargetRate - v1FiringRate) * 0.08;
+
+  // Spike generation: Poisson process with a short refractory period.
+  // Spikes are drawn on a sub-frame timebase so that high firing rates are
+  // not capped by the animation frame rate (~60 Hz).
+  const REFRACTORY = 6; // ms
+  const STEP = 2;       // ms sub-frame resolution
+
+  function genSpikes(rate, history, lastRef) {
+    let last = lastRef;
+    for (let el = 0; el < dt; el += STEP) {
+      const t = rasterClock - dt + el;
+      if (rate > 0.05 && t - last > REFRACTORY && Math.random() < (rate * STEP) / 1000) {
+        history.push({ t });
+        last = t;
+      }
+    }
+    return last;
+  }
+
+  if (currentSection === 0) {
+    lastSpikeTime = genSpikes(firingRate, spikeHistory, lastSpikeTime);
+  }
+  spikeHistory = spikeHistory.filter(s => rasterClock - s.t < RASTER_WINDOW + 200);
+
+  if (currentSection === 1) {
+    const lastV1 = v1SpikeHistory.length ? v1SpikeHistory[v1SpikeHistory.length - 1].t : -1e9;
+    genSpikes(v1FiringRate, v1SpikeHistory, lastV1);
+  }
+  v1SpikeHistory = v1SpikeHistory.filter(s => rasterClock - s.t < RASTER_WINDOW + 200);
+
+  // Draw
+  if (currentSection === 0) {
+    drawRF();
+    updateRaster(spikeHistory, rasterCanvas, rasterCtx, 'RGC');
+    document.getElementById('firing-rate-val').textContent = Math.round(firingRate);
+  } else {
+    drawV1Canvas();
+    updateRaster(v1SpikeHistory, v1RasterCanvas, v1RasterCtx, 'V1 cell');
+    drawTuningCurve();
+    document.getElementById('v1-firing-val').textContent = Math.round(v1FiringRate);
+  }
+
+  animFrame = requestAnimationFrame(animate);
+}
+
+// ── SECTION NAVIGATION ────────────────────────────────────────────────────────
+function goToSection(s) {
+  if (!explorationMode && !freeExploration && s > currentSection) return;
+  currentSection = s;
+  answeredCurrentSection = explorationMode || freeExploration;
+  updateUI(s);
+}
+
+function nextSection() {
+  if (currentSection < 1) { currentSection++; answeredCurrentSection = false; updateUI(currentSection); }
+}
+function prevSection() {
+  if (currentSection > 0) { currentSection--; answeredCurrentSection = explorationMode || freeExploration; updateUI(currentSection); }
+}
+
+function updateUI(s) {
+  const sec = SECTIONS[s];
+  document.getElementById('section-title').textContent = sec.title;
+  document.getElementById('section-desc').textContent = sec.desc;
+
+  document.querySelectorAll('.section-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === s);
+    if (!explorationMode && !freeExploration && i > s) { btn.disabled = true; }
+    else btn.disabled = false;
+  });
+
+  document.getElementById('sec0-content').style.display = s === 0 ? 'block' : 'none';
+  document.getElementById('sec1-content').style.display = s === 1 ? 'block' : 'none';
+
+  document.getElementById('prev-btn').disabled = s === 0;
+  const nb = document.getElementById('next-btn');
+  const nudge = document.getElementById('soft-nudge');
+  if (s === 1) { nb.textContent = 'Done'; nb.disabled = false; nudge.style.display = 'none'; }
+  else if (explorationMode || freeExploration) { nb.disabled = false; nudge.style.display = 'none'; }
+  else { nb.disabled = !answeredCurrentSection; nudge.style.display = answeredCurrentSection ? 'none' : 'block'; }
+
+  if (!explorationMode && sec.prediction) addPredictionPrompt(sec.prediction);
+  else if (explorationMode) addTutorMessage('Explore freely — click anywhere on the receptive field and ask me anything.');
+
+  setTimeout(resizeCanvases, 50);
+}
+
+function setMode(mode) {
+  explorationMode = mode === 'explore';
+  document.getElementById('btn-guided').classList.toggle('active', !explorationMode);
+  document.getElementById('btn-explore').classList.toggle('active', explorationMode);
+  if (explorationMode) {
+    freeExploration = true; answeredCurrentSection = true;
+    document.getElementById('soft-nudge').style.display = 'none';
+    document.getElementById('chat-messages').innerHTML = '';
+    addTutorMessage("Explore mode — click on the receptive field, toggle cell types, and ask me anything.");
+  } else {
+    explorationMode = false; freeExploration = false; answeredCurrentSection = false;
+    document.getElementById('chat-messages').innerHTML = '';
+  }
+  updateUI(currentSection);
+}
+
+// ── CHAT ──────────────────────────────────────────────────────────────────────
+function addPredictionPrompt(text) {
+  const c = document.getElementById('chat-messages');
+  c.innerHTML = '';
+  const el = document.createElement('div');
+  el.className = 'prediction-prompt';
+  el.innerHTML = `<strong>Predict</strong>${text}`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+}
+
+function addTutorMessage(text, thinking = false) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = `message tutor${thinking ? ' thinking' : ''}`;
+  el.innerHTML = `<span class="message-sender">Tutor</span><div class="message-bubble">${text}</div>`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+  return el;
+}
+
+function addStudentMessage(text) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'message student';
+  el.innerHTML = `<span class="message-sender">You</span><div class="message-bubble">${text}</div>`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('student-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!apiKey) { openModal(); return; }
+  input.value = ''; autoResize(input);
+  addStudentMessage(text);
+  const thinking = addTutorMessage('Thinking…', true);
+  document.getElementById('send-btn').disabled = true;
+
+  const sec = SECTIONS[currentSection];
+  chatHistory.push({ role: 'user', content: text });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 300, system: sec.system, messages: chatHistory.slice(-10) }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      const err = data.error.message || '';
+      thinking.querySelector('.message-bubble').textContent = err.toLowerCase().includes('overload') ? 'The AI tutor is busy right now — please wait a moment and try again.' : 'API error: ' + err;
+      chatHistory.pop();
+    } else {
+      const reply = data.content[0].text;
+      thinking.classList.remove('thinking');
+      thinking.querySelector('.message-bubble').textContent = reply;
+      chatHistory.push({ role: 'assistant', content: reply });
+      if (!freeExploration && !explorationMode) {
+        answeredCurrentSection = true;
+        document.getElementById('soft-nudge').style.display = 'none';
+        document.getElementById('next-btn').disabled = false;
+        document.querySelectorAll('.section-btn').forEach((btn, i) => {
+          if (i <= currentSection + 1) { btn.disabled = false; }
+        });
+        if (currentSection === 1) {
+          freeExploration = true;
+          addTutorMessage("You've explored both sections. Well done — you now understand how the visual system builds up feature detection from simple contrast signals to oriented edges.");
+        }
+      }
+    }
+  } catch (e) {
+    thinking.querySelector('.message-bubble').textContent = 'Could not reach the tutor. Check your API key and try again.';
+    chatHistory.pop();
+  }
+
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('chat-messages').scrollTop = 99999;
+}
+
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 90) + 'px'; }
+
+function openModal() { document.getElementById('modal-overlay').classList.add('open'); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function saveApiKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  if (k) {
+    apiKey = k; sessionStorage.setItem('neuc64_api_key', k);
+    document.getElementById('api-status-btn').textContent = 'Key saved ✓';
+    document.getElementById('api-status-btn').style.color = '#0F6E56';
+    closeModal();
+  }
+}
+document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === document.getElementById('modal-overlay')) closeModal(); });
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener('resize', resizeCanvases);
+if (apiKey) { document.getElementById('api-status-btn').textContent = 'Key saved ✓'; document.getElementById('api-status-btn').style.color = '#0F6E56'; }
+resizeCanvases();
+setTimeout(() => {
+  resizeCanvases();
+  targetFiringRate = 1.5;
+  updateUI(0);
+  requestAnimationFrame(ts => { lastTime = ts; animate(ts); });
+}, 100);
+</script>
+</body>
+</html>
