@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synaptic Transmission Explorer — NEU C61</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --berkeley-blue: #003262; --berkeley-gold: #FDB515;
+      --blue-light: #E8EFF7; --gold-light: #FEF5E0; --gold-text: #A07000;
+      --teal: #0F6E56; --teal-light: #E1F5EE;
+      --purple: #7C3AED; --purple-light: #EEEDFE;
+      --red: #DC2626; --red-light: #FEF2F2;
+      --text-primary: #1a1a1a; --text-secondary: #555; --text-tertiary: #999;
+      --border: #e5e5e5; --bg: #fff; --bg-secondary: #f8f8f8;
+      --radius-md: 8px; --radius-lg: 12px;
+      --na: #2563EB; --ca: #D97706; --glu: #0F6E56; --cl: #7C3AED;
+    }
+    body { font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--bg); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+
+    /* NAV */
+    .top-nav { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.97); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 100; }
+    .logo { display: flex; align-items: center; gap: 8px; }
+    .logo-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--berkeley-blue); display: flex; align-items: center; justify-content: center; }
+    .logo-mark svg { width: 17px; height: 17px; }
+    .logo-text { font-size: 13px; font-weight: 500; line-height: 1.2; }
+    .logo-sub { font-size: 11px; color: var(--text-secondary); }
+    .back-link { font-size: 12px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px; }
+    .back-link svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .back-link:hover { color: var(--text-primary); }
+
+    /* APP LAYOUT */
+    .app { display: grid; grid-template-columns: 60fr 40fr; height: calc(100vh - 53px); overflow: hidden; }
+
+    /* LEFT PANEL */
+    .left-panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow: hidden; }
+    .tool-header { padding: 1rem 1.5rem 0.875rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .tool-header h1 { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; margin-bottom: 0.15rem; }
+    .tool-header p { font-size: 12px; color: var(--text-secondary); }
+
+    /* SECTION STEPPER */
+    .section-stepper { display: flex; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); gap: 4px; flex-shrink: 0; }
+    .section-btn { flex: 1; padding: 5px 4px; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 500; color: var(--text-secondary); text-align: center; transition: all 0.15s; line-height: 1.3; }
+    .section-btn:hover { border-color: #bbb; color: var(--text-primary); }
+    .section-btn.active { background: var(--berkeley-blue); color: white; border-color: transparent; }
+    .section-btn.visited { opacity: 0.55; }
+    .section-btn:disabled { opacity: 0.35; cursor: default; }
+
+    /* VIZ AREA */
+    .viz-area { flex: 1; overflow-y: auto; padding: 1rem 1.5rem; display: flex; flex-direction: column; gap: 0.875rem; }
+    .viz-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0.875rem; }
+    .viz-card-label { font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.5rem; }
+
+    /* SYNAPSE CANVAS */
+    #synapse-canvas { width: 100%; height: 280px; display: block; border-radius: 6px; }
+    #voltage-canvas { width: 100%; height: 90px; display: block; border-radius: 6px; }
+
+    /* STEP INDICATOR */
+    .step-dots { display: flex; gap: 6px; margin-top: 0.5rem; flex-wrap: wrap; }
+    .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 0.2s; cursor: default; }
+    .step-dot.active { background: var(--berkeley-blue); }
+    .step-dot.done { background: var(--teal); }
+
+    /* CONTROLS */
+    .controls-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .ctrl-btn { padding: 6px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+    .ctrl-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+    .ctrl-btn.primary { background: var(--berkeley-blue); color: white; border-color: var(--berkeley-blue); }
+    .ctrl-btn.primary:hover { opacity: 0.88; }
+    .ctrl-btn.active-excit { background: var(--na); color: white; border-color: var(--na); }
+    .ctrl-btn.active-inhib { background: var(--purple); color: white; border-color: var(--purple); }
+    .ctrl-btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* SYNAPSE TOGGLE (section 2) */
+    .synapse-toggle { display: flex; gap: 6px; }
+    .toggle-btn { flex: 1; padding: 6px; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer; text-align: center; transition: all 0.15s; }
+    .toggle-btn.excit.active { background: #DBEAFE; border-color: var(--na); color: #1D4ED8; }
+    .toggle-btn.inhib.active { background: var(--purple-light); border-color: var(--purple); color: var(--purple); }
+
+    /* SPATIAL SYNAPSE BUTTONS */
+    .spatial-synapses { display: flex; gap: 8px; }
+    .syn-btn { flex: 1; padding: 7px 8px; border-radius: var(--radius-md); border: 2px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); cursor: pointer; text-align: center; transition: all 0.15s; }
+    .syn-btn:hover { border-color: var(--na); }
+    .syn-btn.fired { background: #DBEAFE; border-color: var(--na); color: #1D4ED8; }
+
+    /* ION LEGEND */
+    .ion-legend { display: flex; gap: 0.875rem; flex-wrap: wrap; margin-top: 0.375rem; }
+    .ion-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-secondary); }
+    .ion-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+    /* NAV BUTTONS */
+    .nav-btns { padding: 0.75rem 1.5rem; border-top: 1px solid var(--border); flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; }
+    .nav-row { display: flex; gap: 8px; }
+    .prev-btn { padding: 7px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 5px; }
+    .prev-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .prev-btn:disabled { opacity: 0.35; cursor: default; }
+    .next-btn { flex: 1; padding: 7px 16px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.15s; }
+    .next-btn svg { width: 13px; height: 13px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .next-btn:disabled { opacity: 0.45; cursor: default; background: #888; }
+    .soft-nudge { font-size: 11px; color: var(--gold-text); background: var(--gold-light); border: 1px solid #F5D78A; border-radius: var(--radius-md); padding: 5px 10px; display: none; }
+
+    /* RIGHT PANEL */
+    .right-panel { display: flex; flex-direction: column; overflow: hidden; }
+    .mode-toggle-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--bg-secondary); }
+    .mode-toggle-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); }
+    .mode-toggle-btns { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 100px; padding: 2px; gap: 2px; }
+    .mode-toggle-btn { padding: 4px 14px; border-radius: 100px; border: none; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--text-secondary); background: transparent; transition: all 0.15s; }
+    .mode-toggle-btn.active { background: var(--berkeley-blue); color: white; }
+
+    .phase-info { padding: 1rem 1.25rem 0.875rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .phase-title { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; margin-bottom: 0.4rem; }
+    .phase-description { font-size: 12.5px; color: var(--text-secondary); line-height: 1.7; }
+
+    .tutor-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; border-top: 1px solid var(--border); }
+    .tutor-header { padding: 0.625rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+    .tutor-title { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; display: flex; align-items: center; gap: 8px; }
+    .tutor-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); flex-shrink: 0; }
+    .api-key-btn { font-size: 11px; color: var(--text-tertiary); cursor: pointer; background: none; border: none; font-family: 'DM Sans', sans-serif; }
+    .api-key-btn:hover { color: var(--text-primary); }
+
+    .chat-messages { flex: 1; overflow-y: auto; padding: 0.75rem 1.25rem; display: flex; flex-direction: column; gap: 0.625rem; }
+    .message { display: flex; flex-direction: column; gap: 2px; max-width: 93%; }
+    .message.tutor { align-self: flex-start; }
+    .message.student { align-self: flex-end; }
+    .message-sender { font-size: 9px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); padding: 0 4px; }
+    .message-bubble { padding: 0.55rem 0.8rem; border-radius: var(--radius-lg); font-size: 12.5px; line-height: 1.6; }
+    .message.tutor .message-bubble { background: var(--bg-secondary); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .message.student .message-bubble { background: var(--berkeley-blue); color: white; border-bottom-right-radius: 4px; }
+    .message.thinking .message-bubble { color: var(--text-tertiary); font-style: italic; }
+    .prediction-prompt { background: var(--gold-light); border: 1px solid #F5D78A; border-radius: var(--radius-lg); padding: 0.65rem 0.8rem; font-size: 12.5px; color: var(--gold-text); line-height: 1.6; align-self: flex-start; max-width: 93%; }
+    .prediction-prompt strong { display: block; font-weight: 500; margin-bottom: 2px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    .input-area { padding: 0.625rem 1.25rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .input-row { display: flex; gap: 7px; align-items: flex-end; }
+    .input-row textarea { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 12.5px; padding: 7px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); resize: none; line-height: 1.5; min-height: 36px; max-height: 90px; }
+    .input-row textarea:focus { outline: none; border-color: var(--berkeley-blue); }
+    .input-row textarea::placeholder { color: var(--text-tertiary); }
+    .send-btn { width: 34px; height: 34px; border-radius: var(--radius-md); background: var(--berkeley-blue); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.15s; }
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: default; }
+    .send-btn svg { width: 14px; height: 14px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--bg); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 380px; width: 90%; border: 1px solid var(--border); }
+    .modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 0.4rem; }
+    .modal p { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 0.875rem; }
+    .modal input { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 0.875rem; }
+    .modal input:focus { outline: none; border-color: var(--berkeley-blue); }
+    .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-secondary { padding: 6px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 12.5px; cursor: pointer; color: var(--text-secondary); }
+    .btn-primary { padding: 6px 14px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; cursor: pointer; color: white; }
+
+    @media (max-width: 800px) {
+      .app { grid-template-columns: 1fr; height: auto; overflow: visible; }
+      .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
+      .right-panel { height: 560px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="../../index.html" class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="3" fill="#FDB515"/>
+        <path d="M10 3C10 3 14.5 6 14.5 10C14.5 14 10 17 10 17C10 17 5.5 14 5.5 10C5.5 6 10 3 10 3Z" stroke="#FDB515" stroke-width="1.25" fill="none"/>
+        <path d="M3 10C3 10 6 6 10 6C14 6 17 10 17 10C17 10 14 14 10 14C6 14 3 10 3 10Z" stroke="white" stroke-width="1.25" fill="none" opacity="0.55"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">NEU C61</div>
+      <div class="logo-sub">UC Berkeley</div>
+    </div>
+  </a>
+  <a href="../index.html" class="back-link">
+    <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Tools
+  </a>
+</nav>
+
+<div class="app">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="tool-header">
+      <h1>Synaptic transmission explorer</h1>
+      <p>From action potential to postsynaptic response — and how signals add up to reach threshold.</p>
+    </div>
+
+    <div class="section-stepper">
+      <button class="section-btn active" data-sec="0" onclick="goToSection(0)">Steps of<br>transmission</button>
+      <button class="section-btn" data-sec="1" onclick="goToSection(1)">EPSPs &amp;<br>IPSPs</button>
+      <button class="section-btn" data-sec="2" onclick="goToSection(2)">Temporal<br>summation</button>
+      <button class="section-btn" data-sec="3" onclick="goToSection(3)">Spatial<br>summation</button>
+    </div>
+
+    <div class="viz-area" id="viz-area">
+
+      <!-- SYNAPSE CANVAS (all sections) -->
+      <div class="viz-card">
+        <div class="viz-card-label" id="canvas-label">Synapse</div>
+        <canvas id="synapse-canvas"></canvas>
+        <div class="ion-legend">
+          <div class="ion-item"><div class="ion-dot" style="background:#D97706"></div> Ca²⁺</div>
+          <div class="ion-item"><div class="ion-dot" style="background:#0F6E56"></div> Neurotransmitter</div>
+          <div class="ion-item"><div class="ion-dot" style="background:#2563EB"></div> Na⁺</div>
+          <div class="ion-item"><div class="ion-dot" style="background:#7C3AED" id="cl-legend-item"></div> Cl⁻</div>
+        </div>
+      </div>
+
+      <!-- SECTION 0: step dots + advance button -->
+      <div id="sec0-controls" class="viz-card">
+        <div class="viz-card-label">Transmission step</div>
+        <div class="step-dots" id="step-dots"></div>
+        <div style="margin-top:0.75rem; display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap;">
+          <button class="ctrl-btn" id="prev-step-btn" onclick="retreatStep()" disabled>← Prev step</button>
+          <button class="ctrl-btn primary" id="next-step-btn" onclick="advanceStep()" disabled>Next step →</button>
+        </div>
+        <div id="step-nudge" style="font-size:11px; color:#A07000; font-style:italic; margin-top:4px; display:none;">Answer the tutor’s question to continue</div>
+      </div>
+
+      <!-- SECTION 1: EPSP/IPSP toggle -->
+      <div id="sec1-controls" class="viz-card" style="display:none;">
+        <div class="viz-card-label">Synapse type</div>
+        <div class="synapse-toggle">
+          <button class="toggle-btn excit active" id="excit-btn" onclick="setSynapseType('excit')">Excitatory (glutamate)</button>
+          <button class="toggle-btn inhib" id="inhib-btn" onclick="setSynapseType('inhib')">Inhibitory</button>
+        </div>
+      </div>
+
+      <!-- SECTION 2: temporal summation controls -->
+      <div id="sec2-controls" class="viz-card" style="display:none;">
+        <div class="viz-card-label">Temporal summation — one synapse</div>
+        <div class="controls-row">
+          <button class="ctrl-btn primary" id="fire-temporal-btn" onclick="fireTemporal()">Fire synapse</button>
+          <button class="ctrl-btn" onclick="resetTemporal()">Reset</button>
+        </div>
+        <div style="font-size:11px; color:var(--text-tertiary); margin-top:6px;">Click repeatedly — watch EPSPs build up</div>
+      </div>
+
+      <!-- SECTION 3: spatial summation controls -->
+      <div id="sec3-controls" class="viz-card" style="display:none;">
+        <div class="viz-card-label">Spatial summation</div>
+        <div style="display:flex; gap:8px;">
+          <button class="ctrl-btn primary" onclick="fireSpatialOne()">Fire synapse A only</button>
+          <button class="ctrl-btn primary" onclick="fireSpatialAll()">Fire synapses A + B + C</button>
+        </div>
+        <div style="margin-top:8px;">
+          <button class="ctrl-btn" onclick="resetSpatial()">Reset</button>
+        </div>
+        <div style="font-size:11px; color:var(--text-tertiary); margin-top:6px;">See how one synapse compares to three firing simultaneously</div>
+      </div>
+
+      <!-- VOLTAGE TRACE (sections 1-3) -->
+      <div class="viz-card" id="voltage-card" style="display:none;">
+        <div class="viz-card-label">Postsynaptic membrane potential</div>
+        <canvas id="voltage-canvas"></canvas>
+      </div>
+
+    </div>
+
+    <div class="nav-btns">
+      <div class="nav-row">
+        <button class="prev-btn" id="prev-btn" onclick="prevSection()" disabled>
+          <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Prev
+        </button>
+        <button class="next-btn" id="next-btn" onclick="nextSection()" disabled>
+          Next
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+      <div class="soft-nudge" id="soft-nudge">Answer the tutor's question to get feedback before moving on</div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="mode-toggle-bar">
+      <span class="mode-toggle-label">Mode</span>
+      <div class="mode-toggle-btns">
+        <button class="mode-toggle-btn active" id="btn-guided" onclick="setMode('guided')">AI guided</button>
+        <button class="mode-toggle-btn" id="btn-explore" onclick="setMode('explore')">Explore</button>
+      </div>
+    </div>
+
+    <div class="phase-info">
+      <div class="phase-title" id="section-title">Steps of synaptic transmission</div>
+      <div class="phase-description" id="section-description"></div>
+    </div>
+
+    <div class="tutor-area">
+      <div class="tutor-header">
+        <div class="tutor-title"><div class="tutor-dot"></div> AI tutor</div>
+        <button class="api-key-btn" id="api-status-btn" onclick="openModal()">Add API key</button>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="input-area">
+        <div class="input-row">
+          <textarea id="student-input" placeholder="Type your prediction or question…" rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h2>Enter your Anthropic API key</h2>
+    <p>Stored in your browser session only.</p>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-…"/>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveApiKey()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+
+const SECTIONS = [
+  {
+    title: 'Steps of synaptic transmission',
+    description: 'An action potential carries an electrical signal down the axon — but how does that signal cross to the next neuron? The synapse is the junction where communication happens, and it works through a sequence of chemical events.',
+    prediction: null, // handled per-step
+    system: `You are an AI tutor for an introductory neuroscience course. Topic: steps of synaptic transmission. The sequence is: (1) AP arrives at presynaptic terminal, (2) voltage-gated Ca2+ channels open, (3) Ca2+ flows in, (4) vesicles fuse with membrane, (5) neurotransmitter released into cleft, (6) neurotransmitter binds postsynaptic receptors (AMPA for glutamate = ligand-gated Na+ channels), (7) Na+ flows in, (8) EPSP generated. Key concept: electrical signal becomes chemical, then electrical again. Do not introduce SNARE proteins, synaptotagmin, or other molecular details beyond calcium-triggered vesicle fusion. Do not bring up mechanisms not shown in this simulation unless the student asks — if they do, give a brief honest answer and redirect. Accept reasonable paraphrases and partial answers. Prioritize the quality of the student's reasoning over precise terminology. If the core concept is right, affirm it warmly without nitpicking wording. IMPORTANT: After the student gives a correct or mostly correct answer, affirm it briefly (1-2 sentences) and then IMMEDIATELY tell them to click 'Next step →' to continue. Do NOT ask follow-up questions or go deeper at this stage — the next step's animation will prompt the next question. Keep your response short: affirm + cue to advance. Example: 'Exactly right — the voltage change opens Ca²⁺ channels. Click Next step → to see what happens next.'`,
+  },
+  {
+    title: 'EPSPs and IPSPs',
+    description: 'Not all synapses excite the postsynaptic cell. Some inhibit it. The direction of the postsynaptic potential depends on which ions flow — and in which direction. Toggle between synapse types and watch how the membrane potential responds.',
+    prediction: 'You can see an excitatory synapse is active — glutamate has bound AMPA receptors, opening Na⁺ channels. Before you toggle to inhibitory: what ion do you think flows at an inhibitory synapse, and in which direction? What effect would that have on the membrane potential?',
+    system: `You are an AI tutor for an introductory neuroscience course. Topic: EPSPs vs IPSPs. Excitatory: glutamate binds AMPA receptors (ligand-gated Na+/K+ channels), Na+ flows in, membrane depolarizes → EPSP. Inhibitory: GABA binds GABA-A receptors (ligand-gated Cl- channels), Cl- flows in, membrane hyperpolarizes → IPSP. Key concept: direction of postsynaptic potential depends on which ion and its electrochemical gradient. Do not bring up mechanisms not shown in this simulation unless the student asks — if they do, give a brief honest answer and redirect. Accept reasonable paraphrases and partial answers. Prioritize the quality of the student's reasoning over precise terminology. Affirm warmly without nitpicking wording.`,
+  },
+  {
+    title: 'Temporal summation',
+    description: 'A single EPSP is usually not enough to bring the membrane to threshold. But if the same synapse fires repeatedly before the first EPSP has fully decayed, the potentials accumulate. This is temporal summation — integration across time.',
+    prediction: 'A single EPSP brings the membrane potential from −70 mV to about −60 mV — not enough to reach threshold (−55 mV). What do you predict will happen if the same synapse fires again before the first EPSP has fully decayed?',
+    system: `You are an AI tutor for an introductory neuroscience course. Topic: temporal summation. Single EPSPs are subthreshold (~10 mV depolarization). Rapid repeated firing of the same synapse allows EPSPs to sum before they decay (membrane time constant ~10-20ms). If summed EPSPs reach threshold (~-55mV), an AP fires. Key concept: neurons integrate inputs over time. Do not bring up mechanisms not shown in this simulation unless the student asks. Accept reasonable paraphrases and partial answers. Prioritize quality of reasoning. Affirm warmly without nitpicking wording.`,
+  },
+  {
+    title: 'Spatial summation',
+    description: 'A neuron receives input from thousands of synapses across its dendrites and soma simultaneously. When multiple synapses are active at the same time, their EPSPs add together at the axon hillock. This is spatial summation — integration across space.',
+    prediction: 'Each of the three synapses shown produces a subthreshold EPSP on its own. What do you predict will happen if two or three of them fire at the same time?',
+    system: `You are an AI tutor for an introductory neuroscience course. Topic: spatial summation. Multiple synapses from different locations contribute EPSPs simultaneously. These converge at the axon hillock. If combined depolarization reaches threshold, AP fires. Key concept: neurons integrate inputs across space. Contrast with temporal summation (same synapse, repeated over time). Do not bring up mechanisms not shown in this simulation unless the student asks. Accept reasonable paraphrases and partial answers. Prioritize quality of reasoning. Affirm warmly without nitpicking wording.`,
+  },
+];
+
+const STEPS = [
+  { label: 'AP arrives at terminal',
+    desc: 'An action potential has traveled down the axon and arrived at the presynaptic terminal.',
+    prediction: 'An action potential has arrived at the presynaptic terminal. You can see vesicles full of neurotransmitter inside. What do you think needs to happen for those vesicles to release their contents into the cleft?' },
+  { label: 'Ca²⁺ channels open',
+    desc: 'Depolarization of the terminal membrane opens voltage-gated Ca²⁺ channels.',
+    prediction: 'Voltage-gated Ca²⁺ channels have just opened. Ca²⁺ is highly concentrated outside the cell and the inside is negative. What do you predict happens to Ca²⁺ now that these channels are open?' },
+  { label: 'Ca²⁺ flows in',
+    desc: 'Ca²⁺ rushes into the terminal down its concentration gradient.',
+    prediction: 'Ca²⁺ is now flooding into the terminal. The terminal contains vesicles filled with neurotransmitter. What do you think Ca²⁺ does when it enters?' },
+  { label: 'Vesicles fuse',
+    desc: 'Ca²⁺ triggers synaptic vesicles to fuse with the presynaptic membrane.',
+    prediction: 'Two vesicles have fused with the presynaptic membrane. What happens to the neurotransmitter that was inside them?' },
+  { label: 'Neurotransmitter released',
+    desc: 'Neurotransmitter is released by exocytosis into the synaptic cleft.',
+    prediction: 'Neurotransmitter molecules are now in the synaptic cleft. What do they need to do to affect the postsynaptic cell?' },
+  { label: 'Receptors bind',
+    desc: 'Neurotransmitter diffuses across the cleft and binds postsynaptic receptors.',
+    prediction: 'Neurotransmitter has bound AMPA receptors — ligand-gated Na⁺ channels — on the postsynaptic membrane. What do you predict happens to the postsynaptic membrane potential now?' },
+  { label: 'Channels open → EPSP',
+    desc: 'Ligand-gated ion channels open — Na⁺ flows in, depolarizing the postsynaptic membrane (EPSP).',
+    prediction: 'Na⁺ has flowed in and generated an EPSP. The electrical signal has been transmitted from one neuron to the next. Can you describe the full sequence of events in your own words — from the AP arriving to the EPSP?' },
+  { label: 'NT unbinds → reuptake',
+    desc: 'Neurotransmitter unbinds from receptors and is taken back up into the presynaptic terminal via the reuptake transporter, terminating the signal.',
+    prediction: null },
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentSection = 0;
+let currentStep = 0;
+let explorationMode = false;
+let freeExploration = false;
+let answeredCurrentSection = false;
+let answeredCurrentStep = false; // gates Next Step button in section 0
+let synapseType = 'excit'; // 'excit' or 'inhib'
+let chatHistory = [];
+let apiKey = sessionStorage.getItem('neuc64_api_key') || '';
+
+// Animation state
+let animFrame = null;
+let apArrowY = null;
+let caIons = []; // animated Ca2+ ions entering terminal
+let naIons = []; // animated Na+ ions entering postsynaptic cell
+let sec1Ions = []; // animated ions for section 1 EPSP/IPSP
+let sec1IonsType = null; // track which type is initialized
+let fusionProgress = 0; // 0=resting, 1=fully fused
+let ntReleaseProgress = 0; // 0=in vesicle, 1=dispersed in cleft
+let ntBindProgress = 0;    // 0=in cleft, 1=bound to receptors
+let ntReuptakeProgress = 0; // 0=bound, 1=taken back up
+// NT dot positions: start at vesicle, move to cleft, then to receptors
+let ntDots = []; // {x, y, targetX, targetY, bindX, bindY} // null = not animating, number = current y position of AP arrow
+let apArrowActive = false;
+let stepAnimProgress = 0; // 0→1 for current step animation
+let stepAnimating = false;
+
+// Voltage trace
+let voltagePoints = []; // {t, v}
+let voltageClock = 0;
+const REST_V = -70;
+const THRESHOLD_V = -55;
+const EPSP_AMP = 8;   // mV — subthreshold alone, suprathreshold with 3 (spatial) or temporal sum
+const IPSP_AMP = -10;
+const DECAY_TAU = 80; // frames for decay
+
+// Temporal summation
+let temporalEpsps = []; // {t0, amp}
+let temporalFired = false;
+let temporalAPs = [];   // animated AP arrows: {y, speed}
+let temporalNTs = [];   // NT dots in cleft: {x, y, alpha, vy}
+let apWaveforms = [];   // AP waveforms on trace: {t0} fired times
+
+// Spatial summation
+let spatialFired = { A: false, B: false, C: false };
+let spatialEpsps = [];
+let spatialNTs = []; // animated NT dots per synapse {x, y, alpha, vy}
+let spatialApFired = false;
+
+// AP fired flag (for threshold crossing)
+let apFired = false;
+let apT = -999;
+let clockAccum = 0; // fractional clock for slower trace
+
+// Canvas
+const sCanvas = document.getElementById('synapse-canvas');
+const sCtx = sCanvas.getContext('2d');
+const vCanvas = document.getElementById('voltage-canvas');
+const vCtx = vCanvas.getContext('2d');
+
+// ── RESIZE ────────────────────────────────────────────────────────────────────
+function resizeCanvases() {
+  const dpr = window.devicePixelRatio || 1;
+  const sw = sCanvas.parentElement.clientWidth - 28;
+  sCanvas.width = sw * dpr; sCanvas.height = 280 * dpr;
+  sCanvas.style.width = sw + 'px'; sCanvas.style.height = '280px';
+  sCtx.scale(dpr, dpr);
+
+  const vw = vCanvas.parentElement ? vCanvas.parentElement.clientWidth - 28 : 300;
+  vCanvas.width = vw * dpr; vCanvas.height = 90 * dpr;
+  vCanvas.style.width = vw + 'px'; vCanvas.style.height = '90px';
+  vCtx.scale(dpr, dpr);
+}
+
+// ── SECTION NAVIGATION ────────────────────────────────────────────────────────
+function goToSection(s) {
+  if (!explorationMode && !freeExploration && s > currentSection) return;
+  currentSection = s;
+  answeredCurrentSection = explorationMode || freeExploration;
+  currentStep = 0; stepAnimProgress = 0; stepAnimating = false;
+  resetAllVoltage();
+  updateUI(s);
+}
+
+function nextSection() {
+  if (currentSection < 3) { currentSection++; answeredCurrentSection = false; currentStep = 0; resetAllVoltage(); updateUI(currentSection); }
+}
+
+function prevSection() {
+  if (currentSection > 0) { currentSection--; answeredCurrentSection = explorationMode || freeExploration; updateUI(currentSection); }
+}
+
+function updateUI(s) {
+  const sec = SECTIONS[s];
+  document.getElementById('section-title').textContent = sec.title;
+  document.getElementById('section-description').textContent = sec.description;
+
+  // Section stepper
+  document.querySelectorAll('.section-btn').forEach((btn, i) => {
+    btn.classList.remove('active', 'visited');
+    if (i === s) btn.classList.add('active');
+    if (i < s) btn.classList.add('visited');
+    if (!explorationMode && !freeExploration && i > s) {
+      btn.disabled = true; btn.style.opacity = '0.35';
+    } else {
+      btn.disabled = false; btn.style.opacity = '';
+    }
+  });
+
+  // Section-specific controls
+  document.getElementById('sec0-controls').style.display = s === 0 ? 'block' : 'none';
+  document.getElementById('sec1-controls').style.display = s === 1 ? 'block' : 'none';
+  document.getElementById('sec2-controls').style.display = s === 2 ? 'block' : 'none';
+  document.getElementById('sec3-controls').style.display = s === 3 ? 'block' : 'none';
+  document.getElementById('voltage-card').style.display = s >= 1 ? 'block' : 'none';
+  document.getElementById('cl-legend-item').parentElement.style.display = s === 1 ? 'flex' : 'none';
+
+  // Nav buttons
+  document.getElementById('prev-btn').disabled = s === 0;
+  const nb = document.getElementById('next-btn');
+  const nudge = document.getElementById('soft-nudge');
+  if (s === 3 && freeExploration) {
+    nb.textContent = 'Start over'; nb.disabled = false; nudge.style.display = 'none';
+  } else if (explorationMode || freeExploration) {
+    nb.innerHTML = 'Next <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+    nb.disabled = s === 3; nudge.style.display = 'none';
+  } else {
+    nb.innerHTML = 'Next <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+    nb.disabled = !answeredCurrentSection;
+    nudge.style.display = answeredCurrentSection ? 'none' : 'block';
+  }
+
+  // Rebuild step dots for section 0
+  if (s === 0) {
+    answeredCurrentStep = false;
+    fusionProgress = 0; ntReleaseProgress = 0; ntBindProgress = 0; ntReuptakeProgress = 0; ntDots = []; naIons = [];
+    buildStepDots();
+    apArrowActive = true; apArrowY = null;
+    setTimeout(() => { apArrowActive = true; apArrowY = null; }, 800);
+  }
+
+  // Prediction prompt
+  if (!explorationMode && sec.prediction) addPredictionPrompt(sec.prediction);
+  else if (explorationMode) addTutorMessage('Explore freely — ask me anything about what you see here.');
+
+  if (s === 1) { resetVoltageTrace(); initVoltageTrace(); }
+  if (s === 2) { resetTemporal(); }
+  if (s === 3) { resetSpatial(); }
+
+  setTimeout(resizeCanvases, 50);
+}
+
+// ── MODE TOGGLE ───────────────────────────────────────────────────────────────
+function setMode(mode) {
+  explorationMode = mode === 'explore';
+  document.getElementById('btn-guided').classList.toggle('active', !explorationMode);
+  document.getElementById('btn-explore').classList.toggle('active', explorationMode);
+  if (explorationMode) {
+    freeExploration = true; answeredCurrentSection = true;
+    document.getElementById('soft-nudge').style.display = 'none';
+    document.getElementById('chat-messages').innerHTML = '';
+    addTutorMessage("You're in Explore mode — ask me anything and navigate freely.");
+  } else {
+    explorationMode = false; freeExploration = false; answeredCurrentSection = false;
+    document.getElementById('chat-messages').innerHTML = '';
+  }
+  updateUI(currentSection);
+}
+
+// ── STEP ANIMATION (Section 0) ────────────────────────────────────────────────
+function buildStepDots() {
+  const container = document.getElementById('step-dots');
+  container.innerHTML = '';
+  STEPS.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'step-dot' + (i < currentStep ? ' done' : i === currentStep ? ' active' : '');
+    container.appendChild(d);
+  });
+
+  const prevBtn = document.getElementById('prev-step-btn');
+  if (prevBtn) prevBtn.disabled = currentStep === 0;
+  // Fire prediction for this step (in guided mode)
+  const step = STEPS[currentStep];
+  if (!explorationMode && step.prediction) {
+    addPredictionPrompt(step.prediction);
+    answeredCurrentStep = false;
+    document.getElementById('next-step-btn').disabled = true;
+    const nudge = document.getElementById('step-nudge');
+    if (nudge) nudge.style.display = 'block';
+  } else {
+    // Explore mode or last step — unlock immediately
+    answeredCurrentStep = true;
+    document.getElementById('next-step-btn').disabled = (currentStep >= STEPS.length - 1);
+    const nudge = document.getElementById('step-nudge');
+    if (nudge) nudge.style.display = 'none';
+  }
+}
+
+function retreatStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    fusionProgress = 0; ntReleaseProgress = 0; ntBindProgress = 0; ntReuptakeProgress = 0; ntDots = []; caIons = []; naIons = [];
+    stepAnimating = false; stepAnimProgress = 0;
+    answeredCurrentStep = explorationMode || freeExploration;
+    buildStepDots();
+    document.getElementById('prev-step-btn').disabled = currentStep === 0;
+  }
+}
+
+function advanceStep() {
+  if (!answeredCurrentStep && !explorationMode && !freeExploration) return;
+  if (currentStep < STEPS.length - 1) {
+    currentStep++;
+    stepAnimating = true; stepAnimProgress = 0;
+    answeredCurrentStep = false; // reset BEFORE buildStepDots so gate applies
+    buildStepDots();
+    if (currentStep === STEPS.length - 1) {
+      // Last step — unlock Next section if student has answered all
+      answeredCurrentSection = true;
+      document.getElementById('next-btn').disabled = false;
+      document.getElementById('soft-nudge').style.display = 'none';
+      document.querySelectorAll('.section-btn').forEach((btn, i) => {
+        if (i <= 1) { btn.disabled = false; btn.style.opacity = ''; }
+      });
+    }
+  }
+}
+
+function unlockNext() {
+  freeExploration = true;
+  document.getElementById('next-btn').disabled = false;
+  document.getElementById('soft-nudge').style.display = 'none';
+  document.querySelectorAll('.section-btn').forEach((btn, i) => {
+    btn.disabled = false; btn.style.opacity = '';
+  });
+  if (currentSection === 3) addTutorMessage("You've explored all four sections — well done. You now have the full picture of how neurons communicate and integrate signals.");
+}
+
+// ── SYNAPSE TYPE (Section 1) ───────────────────────────────────────────────────
+function setSynapseType(type) {
+  synapseType = type;
+  sec1Ions = []; sec1IonsType = null;
+  document.getElementById('excit-btn').classList.toggle('active', type === 'excit');
+  document.getElementById('inhib-btn').classList.toggle('active', type === 'inhib');
+  resetVoltageTrace(); initVoltageTrace();
+  triggerEpsp(type === 'excit' ? EPSP_AMP : IPSP_AMP);
+}
+
+// ── VOLTAGE TRACE ─────────────────────────────────────────────────────────────
+function resetAllVoltage() {
+  voltagePoints = []; voltageClock = 0; apFired = false; apT = -999;
+  temporalEpsps = []; temporalFired = false;
+  spatialEpsps = []; spatialApFired = false;
+  spatialFired = { A: false, B: false, C: false };
+  document.querySelectorAll('.syn-btn').forEach(b => b.classList.remove('fired'));
+}
+
+function resetVoltageTrace() { voltagePoints = []; voltageClock = 0; apFired = false; apT = -999; }
+function initVoltageTrace() {
+  for (let i = 0; i < 60; i++) voltagePoints.push({ t: i, v: REST_V });
+  voltageClock = 60;
+}
+
+function triggerEpsp(amp) {
+  temporalEpsps.push({ t0: voltageClock, amp });
+}
+
+function getCurrentV() {
+  let v = REST_V;
+  const epsps = currentSection === 2 ? temporalEpsps : spatialEpsps;
+  epsps.forEach(ep => {
+    const dt = voltageClock - ep.t0;
+    if (dt >= 0 && dt < DECAY_TAU * 3) {
+      v += ep.amp * Math.exp(-dt / DECAY_TAU);
+    }
+  });
+  return Math.max(-90, Math.min(50, v));
+}
+
+function resetTemporal() { temporalEpsps = []; temporalFired = false; apFired = false; apT = -999; voltagePoints = []; voltageClock = 0; clockAccum = 0; temporalAPs = []; temporalNTs = []; apWaveforms = []; initVoltageTrace(); }
+function resetSpatial() {
+  spatialEpsps = []; spatialApFired = false; apFired = false; apT = -999; apWaveforms = [];
+  spatialFired = { A: false, B: false, C: false };
+  spatialNTs = [];
+  voltagePoints = []; voltageClock = 0; clockAccum = 0; initVoltageTrace();
+}
+
+function fireTemporal() {
+  triggerEpsp(EPSP_AMP);
+  // Spawn animated AP arrow
+  const dpr = window.devicePixelRatio || 1;
+  const h = sCanvas.height / dpr;
+  temporalAPs.push({ y: 0, speed: 2.2 }); // starts at top
+  // Spawn NT dots after a short delay
+  setTimeout(() => {
+    for (let i = 0; i < 5; i++) {
+      const dpr2 = window.devicePixelRatio || 1;
+      const w2 = sCanvas.width / dpr2, h2 = sCanvas.height / dpr2;
+      const cleftY2 = h2 * 0.52;
+      const cx2 = w2 / 2;
+      temporalNTs.push({
+        x: cx2 + (Math.random()-0.5)*50,
+        y: cleftY2,
+        alpha: 1,
+        vy: 0.6 + Math.random()*0.4,
+      });
+    }
+  }, 300);
+}
+
+function spawnSpatialNTs(sx) {
+  const dpr = window.devicePixelRatio || 1;
+  const h = sCanvas.height / dpr;
+  const postY = h - 58;
+  for (let j = 0; j < 5; j++) {
+    spatialNTs.push({
+      x: sx + (Math.random()-0.5)*20,
+      y: postY - 14,
+      alpha: 1,
+      vy: 0.5 + Math.random()*0.3,
+    });
+  }
+}
+
+function fireSpatialOne() {
+  resetSpatial();
+  spatialFired['A'] = true;
+  spatialEpsps.push({ t0: voltageClock, amp: EPSP_AMP });
+  const dpr = window.devicePixelRatio || 1;
+  const w = sCanvas.width / dpr;
+  spawnSpatialNTs(w/2 - w*0.30);
+}
+
+function fireSpatialAll() {
+  resetSpatial();
+  // All three fire at exactly the same time
+  const dpr = window.devicePixelRatio || 1;
+  const w = sCanvas.width / dpr;
+  const synXs = [w/2 - w*0.30, w/2, w/2 + w*0.30];
+  ['A','B','C'].forEach((s, i) => {
+    spatialFired[s] = true;
+    spatialEpsps.push({ t0: voltageClock, amp: EPSP_AMP });
+    spawnSpatialNTs(synXs[i]);
+  });
+}
+
+function drawVoltageTrace() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = vCanvas.width / dpr;
+  const h = vCanvas.height / dpr;
+  vCtx.clearRect(0, 0, w, h);
+  vCtx.fillStyle = '#f8f8f8'; vCtx.fillRect(0, 0, w, h);
+
+  // Tighter range for sec 1 to make EPSP/IPSP more visible
+  const minV = currentSection === 1 ? -85 : -90;
+  const maxV = currentSection === 1 ? -50 : 50;
+  const range = maxV - minV;
+  const maxT = currentSection === 1 ? Math.max(300, voltageClock) : 300;
+
+  // Grid lines — show threshold only for sections 2,3
+  const gridVs = currentSection === 1 ? [-70, -80, -60] : [-70, -55, -90, 0];
+  gridVs.forEach(v => {
+    const y = h - 14 - ((v - minV) / range) * (h - 20);
+    if (y < 2 || y > h - 2) return; // skip if outside canvas
+    vCtx.strokeStyle = v === -55 ? '#FDB515' : '#e5e5e5';
+    vCtx.lineWidth = v === -55 ? 1.5 : 1;
+    vCtx.setLineDash(v === -55 ? [4, 3] : []);
+    vCtx.beginPath(); vCtx.moveTo(36, y); vCtx.lineTo(w - 8, y); vCtx.stroke();
+    vCtx.setLineDash([]);
+    vCtx.fillStyle = v === -55 ? '#A07000' : '#bbb';
+    vCtx.font = '9px DM Sans'; vCtx.textAlign = 'right';
+    vCtx.fillText(v, 32, y + 3);
+  });
+  if (currentSection !== 1) {
+    const threshY = h - 14 - ((THRESHOLD_V - minV) / range) * (h - 20);
+    vCtx.fillStyle = '#A07000'; vCtx.font = '8px DM Sans'; vCtx.textAlign = 'left';
+    vCtx.fillText('threshold', 38, threshY - 3);
+  }
+
+  // Voltage trace
+  if (voltagePoints.length > 1) {
+    vCtx.strokeStyle = '#003262'; vCtx.lineWidth = 2; vCtx.lineJoin = 'round';
+    vCtx.beginPath();
+    voltagePoints.forEach((pt, i) => {
+      const x = 36 + ((pt.t / maxT)) * (w - 44);
+      const y = h - 14 - ((pt.v - minV) / range) * (h - 20);
+      i === 0 ? vCtx.moveTo(x, y) : vCtx.lineTo(x, y);
+    });
+    vCtx.stroke();
+  }
+
+  vCtx.textAlign = 'left';
+}
+
+// ── SYNAPSE DRAWING ───────────────────────────────────────────────────────────
+
+function drawChannelProtein(ctx, x, y, color, open, presynaptic) {
+  const h = 13, w2 = 6, gap = open ? 4 : 1;
+  const yOff = presynaptic ? -h : -h/2; // straddle membrane for postsynaptic
+  // Always show color; open = solid fill, closed = lighter fill
+  ctx.fillStyle = open ? color + 'cc' : color + '44';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(x - gap/2 - w2, y + yOff, w2, h, 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(x + gap/2, y + yOff, w2, h, 2); ctx.fill(); ctx.stroke();
+}
+
+function drawIonArrow(ctx, x, fromY, toY, color, label) {
+  const dir = toY > fromY ? 1 : -1;
+  ctx.strokeStyle = color; ctx.lineWidth = 1.8;
+  ctx.setLineDash([3, 2]);
+  ctx.beginPath(); ctx.moveTo(x, fromY); ctx.lineTo(x, toY - dir * 6); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(x - 4, toY - dir * 9); ctx.lineTo(x, toY); ctx.lineTo(x + 4, toY - dir * 9);
+  ctx.strokeStyle = color; ctx.lineWidth = 1.8; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, fromY, 4, 0, Math.PI * 2);
+  ctx.fillStyle = color; ctx.globalAlpha = 0.9; ctx.fill(); ctx.globalAlpha = 1;
+  ctx.fillStyle = color; ctx.font = 'bold 7px DM Sans'; ctx.textAlign = 'center';
+  ctx.fillText(label, x, fromY + (dir > 0 ? -8 : 12));
+  ctx.textAlign = 'left';
+}
+
+// ── NT DOT ANIMATION ─────────────────────────────────────────────────────────
+function initNtDots(cx, cleftY, halfTW) {
+  ntDots = [];
+  // Fusing vesicle is index 3: cx - halfTW*0.178
+  const vx = cx - halfTW * 0.178;
+  const vy = cleftY - 4; // at membrane after fusion
+  // 5 receptor positions (matching recXs in drawBioSynapse)
+  const recXs = [cx - halfTW*0.75, cx - halfTW*0.35, cx + halfTW*0.05, cx + halfTW*0.45, cx + halfTW*0.8];
+  const postY = cleftY + 24; // postsynaptic membrane y
+  recXs.forEach((rx, i) => {
+    // Intermediate cleft position — spread out
+    const cleftX = cx + (rx - cx) * 0.7;
+    const cleftY2 = cleftY + 10 + (i % 2) * 6;
+    ntDots.push({
+      startX: vx + (Math.random()-0.5)*8,
+      startY: vy,
+      cleftX, cleftY: cleftY2,
+      bindX: rx, bindY: postY - 2,
+      transX: cx - halfTW * 0.72, // reuptake transporter x
+      transY: cleftY - 8,          // just above membrane
+    });
+  });
+}
+
+function getNtDotPos(dot, releaseP, bindP, reuptakeP) {
+  if (reuptakeP > 0) {
+    // Phase 3a (0→0.6): NT moves from receptor to transporter on membrane
+    // Phase 3b (0.6→1): NT enters terminal through transporter, fades
+    if (reuptakeP <= 0.6) {
+      const t = reuptakeP / 0.6;
+      return {
+        x: dot.bindX + (dot.transX - dot.bindX) * t,
+        y: dot.bindY + (dot.transY - dot.bindY) * t,
+        alpha: 1,
+      };
+    } else {
+      const t = (reuptakeP - 0.6) / 0.4;
+      return {
+        x: dot.transX,
+        y: dot.transY - t * 30, // move upward into terminal
+        alpha: Math.max(0, 1 - t), // fade as it enters
+      };
+    }
+  }
+  if (bindP > 0) {
+    return {
+      x: dot.cleftX + (dot.bindX - dot.cleftX) * bindP,
+      y: dot.cleftY + (dot.bindY - dot.cleftY) * bindP,
+      alpha: 1,
+    };
+  }
+  return {
+    x: dot.startX + (dot.cleftX - dot.startX) * releaseP,
+    y: dot.startY + (dot.cleftY - dot.startY) * releaseP,
+    alpha: 1,
+  };
+}
+
+// ── SECTION 1 ION ANIMATION (EPSP/IPSP) ──────────────────────────────────────
+function initSec1Ions(cx, postY, halfTW, type) {
+  sec1Ions = [];
+  const recXs = [cx - halfTW*0.75, cx - halfTW*0.35, cx + halfTW*0.05, cx + halfTW*0.45, cx + halfTW*0.8];
+  const color = type === 'inhib' ? '#7C3AED' : '#2563EB';
+  const label = type === 'inhib' ? 'Cl⁻' : 'Na⁺';
+  const dir = 1; // both Na+ and Cl- flow INTO postsynaptic cell (Cl- from outside, Na+ from outside)
+  recXs.forEach(rx => {
+    for (let i = 0; i < 2; i++) {
+      sec1Ions.push({
+        x: rx + (Math.random()-0.5)*3, rx, color, label,
+        y: postY - 8 - Math.random()*10,
+        speed: 0.5 + Math.random()*0.25,
+        phase: Math.random()*40,
+        fadeDepth: postY + 28,
+      });
+    }
+  });
+}
+
+function updateSec1Ions(postY) {
+  sec1Ions.forEach(ion => {
+    if (ion.phase > 0) { ion.phase--; return; }
+    ion.y += ion.speed;
+    if (ion.y > ion.fadeDepth) {
+      ion.x = ion.rx + (Math.random()-0.5)*3;
+      ion.y = postY - 8 - Math.random()*8;
+      ion.phase = Math.random()*30;
+    }
+  });
+}
+
+function drawSec1Ions(ctx, postY) {
+  const fadeStart = postY + 14, fadeEnd = postY + 28;
+  sec1Ions.forEach(ion => {
+    if (ion.phase > 0) return;
+    const alpha = ion.y > fadeStart ? Math.max(0, 1 - (ion.y - fadeStart)/(fadeEnd - fadeStart)) : 0.9;
+    if (alpha <= 0) return;
+    ctx.beginPath(); ctx.arc(ion.x, ion.y, 3, 0, Math.PI*2);
+    ctx.fillStyle = ion.color; ctx.globalAlpha = alpha; ctx.fill();
+    ctx.font = 'bold 6px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText(ion.label, ion.x, ion.y + 8);
+    ctx.textAlign = 'left'; ctx.globalAlpha = 1;
+  });
+}
+
+// ── ANIMATED Na+ IONS (postsynaptic) ──────────────────────────────────────────
+function initNaIons(cx, postY, halfTW) {
+  naIons = [];
+  const recXs = [cx - halfTW*0.75, cx - halfTW*0.35, cx + halfTW*0.05, cx + halfTW*0.45, cx + halfTW*0.8];
+  recXs.forEach(rx => {
+    for (let i = 0; i < 2; i++) {
+      naIons.push({
+        x: rx + (Math.random()-0.5)*3,
+        rx,
+        y: postY - 8 - Math.random()*10, // start above postsynaptic membrane
+        speed: 0.5 + Math.random()*0.25,
+        phase: Math.random()*40,
+        fadeDepth: postY + 28, // fade out this far below membrane
+      });
+    }
+  });
+}
+
+function updateNaIons(postY) {
+  naIons.forEach(ion => {
+    if (ion.phase > 0) { ion.phase--; return; }
+    ion.y += ion.speed; // move downward into postsynaptic cell
+    if (ion.y > ion.fadeDepth) {
+      ion.x = ion.rx + (Math.random()-0.5)*3;
+      ion.y = postY - 8 - Math.random()*8;
+      ion.phase = Math.random()*30;
+    }
+  });
+}
+
+function drawNaIons(ctx, postY) {
+  const fadeStart = postY + 14;
+  const fadeEnd = postY + 28;
+  naIons.forEach(ion => {
+    if (ion.phase > 0) return;
+    const alpha = ion.y > fadeStart
+      ? Math.max(0, 1 - (ion.y - fadeStart) / (fadeEnd - fadeStart))
+      : 0.9;
+    if (alpha <= 0) return;
+    ctx.beginPath(); ctx.arc(ion.x, ion.y, 3, 0, Math.PI*2);
+    ctx.fillStyle = '#2563EB'; ctx.globalAlpha = alpha; ctx.fill();
+    ctx.font = 'bold 6px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('Na⁺', ion.x, ion.y + 8);
+    ctx.textAlign = 'left'; ctx.globalAlpha = 1;
+  });
+}
+
+// ── ANIMATED Ca2+ IONS ───────────────────────────────────────────────────────
+function initCaIons(cx, cleftY, caChanXs) {
+  caIons = [];
+  caChanXs.forEach(chx => {
+    for (let i = 0; i < 3; i++) {
+      caIons.push({
+        x: chx + (Math.random()-0.5)*3,
+        cx: chx,
+        y: cleftY + 8 + Math.random()*20, // start in cleft
+        speed: 0.6 + Math.random()*0.3,
+        phase: Math.random()*60 // stagger
+      });
+    }
+  });
+}
+
+function updateCaIons(cleftY, terminalTopY) {
+  caIons.forEach(ion => {
+    if (ion.phase > 0) { ion.phase--; return; }
+    ion.y -= ion.speed; // move upward into terminal
+    if (ion.y < terminalTopY) {
+      // reset to cleft
+      ion.x = ion.cx + (Math.random()-0.5)*3;
+      ion.y = cleftY + 6 + Math.random()*12;
+      ion.phase = Math.random()*40;
+    }
+  });
+}
+
+function drawCaIons(ctx) {
+  const dpr = window.devicePixelRatio || 1;
+  const h = sCanvas.height / dpr;
+  const cleftY0 = h * 0.55;
+  const fadeStart = cleftY0 - 38; // start fading
+  const fadeEnd   = cleftY0 - 72; // fully invisible
+  caIons.forEach(ion => {
+    if (ion.phase > 0) return;
+    if (ion.y < fadeEnd) return;
+    const alpha = ion.y < fadeStart
+      ? Math.max(0, (ion.y - fadeEnd) / (fadeStart - fadeEnd))
+      : 0.9;
+    ctx.beginPath(); ctx.arc(ion.x, ion.y, 3, 0, Math.PI*2);
+    ctx.fillStyle = '#D97706'; ctx.globalAlpha = alpha; ctx.fill();
+    if (alpha > 0.5) {
+      ctx.font = 'bold 6px DM Sans'; ctx.textAlign = 'center';
+      ctx.fillText('Ca²⁺', ion.x, ion.y - 5);
+      ctx.textAlign = 'left';
+    }
+    ctx.globalAlpha = 1;
+  });
+}
+
+function drawBioSynapse(ctx, cx, cleftY, w, opts) {
+  const o = opts || {};
+  const termW = Math.min(w * 0.66, 240);
+  const halfTW = termW / 2;
+  const termBodyH = 100;
+  const cleftH = 24;
+  const neckW = 26;
+  const neckH = 30;
+
+  // Axon neck
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(cx - neckW, cleftY - termBodyH - neckH);
+  ctx.lineTo(cx - neckW, cleftY - termBodyH + 2);
+  ctx.lineTo(cx + neckW, cleftY - termBodyH + 2);
+  ctx.lineTo(cx + neckW, cleftY - termBodyH - neckH);
+  ctx.fillStyle = '#f5d98a'; ctx.strokeStyle = '#c8962a'; ctx.lineWidth = 2;
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = '#7a5a10'; ctx.font = 'bold 13px DM Sans'; ctx.textAlign = 'center';
+  ctx.fillText('Pre-synaptic cell', cx, cleftY - termBodyH - neckH - 8);
+
+  // Terminal bulb (teardrop shape)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(cx - neckW, cleftY - termBodyH + 2);
+  ctx.bezierCurveTo(cx - neckW - 2, cleftY - termBodyH * 0.6, cx - halfTW, cleftY - termBodyH * 0.45, cx - halfTW, cleftY - 4);
+  ctx.lineTo(cx + halfTW, cleftY - 4);
+  ctx.bezierCurveTo(cx + halfTW, cleftY - termBodyH * 0.45, cx + neckW + 2, cleftY - termBodyH * 0.6, cx + neckW, cleftY - termBodyH + 2);
+  ctx.closePath();
+  ctx.fillStyle = '#fdeaa3'; ctx.strokeStyle = '#c8962a'; ctx.lineWidth = 2.5;
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+
+  // Axon terminal label
+  ctx.fillStyle = '#7a5a10'; ctx.font = '8px DM Sans'; ctx.textAlign = 'left';
+  ctx.fillText('Axon terminal', cx + neckW + 6, cleftY - termBodyH - neckH + 24);
+  ctx.strokeStyle = '#c8962a'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx + neckW, cleftY - termBodyH - neckH + 22); ctx.lineTo(cx + neckW + 5, cleftY - termBodyH - neckH + 22); ctx.stroke();
+
+  // Ca2+ channel positions — stored for drawing after vesicles
+  const caChanXs = [cx - halfTW*0.35, cx + halfTW*0.35];
+
+  // Vesicles — 2 rows evenly spaced + 3 docked
+  const vr = 10;
+  // Vesicle placement — mathematically verified safe positions
+  // Terminal half-width at each row (conservative linear approx from neckW=26 to halfTW):
+  //   top row (75% up): safe ±46px → use ±0.15*halfTW=18px ✓
+  //   mid row (50% up): safe ±66px → use ±0.25*halfTW=30px ✓
+  //   low row (25% up): safe ±86px → use ±0.30*halfTW=36px ✓
+  //   docked: Ca2+ at ±42px, reuptake at -86px → use ±65px (13px clear of each) ✓
+  const vesicles = [
+    {x: cx - halfTW*0.395, y: cleftY - termBodyH*0.447},
+    {x: cx - halfTW*0.149, y: cleftY - termBodyH*0.677},
+    {x: cx + halfTW*0.161, y: cleftY - termBodyH*0.386},
+    {x: cx - halfTW*0.178, y: cleftY - termBodyH*0.247},
+    {x: cx + halfTW*0.354, y: cleftY - termBodyH*0.512},
+    {x: cx - halfTW*0.58,  y: cleftY - termBodyH*0.32, docked: true},
+    {x: cx + halfTW*0.58,  y: cleftY - termBodyH*0.32, docked: true},
+  ];
+
+  vesicles.forEach((v, vi) => {
+    // One fusing vesicle: the second docked one (index 7, cx - 0.02)
+    // We use the non-docked vesicle closest to center as the fusing one
+    const isFusingVesicle = vi === 3; // cx - halfTW*0.178 — lowest non-docked vesicle
+    
+    if (isFusingVesicle && o.vesiclesFused) {
+      // Animate: move from resting y toward membrane, then morph to omega
+      const restY = v.y;
+      const targetY = cleftY - vr * 0.6; // just touching membrane
+      const currentY = restY + (targetY - restY) * Math.min(fusionProgress * 1.5, 1);
+      const morphFrac = Math.max(0, (fusionProgress - 0.6) / 0.4); // morph in last 40%
+
+      // Move vesicle toward membrane — keep as circle throughout
+      // Fade out vesicle membrane as NT releases (merging into presynaptic membrane)
+      const vesicleAlpha = Math.max(0, 1 - ntReleaseProgress * 1.2);
+      if (vesicleAlpha > 0) {
+        ctx.beginPath(); ctx.arc(v.x, currentY, vr, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(190,235,210,${0.9 * vesicleAlpha})`;
+        ctx.strokeStyle = '#3a9e6a'; ctx.lineWidth = 1.8;
+        ctx.globalAlpha = vesicleAlpha; ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      // NT dots inside — fade out as ntReleaseProgress increases in step 4
+      const dotAlpha = ntReleaseProgress > 0 ? Math.max(0, 1 - ntReleaseProgress * 2) : 0.8;
+      if (dotAlpha > 0) {
+        [{dx:-4,dy:-3},{dx:2,dy:-5},{dx:5,dy:0},{dx:-2,dy:3},{dx:2,dy:5}].forEach(d => {
+          ctx.beginPath(); ctx.arc(v.x+d.dx, currentY+d.dy, 2.2, 0, Math.PI*2);
+          ctx.fillStyle = '#2a8a50'; ctx.globalAlpha = dotAlpha; ctx.fill(); ctx.globalAlpha = 1;
+        });
+      }
+    } else if (!v.docked || !o.vesiclesFused) {
+      // Regular non-fusing vesicle — always draw normally
+      ctx.beginPath(); ctx.arc(v.x, v.y, vr, 0, Math.PI * 2);
+      ctx.fillStyle = v.docked ? 'rgba(190,235,210,0.9)' : 'rgba(200,238,218,0.8)';
+      ctx.strokeStyle = '#3a9e6a'; ctx.lineWidth = 1.8;
+      ctx.fill(); ctx.stroke();
+      // NT dots inside
+      [{dx:-4,dy:-3},{dx:2,dy:-5},{dx:5,dy:0},{dx:-2,dy:3},{dx:2,dy:5}].forEach(d => {
+        ctx.beginPath(); ctx.arc(v.x+d.dx, v.y+d.dy, 2.2, 0, Math.PI*2);
+        ctx.fillStyle = '#2a8a50'; ctx.globalAlpha = 0.75; ctx.fill(); ctx.globalAlpha = 1;
+      });
+    }
+    // docked vesicles that aren't fusing: draw normally
+    else if (v.docked && !isFusingVesicle) {
+      ctx.beginPath(); ctx.arc(v.x, v.y, vr, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(190,235,210,0.9)';
+      ctx.strokeStyle = '#3a9e6a'; ctx.lineWidth = 1.8;
+      ctx.fill(); ctx.stroke();
+      [{dx:-4,dy:-3},{dx:2,dy:-5},{dx:5,dy:0},{dx:-2,dy:3},{dx:2,dy:5}].forEach(d => {
+        ctx.beginPath(); ctx.arc(v.x+d.dx, v.y+d.dy, 2.2, 0, Math.PI*2);
+        ctx.fillStyle = '#2a8a50'; ctx.globalAlpha = 0.75; ctx.fill(); ctx.globalAlpha = 1;
+      });
+    }
+  });
+
+  // Vesicle label
+  ctx.fillStyle = '#0F6E56'; ctx.font = '8px DM Sans'; ctx.textAlign = 'right';
+  ctx.fillText('Synaptic vesicles', cx - halfTW - 6, cleftY - termBodyH*0.677 - 2);
+  ctx.strokeStyle = '#3a9e6a'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx - halfTW - 5, cleftY - termBodyH*0.677); ctx.lineTo(cx - halfTW*0.149 - vr - 2, cleftY - termBodyH*0.677); ctx.stroke();
+
+  // Synaptic cleft bracket (no fill — channels must show through)
+  ctx.strokeStyle = '#bbb'; ctx.lineWidth = 1;
+  const bx = cx - halfTW - 20;
+  ctx.beginPath();
+  ctx.moveTo(bx - 4, cleftY - 2); ctx.lineTo(bx + 4, cleftY - 2);
+  ctx.moveTo(bx, cleftY - 2); ctx.lineTo(bx, cleftY + cleftH - 2);
+  ctx.moveTo(bx - 4, cleftY + cleftH - 2); ctx.lineTo(bx + 4, cleftY + cleftH - 2);
+  ctx.stroke();
+  ctx.fillStyle = '#999'; ctx.font = '8px DM Sans'; ctx.textAlign = 'right';
+  ctx.fillText('Synaptic cleft', bx - 6, cleftY + cleftH/2 + 3);
+
+  // Ca2+ channels drawn AFTER vesicles so they're always visible, orange, straddling membrane
+  caChanXs.forEach(chx => drawChannelProtein(ctx, chx, cleftY, '#D97706', o.caOpen, true));
+  ctx.fillStyle = '#D97706'; ctx.font = '7px DM Sans'; ctx.textAlign = 'left';
+  ctx.fillText('Voltage-gated Ca²⁺ channels', cx + halfTW + 6, cleftY - 6);
+  ctx.strokeStyle = '#D97706'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx + halfTW*0.35 + 6, cleftY); ctx.lineTo(cx + halfTW + 5, cleftY - 3); ctx.stroke();
+
+  // NT dots — animated from vesicle to cleft to receptors
+  if (o.ntInCleft && ntDots.length > 0) {
+    ntDots.forEach(dot => {
+      const pos = getNtDotPos(dot, ntReleaseProgress, ntBindProgress, ntReuptakeProgress);
+      if (pos.alpha <= 0) return;
+      ctx.beginPath(); ctx.arc(pos.x, pos.y, 3.5, 0, Math.PI*2);
+      ctx.fillStyle = '#2a8a50'; ctx.globalAlpha = (pos.alpha || 1) * 0.85; ctx.fill(); ctx.globalAlpha = 1;
+    });
+  }
+
+  // Postsynaptic membrane (wavy)
+  const postY = cleftY + cleftH;
+  ctx.beginPath();
+  ctx.moveTo(cx - halfTW - 8, postY);
+  for (let i = 0; i <= 14; i++) {
+    const px = cx - halfTW - 8 + (termW + 16) * (i / 14);
+    ctx.lineTo(px, postY + Math.sin(i * 1.0) * 2.5);
+  }
+  ctx.strokeStyle = '#c05080'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Postsynaptic body
+  ctx.fillStyle = 'rgba(240,200,215,0.3)';
+  ctx.beginPath(); ctx.roundRect(cx - halfTW - 8, postY, termW + 16, 50, [0,0,10,10]); ctx.fill();
+
+  // Postsynaptic receptors
+  const recXs = [cx - halfTW*0.75, cx - halfTW*0.35, cx + halfTW*0.05, cx + halfTW*0.45, cx + halfTW*0.8];
+  const recColor = o.synapseType === 'inhib' ? '#7C3AED' : '#2563EB';
+  recXs.forEach(rx => drawChannelProtein(ctx, rx, postY, recColor, o.channelsOpen, false));
+
+  // Receptor label — outside cell with pointer
+  const chanLabel = 'Ligand-gated ion channel';
+  ctx.fillStyle = recColor; ctx.font = 'bold 8px DM Sans'; ctx.textAlign = 'right';
+  ctx.fillText(chanLabel, cx - halfTW - 6, postY + 14);
+  ctx.strokeStyle = recColor; ctx.lineWidth = 1;
+  // Point to one of the receptor channels
+  const pointRec = recXs[1]; // second receptor from left
+  ctx.beginPath(); ctx.moveTo(pointRec, postY + 5); ctx.lineTo(cx - halfTW - 5, postY + 12); ctx.stroke();
+
+  // Ion flow
+  if (o.channelsOpen && o.ionFlowing) {
+    const ionColor = o.synapseType === 'inhib' ? '#7C3AED' : '#2563EB';
+    const ionLabel = o.synapseType === 'inhib' ? 'Cl⁻' : 'Na⁺';
+    [cx - halfTW*0.35, cx + halfTW*0.05, cx + halfTW*0.45].forEach(ix => {
+      drawIonArrow(ctx, ix, postY - 10, postY + 22, ionColor, ionLabel);
+    });
+  }
+
+  // Ca2+ flowing in
+  // Ca2+ flowing handled by animated ions in animate loop
+
+  // Postsynaptic cell label
+  ctx.fillStyle = '#8a3055'; ctx.font = 'bold 13px DM Sans'; ctx.textAlign = 'center';
+  ctx.fillText('Post-synaptic cell', cx, postY + 66);
+  ctx.textAlign = 'left';
+}
+
+function drawSynapse() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = sCanvas.width / dpr;
+  const h = sCanvas.height / dpr;
+  sCtx.clearRect(0, 0, w, h);
+  sCtx.fillStyle = '#f9f9f9'; sCtx.fillRect(0, 0, w, h);
+
+  const cx = w / 2;
+
+  if (currentSection === 0) drawSection0(w, h, cx);
+  else if (currentSection === 1) drawSection1(w, h, cx);
+  else if (currentSection === 2) drawSection2(w, h, cx);
+  else if (currentSection === 3) drawSection3(w, h, cx);
+}
+
+function drawSection0(w, h, cx) {
+  const cleftY = h * 0.55;
+  const s = currentStep;
+  drawBioSynapse(sCtx, cx, cleftY, w, {
+    caOpen: s >= 1, caFlowing: s >= 2, vesiclesFused: s >= 3,
+    ntInCleft: s >= 4, channelsOpen: s >= 6 && s < 7, ionFlowing: false, // Na+ handled by naIons animation
+    synapseType: 'excit',
+  });
+  // AP arrival arrow
+  if (apArrowY !== null) {
+    sCtx.save();
+    sCtx.strokeStyle = '#DC2626'; sCtx.lineWidth = 2.5;
+    sCtx.shadowColor = '#DC2626'; sCtx.shadowBlur = 6;
+    sCtx.beginPath(); sCtx.moveTo(cx, apArrowY - 14); sCtx.lineTo(cx, apArrowY); sCtx.stroke();
+    sCtx.beginPath();
+    sCtx.moveTo(cx - 6, apArrowY - 8); sCtx.lineTo(cx, apArrowY + 2); sCtx.lineTo(cx + 6, apArrowY - 8);
+    sCtx.stroke();
+    sCtx.fillStyle = '#DC2626'; sCtx.font = 'bold 8px DM Sans'; sCtx.textAlign = 'center';
+    sCtx.fillText('AP', cx + 14, apArrowY - 4);
+    sCtx.restore();
+  }
+  sCtx.fillStyle = '#003262'; sCtx.font = 'bold 10px DM Sans'; sCtx.textAlign = 'center';
+  sCtx.fillText('Step ' + (currentStep+1) + ' of ' + STEPS.length + ': ' + STEPS[currentStep].label, cx, h - 6);
+  sCtx.textAlign = 'left';
+}
+
+function drawSection1(w, h, cx) {
+  const cleftY = h * 0.55;
+  drawBioSynapse(sCtx, cx, cleftY, w, {
+    caOpen: false, caFlowing: false, vesiclesFused: true,
+    ntInCleft: true, channelsOpen: true, ionFlowing: false,
+    synapseType: synapseType,
+  });
+}
+
+function drawSection2(w, h, cx) {
+  const cleftY = h * 0.56;
+  const cleftH = 20;
+  const termBodyH = 80;
+  const neckW = 20;
+  const neckH = 22;
+  const halfTW = Math.min(w * 0.30, 100);
+
+  // Axon neck
+  sCtx.fillStyle = '#f5d98a'; sCtx.strokeStyle = '#c8962a'; sCtx.lineWidth = 1.5;
+  sCtx.beginPath(); sCtx.roundRect(cx - neckW, 2, neckW*2, cleftY - termBodyH - 2, [4,4,0,0]); sCtx.fill(); sCtx.stroke();
+  sCtx.fillStyle = '#7a5a10'; sCtx.font = 'bold 11px DM Sans'; sCtx.textAlign = 'center';
+  sCtx.fillText('Pre-synaptic cell', cx, 18);
+
+  // Terminal bulb (teardrop)
+  sCtx.beginPath();
+  sCtx.moveTo(cx - neckW, cleftY - termBodyH);
+  sCtx.bezierCurveTo(cx - neckW - 2, cleftY - termBodyH * 0.6, cx - halfTW, cleftY - termBodyH * 0.45, cx - halfTW, cleftY - 3);
+  sCtx.lineTo(cx + halfTW, cleftY - 3);
+  sCtx.bezierCurveTo(cx + halfTW, cleftY - termBodyH * 0.45, cx + neckW + 2, cleftY - termBodyH * 0.6, cx + neckW, cleftY - termBodyH);
+  sCtx.closePath();
+  sCtx.fillStyle = '#fdeaa3'; sCtx.strokeStyle = '#c8962a'; sCtx.lineWidth = 2;
+  sCtx.fill(); sCtx.stroke();
+
+  // Synaptic cleft
+  sCtx.fillStyle = 'rgba(255,252,240,0.85)';
+  sCtx.beginPath(); sCtx.roundRect(cx - halfTW - 4, cleftY - 2, halfTW*2 + 8, cleftH, 2); sCtx.fill();
+  sCtx.fillStyle = '#aaa'; sCtx.font = '8px DM Sans'; sCtx.textAlign = 'center';
+  sCtx.fillText('synaptic cleft', cx, cleftY + 13);
+
+  // Post-syn cell
+  const postY = cleftY + cleftH;
+  sCtx.fillStyle = 'rgba(240,200,215,0.35)'; sCtx.strokeStyle = '#c05080'; sCtx.lineWidth = 2;
+  sCtx.beginPath(); sCtx.roundRect(cx - halfTW - 4, postY, halfTW*2 + 8, 50, [0,0,10,10]); sCtx.fill(); sCtx.stroke();
+  sCtx.fillStyle = '#8a3055'; sCtx.font = 'bold 11px DM Sans'; sCtx.textAlign = 'center';
+  sCtx.fillText('Post-synaptic cell', cx, postY + 34);
+
+  // NT dots in cleft
+  temporalNTs.forEach(dot => {
+    if (dot.alpha <= 0) return;
+    sCtx.beginPath(); sCtx.arc(dot.x, dot.y, 3.5, 0, Math.PI*2);
+    sCtx.fillStyle = '#2a8a50'; sCtx.globalAlpha = dot.alpha; sCtx.fill(); sCtx.globalAlpha = 1;
+  });
+
+  // AP arrows traveling down axon
+  temporalAPs.forEach(ap => {
+    if (ap.y > cleftY - termBodyH - 2) return;
+    sCtx.save();
+    sCtx.strokeStyle = '#DC2626'; sCtx.lineWidth = 2.5;
+    sCtx.shadowColor = '#DC2626'; sCtx.shadowBlur = 5;
+    sCtx.beginPath(); sCtx.moveTo(cx, ap.y - 12); sCtx.lineTo(cx, ap.y); sCtx.stroke();
+    sCtx.beginPath();
+    sCtx.moveTo(cx - 5, ap.y - 7); sCtx.lineTo(cx, ap.y + 2); sCtx.lineTo(cx + 5, ap.y - 7);
+    sCtx.stroke();
+    sCtx.restore();
+  });
+  sCtx.textAlign = 'left';
+}
+
+function drawSection3(w, h, cx) {
+  const synXs = [cx - w*0.30, cx, cx + w*0.30];
+  const synLabels = ['A', 'B', 'C'];
+  const neckW = 14;
+  const termBodyH = 52;
+  const halfTW = Math.min(w * 0.11, 46);
+  const postY = h - 58;
+  const cleftH = 14;
+
+  // Post-synaptic cell
+  sCtx.fillStyle = 'rgba(240,200,215,0.35)'; sCtx.strokeStyle = '#c05080'; sCtx.lineWidth = 2;
+  sCtx.beginPath(); sCtx.roundRect(cx - w*0.46, postY, w*0.92, 48, [0,0,10,10]); sCtx.fill(); sCtx.stroke();
+  sCtx.fillStyle = '#8a3055'; sCtx.font = 'bold 11px DM Sans'; sCtx.textAlign = 'center';
+  sCtx.fillText('Post-synaptic cell', cx, postY + 32);
+
+  synXs.forEach((sx, i) => {
+    const label = synLabels[i];
+    const fired = spatialFired[label];
+    const cleftY = postY - cleftH;
+
+    // Axon neck
+    sCtx.fillStyle = fired ? '#f5d98a' : '#f0ecd5';
+    sCtx.strokeStyle = fired ? '#c8962a' : '#c8b87a'; sCtx.lineWidth = 1.5;
+    sCtx.beginPath(); sCtx.roundRect(sx - neckW, 2, neckW*2, cleftY - termBodyH - 2, [4,4,0,0]); sCtx.fill(); sCtx.stroke();
+    sCtx.fillStyle = fired ? '#7a5a10' : '#888'; sCtx.font = 'bold 9px DM Sans'; sCtx.textAlign = 'center';
+    sCtx.fillText('Syn ' + label, sx, 16);
+
+    // Terminal bulb (teardrop)
+    sCtx.beginPath();
+    sCtx.moveTo(sx - neckW, cleftY - termBodyH);
+    sCtx.bezierCurveTo(sx - neckW - 2, cleftY - termBodyH*0.6, sx - halfTW, cleftY - termBodyH*0.45, sx - halfTW, cleftY - 3);
+    sCtx.lineTo(sx + halfTW, cleftY - 3);
+    sCtx.bezierCurveTo(sx + halfTW, cleftY - termBodyH*0.45, sx + neckW + 2, cleftY - termBodyH*0.6, sx + neckW, cleftY - termBodyH);
+    sCtx.closePath();
+    sCtx.fillStyle = fired ? '#fdeaa3' : '#f5f0de';
+    sCtx.strokeStyle = fired ? '#c8962a' : '#c8b87a'; sCtx.lineWidth = 2;
+    sCtx.fill(); sCtx.stroke();
+
+    // Cleft
+    sCtx.fillStyle = 'rgba(255,252,240,0.85)';
+    sCtx.beginPath(); sCtx.roundRect(sx - halfTW - 2, cleftY - 1, halfTW*2 + 4, cleftH + 2, 2); sCtx.fill();
+
+    // NT dots animated
+    spatialNTs.filter(d => Math.abs(d.x - sx) < 40).forEach(d => {
+      if (d.alpha <= 0) return;
+      sCtx.beginPath(); sCtx.arc(d.x, d.y, 2.8, 0, Math.PI*2);
+      sCtx.fillStyle = '#2a8a50'; sCtx.globalAlpha = d.alpha * 0.85; sCtx.fill(); sCtx.globalAlpha = 1;
+    });
+  });
+  sCtx.textAlign = 'left';
+}
+
+// ── ANIMATION LOOP ────────────────────────────────────────────────────────────
+function animate() {
+  // Advance step animation
+  if (stepAnimating) {
+    stepAnimProgress = Math.min(stepAnimProgress + 0.03, 1);
+    if (stepAnimProgress >= 1) stepAnimating = false;
+  }
+
+  // Voltage trace update (sections 1-3)
+  if (currentSection >= 1) {
+    // Slow clock for sections 2-3 so trace scrolls more slowly
+    const clockRate = (currentSection === 2 || currentSection === 3) ? 0.5 : 1;
+    clockAccum += clockRate;
+    if (clockAccum >= 1) { voltageClock += Math.floor(clockAccum); clockAccum -= Math.floor(clockAccum); }
+    let v;
+    if (currentSection === 1) {
+      // Auto-trigger on section entry — EPSP stays subthreshold, trace freezes after settling
+      const sec1Amp = synapseType === 'excit' ? 10 : -9; // 10mV EPSP peaks at -60 (subthreshold)
+      const elapsed = voltageClock - 65;
+      if (elapsed < DECAY_TAU * 4) {
+        v = REST_V + sec1Amp * Math.exp(-Math.max(0, elapsed) / DECAY_TAU);
+        v = Math.max(-90, Math.min(-57, v)); // hard cap below threshold
+      } else {
+        v = REST_V; // settled back to rest — freeze
+        voltageClock = 65 + DECAY_TAU * 4; // stop clock advancing
+      }
+    } else if (currentSection === 2) {
+      const baseV = getCurrentV();
+      // Check if in AP refractory (within 60 frames of last AP)
+      const lastAp = apWaveforms[apWaveforms.length - 1];
+      const inRefractory = lastAp && (voltageClock - lastAp.t0) < 60;
+      v = baseV;
+      // Check threshold — only fire if not in refractory
+      if (!inRefractory && baseV >= THRESHOLD_V) {
+        apWaveforms.push({ t0: voltageClock });
+        if (!apFired) {
+          apFired = true; apT = voltageClock;
+          if (!explorationMode) addTutorMessage('Threshold reached — an action potential fires! This is temporal summation in action. Keep firing to see what happens.');
+        }
+      }
+      // Compute AP waveform (overrides EPSP voltage during AP)
+      apWaveforms.forEach(ap => {
+        const dt = voltageClock - ap.t0;
+        if (dt < 0 || dt > 80) return;
+        // Smooth AP waveform using eased curves
+        // Phases (dt in frames at 0.5x clock = real ~33ms each):
+        //  0-6: depolarization  -70 → +40
+        //  6-18: repolarization +40 → -80
+        //  18-55: undershoot    -80 → -73 (slow, curved)
+        //  55-80: return        -73 → -70
+        let apV;
+        const ease = t => t < 0.5 ? 2*t*t : -1+(4-2*t)*t; // smooth in/out
+        if (dt < 6) {
+          apV = -70 + ease(dt/6) * 110;
+        } else if (dt < 18) {
+          const t = (dt-6)/12;
+          apV = 40 - (3*t*t - 2*t*t*t) * 120; // cubic ease
+        } else if (dt < 55) {
+          const t = (dt-18)/37;
+          apV = -80 + (1 - Math.cos(t * Math.PI)) / 2 * 7; // cosine ease for smooth undershoot
+        } else {
+          const t = (dt-55)/25;
+          apV = -73 + ease(t) * 3;
+        }
+        v = apV;
+      });
+    } else if (currentSection === 3) {
+      const baseV3 = getCurrentV();
+      const lastAp3 = apWaveforms[apWaveforms.length - 1];
+      const inRef3 = lastAp3 && (voltageClock - lastAp3.t0) < 60;
+      v = baseV3;
+      if (!inRef3 && baseV3 >= THRESHOLD_V) {
+        apWaveforms.push({ t0: voltageClock });
+        if (!apFired) {
+          apFired = true; apT = voltageClock;
+          if (!explorationMode) addTutorMessage('Threshold reached — an action potential fires! Multiple synapses firing together pushed the membrane over. This is the neuron integrating spatial inputs from across its surface.');
+        }
+      }
+      // Apply AP waveform
+      apWaveforms.forEach(ap => {
+        const dt = voltageClock - ap.t0;
+        if (dt < 0 || dt > 80) return;
+        const ease = t => t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+        let apV;
+        if      (dt < 6)  apV = -70 + ease(dt/6) * 110;
+        else if (dt < 18) apV = 40 - (3*(dt-6)/12*(dt-6)/12 - 2*(dt-6)/12*(dt-6)/12*(dt-6)/12) * 120;
+        else if (dt < 55) apV = -80 + (1 - Math.cos((dt-18)/37 * Math.PI)) / 2 * 7;
+        else              apV = -73 + ease((dt-55)/25) * 3;
+        v = apV;
+      });
+    } else {
+      v = REST_V;
+    }
+    // Section 1: never shift — show full trace from start
+    if (currentSection !== 1 && voltagePoints.length > 300) voltagePoints.shift();
+    if (currentSection >= 1) voltagePoints.push({ t: voltageClock, v });
+  }
+
+  // Animate Ca2+ ions in section 0 step 2+
+  if (currentSection === 0) {
+    const dpr0 = window.devicePixelRatio || 1;
+    const w0 = sCanvas.width / dpr0;
+    const h0 = sCanvas.height / dpr0;
+    const cleftY0 = h0 * 0.55;
+    const caChanXs0 = [w0/2 - 120*0.35, w0/2 + 120*0.35];
+    if (currentStep === 2) {
+      if (caIons.length === 0) initCaIons(w0/2, cleftY0, caChanXs0);
+      updateCaIons(cleftY0, cleftY0 - 80);
+    } else {
+      caIons = [];
+    }
+    // Na+ ions enter postsynaptic cell at step 6
+    if (currentSection === 0) {
+      const dpr0b = window.devicePixelRatio || 1;
+      const w0b = sCanvas.width / dpr0b, h0b = sCanvas.height / dpr0b;
+      const cleftY0b = h0b * 0.55, postY0b = cleftY0b + 24;
+      if (currentStep === 6) {
+        if (naIons.length === 0) initNaIons(w0b/2, postY0b, Math.min(w0b*0.33, 120));
+        updateNaIons(postY0b);
+      } else { naIons = []; }
+    }
+    if (currentStep >= 3) {
+      fusionProgress = Math.min(fusionProgress + 0.008, 1);
+    } else {
+      fusionProgress = 0; ntReleaseProgress = 0; ntBindProgress = 0; ntReuptakeProgress = 0; ntDots = []; naIons = [];
+    }
+    if (currentStep >= 4) {
+      if (ntDots.length === 0) initNtDots(w0/2, cleftY0, 120);
+      ntReleaseProgress = Math.min(ntReleaseProgress + 0.012, 1);
+    } else {
+      ntReleaseProgress = 0;
+    }
+    if (currentStep >= 5 && currentStep < 7) {
+      ntBindProgress = Math.min(ntBindProgress + 0.015, 1);
+    } else if (currentStep < 5) {
+      ntBindProgress = 0;
+    }
+    if (currentStep >= 7) {
+      ntReuptakeProgress = Math.min(ntReuptakeProgress + 0.012, 1);
+    } else {
+      ntReuptakeProgress = 0;
+    }
+  }
+
+  // Section 1: EPSP/IPSP ion animation (top-level, not inside section 0 block)
+  if (currentSection === 1) {
+    const dpr1 = window.devicePixelRatio || 1;
+    const w1 = sCanvas.width / dpr1, h1 = sCanvas.height / dpr1;
+    const cleftY1 = h1 * 0.55, postY1 = cleftY1 + 24;
+    if (sec1Ions.length === 0 || sec1IonsType !== synapseType) {
+      initSec1Ions(w1/2, postY1, Math.min(w1*0.33, 120), synapseType);
+      sec1IonsType = synapseType;
+    }
+    updateSec1Ions(postY1);
+  } else if (currentSection !== 1) {
+    sec1Ions = []; sec1IonsType = null;
+  }
+
+  // Animate AP arrow in section 0
+  if (currentSection === 0) {
+    const dpr2 = window.devicePixelRatio || 1;
+    const w2 = sCanvas.width / dpr2;
+    const h2 = sCanvas.height / dpr2;
+    const cleftY2 = h2 * 0.55;
+    const termBodyH2 = 100; const neckH2 = 30;
+    const topY = cleftY2 - termBodyH2 - neckH2 - 10;
+    const botY = cleftY2 - termBodyH2 - 4;
+    if (apArrowActive && currentStep === 0) {
+      if (apArrowY === null) apArrowY = topY;
+      apArrowY += 0.7;
+      if (apArrowY > botY) { apArrowY = topY; } // loop continuously
+    } else if (currentStep > 0) {
+      apArrowActive = false; apArrowY = null;
+    }
+  }
+  drawSynapse();
+  if (currentSection === 0 && currentStep >= 2 && caIons.length > 0) drawCaIons(sCtx);
+  if (currentSection === 1 && sec1Ions.length > 0) {
+    const dpr1b = window.devicePixelRatio || 1;
+    const h1b = sCanvas.height / dpr1b;
+    drawSec1Ions(sCtx, h1b * 0.55 + 24);
+  }
+  if (currentSection === 0 && currentStep === 6 && naIons.length > 0) {
+    const dpr0c = window.devicePixelRatio || 1;
+    const h0c = sCanvas.height / dpr0c;
+    drawNaIons(sCtx, h0c * 0.55 + 24);
+  }
+  // Update spatial NT dots
+  if (currentSection === 3) {
+    const dpr3 = window.devicePixelRatio || 1;
+    const h3 = sCanvas.height / dpr3;
+    const postY3 = h3 - 58;
+    spatialNTs.forEach(dot => {
+      dot.y += dot.vy;
+      if (dot.y > postY3 + 10) dot.alpha -= 0.05;
+    });
+    spatialNTs = spatialNTs.filter(d => d.alpha > 0);
+  }
+
+  // Update temporal AP arrows and NT dots
+  if (currentSection === 2) {
+    temporalAPs.forEach(ap => { ap.y += ap.speed; });
+    temporalAPs = temporalAPs.filter(ap => ap.y <= 999);
+    temporalNTs.forEach(dot => {
+      dot.y += dot.vy;
+      if (dot.y > (sCanvas.height / (window.devicePixelRatio||1)) * 0.72) dot.alpha -= 0.04;
+    });
+    temporalNTs = temporalNTs.filter(dot => dot.alpha > 0);
+  }
+  if (currentSection >= 1) drawVoltageTrace();
+
+  animFrame = requestAnimationFrame(animate);
+}
+
+function startAnimation() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  animFrame = requestAnimationFrame(animate);
+}
+
+// ── CHAT ──────────────────────────────────────────────────────────────────────
+function addPredictionPrompt(text) {
+  const c = document.getElementById('chat-messages');
+  c.innerHTML = '';
+  const el = document.createElement('div');
+  el.className = 'prediction-prompt';
+  el.innerHTML = `<strong>Predict</strong>${text}`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+}
+
+function addTutorMessage(text, thinking = false) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = `message tutor${thinking ? ' thinking' : ''}`;
+  el.innerHTML = `<span class="message-sender">Tutor</span><div class="message-bubble">${text}</div>`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+  return el;
+}
+
+function addStudentMessage(text) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'message student';
+  el.innerHTML = `<span class="message-sender">You</span><div class="message-bubble">${text}</div>`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('student-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!apiKey) { openModal(); return; }
+
+  input.value = ''; autoResize(input);
+  addStudentMessage(text);
+  const thinking = addTutorMessage('Thinking…', true);
+  document.getElementById('send-btn').disabled = true;
+
+  const sec = SECTIONS[currentSection];
+  chatHistory.push({ role: 'user', content: text });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 300, system: sec.system, messages: chatHistory.slice(-10) }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      const apiErr = data.error.message || 'Unknown error';
+      thinking.querySelector('.message-bubble').textContent = apiErr.toLowerCase().includes('overload') ? 'The AI tutor is busy right now — please wait a moment and try again.' : 'API error: ' + apiErr;
+      chatHistory.pop();
+    } else {
+      const reply = data.content[0].text;
+      thinking.classList.remove('thinking');
+      thinking.querySelector('.message-bubble').textContent = reply;
+      chatHistory.push({ role: 'assistant', content: reply });
+
+      if (!freeExploration && !explorationMode) {
+        if (currentSection === 0) {
+          // Section 0: unlock next STEP, not section
+          answeredCurrentStep = true;
+          document.getElementById('next-step-btn').disabled = false;
+          const nudge = document.getElementById('step-nudge');
+          if (nudge) nudge.style.display = 'none';
+        } else {
+          answeredCurrentSection = true;
+          document.getElementById('soft-nudge').style.display = 'none';
+          document.getElementById('next-btn').disabled = false;
+          document.querySelectorAll('.section-btn').forEach((btn, i) => {
+            if (i <= currentSection + 1) { btn.disabled = false; btn.style.opacity = ''; }
+          });
+          if (currentSection === 3) setTimeout(() => unlockNext(), 1200);
+        }
+      }
+    }
+  } catch (e) {
+    thinking.querySelector('.message-bubble').textContent = 'Could not reach the tutor. Check your API key and try again.';
+    chatHistory.pop();
+  }
+
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('chat-messages').scrollTop = 99999;
+}
+
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 90) + 'px'; }
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal() { document.getElementById('modal-overlay').classList.add('open'); document.getElementById('api-key-input').focus(); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function saveApiKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  if (k) {
+    apiKey = k; sessionStorage.setItem('neuc64_api_key', k);
+    document.getElementById('api-status-btn').textContent = 'Key saved ✓';
+    document.getElementById('api-status-btn').style.color = '#0F6E56';
+    closeModal();
+  }
+}
+document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === document.getElementById('modal-overlay')) closeModal(); });
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener('resize', resizeCanvases);
+if (apiKey) { document.getElementById('api-status-btn').textContent = 'Key saved ✓'; document.getElementById('api-status-btn').style.color = '#0F6E56'; }
+resizeCanvases();
+initVoltageTrace();
+answeredCurrentSection = false;
+document.getElementById('next-btn').disabled = true;
+updateUI(0);
+startAnimation();
+</script>
+</body>
+</html>

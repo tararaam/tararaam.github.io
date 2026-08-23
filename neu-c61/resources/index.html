@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resources — NEU C61</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --berkeley-blue: #003262; --berkeley-gold: #FDB515;
+      --blue-light: #E8EFF7; --gold-light: #FEF5E0; --gold-text: #A07000;
+      --teal: #0F6E56; --teal-light: #E1F5EE;
+      --purple: #7C3AED; --purple-light: #EEEDFE;
+      --red: #A32D2D; --red-light: #FCEBEB;
+      --text-primary: #1a1a1a; --text-secondary: #555; --text-tertiary: #999;
+      --border: #e5e5e5; --bg: #fff; --bg-secondary: #f8f8f8;
+      --radius-md: 8px; --radius-lg: 12px;
+    }
+    body { font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--bg); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); z-index: 100; }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-mark { width: 34px; height: 34px; border-radius: 9px; background: var(--berkeley-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .logo-mark svg { width: 20px; height: 20px; }
+    .logo-text { font-size: 17px; font-weight: 500; line-height: 1.2; }
+    .logo-sub { font-size: 12px; color: var(--text-secondary); }
+    nav ul { list-style: none; display: flex; gap: 0.25rem; }
+    nav ul li a { font-size: 13px; color: var(--text-secondary); padding: 6px 14px; border-radius: var(--radius-md); transition: background 0.15s, color 0.15s; }
+    nav ul li a:hover { background: var(--bg-secondary); color: var(--text-primary); }
+    nav ul li a.active { background: var(--bg-secondary); color: var(--text-primary); }
+
+    .page-header { padding: 2.5rem 2rem 2rem; border-bottom: 1px solid var(--border); }
+    .breadcrumb { font-size: 13px; color: var(--text-tertiary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px; }
+    .breadcrumb a { color: var(--text-tertiary); }
+    .breadcrumb a:hover { color: var(--text-primary); }
+    .breadcrumb svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    h1 { font-family: 'DM Serif Display', serif; font-size: 34px; font-weight: 400; margin-bottom: 0.4rem; }
+    .page-desc { font-size: 14px; color: var(--text-secondary); }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 0.6rem; padding: 0.875rem 2rem; border-bottom: 1px solid var(--border); align-items: center; }
+    .legend-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin-right: 0.25rem; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 100px; white-space: nowrap; }
+    .chip-reading { background: #F1F5F9; color: #475569; }
+    .chip-quiz { background: var(--gold-light); color: var(--gold-text); }
+    .chip-hw { background: #BFDBFE; color: #1D4ED8; }
+    .chip-exam { background: #FEE2E2; color: #991B1B; }
+    .chip-project { background: var(--purple-light); color: var(--purple); }
+    .chip-tool { background: #FFEDD5; color: #C2410C; }
+    .chip-reflection { background: var(--teal-light); color: var(--teal); }
+    .chip-due { background: #FCE7F3; color: #9D174D; }
+
+    .weeks { padding: 1.5rem 2rem; display: flex; flex-direction: column; gap: 0.875rem; }
+
+    .week-card { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    .week-card.current { border-color: var(--berkeley-blue); }
+
+    .week-header { display: flex; align-items: center; gap: 1rem; padding: 0.875rem 1.25rem; cursor: pointer; user-select: none; background: var(--bg); transition: background 0.15s; }
+    .week-header:hover { background: var(--bg-secondary); }
+    .week-card.current .week-header { background: var(--blue-light); }
+
+    .week-number { font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); min-width: 55px; flex-shrink: 0; }
+    .week-card.current .week-number { color: var(--berkeley-blue); }
+    .week-meta { flex: 1; min-width: 0; }
+    .week-title { font-size: 14px; font-weight: 500; }
+    .week-dates { font-size: 12px; color: var(--text-tertiary); }
+    .week-chips { display: flex; gap: 4px; flex-wrap: wrap; flex-shrink: 0; }
+    .week-chevron { width: 15px; height: 15px; stroke: var(--text-tertiary); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; flex-shrink: 0; }
+    .week-card.open .week-chevron { transform: rotate(180deg); }
+
+    .week-body { display: none; border-top: 1px solid var(--border); }
+    .week-card.open .week-body { display: block; }
+
+    .session { padding: 1rem 1.25rem; }
+    .session + .session { border-top: 1px dashed var(--border); }
+    .session-header { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.625rem; }
+    .session-date { font-size: 12px; font-weight: 500; color: var(--text-tertiary); flex-shrink: 0; min-width: 56px; }
+    .session-topic { font-size: 15px; font-weight: 500; }
+    .session-rows { display: flex; flex-direction: column; gap: 0.5rem; }
+    .session-row { display: flex; align-items: flex-start; gap: 0.625rem; }
+    .session-row .chip { flex-shrink: 0; margin-top: 1px; }
+    .session-row-content { font-size: 14px; color: var(--text-secondary); line-height: 1.5; padding-top: 2px; }
+    .session-row-content a { color: var(--teal); text-decoration: underline; text-underline-offset: 2px; }
+    .session-row-content a:hover { color: var(--berkeley-blue); }
+
+    footer { border-top: 1px solid var(--border); padding: 1.25rem 2rem; display: flex; justify-content: space-between; font-size: 12px; color: var(--text-tertiary); margin-top: 1rem; }
+
+    /* FILES DRAWER */
+    .files-drawer { border-bottom: 1px solid var(--border); margin: 0 2rem; }
+    .files-drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0; cursor: pointer; user-select: none; color: var(--text-secondary); font-size: 13px; font-weight: 500; transition: color 0.15s; }
+    .files-drawer-header:hover { color: var(--text-primary); }
+    .files-drawer-left { display: flex; align-items: center; gap: 8px; }
+    .files-chevron { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; flex-shrink: 0; }
+    .files-drawer.open .files-chevron { transform: rotate(180deg); }
+    .files-drawer-body { display: none; padding-bottom: 1rem; }
+    .files-drawer.open .files-drawer-body { display: block; }
+
+    /* QUICK CARDS */
+    .quick-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-top: 0.75rem; }
+    .quick-card { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+    .quick-card-header { margin-bottom: 0.875rem; }
+    .quick-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+    .quick-list li { display: flex; align-items: center; justify-content: space-between; font-size: 14px; padding: 0.375rem 0; border-bottom: 1px solid var(--border); }
+    .quick-list li:last-child { border-bottom: none; }
+    .quick-item-name { font-size: 14px; color: var(--text-secondary); }
+    .quick-item-link { color: var(--teal); font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
+    .quick-item-link:hover { color: var(--berkeley-blue); }
+    .coming-soon-badge { font-size: 11px; color: var(--text-tertiary); background: var(--bg-secondary); border: 1px solid var(--border); padding: 2px 8px; border-radius: 100px; }
+
+    @media (max-width: 600px) {
+      nav ul { display: none; }
+      .weeks, .page-header, .legend { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .week-chips { display: none; }
+      footer { flex-direction: column; gap: 0.5rem; }
+    }
+
+    /* OPTION B: Floating files button */
+    .files-fab { position: fixed; right: 1.5rem; top: 50%; transform: translateY(-50%); z-index: 200;
+      display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .files-fab-btn { display: flex; align-items: center; gap: 6px; padding: 10px 14px;
+      background: var(--berkeley-blue); color: white; border: none; border-radius: 100px;
+      font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0,50,98,0.25); transition: all 0.15s; white-space: nowrap; }
+    .files-fab-btn:hover { background: #004080; box-shadow: 0 4px 16px rgba(0,50,98,0.35); }
+    .files-fab-btn svg { width: 14px; height: 14px; stroke: white; fill: none; stroke-width: 2;
+      stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+    /* Slide-in panel */
+    .files-panel-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.2);
+      z-index: 300; }
+    .files-panel-overlay.open { display: block; }
+    .files-panel { position: fixed; right: 0; top: 0; bottom: 0; width: 320px; background: white;
+      box-shadow: -4px 0 24px rgba(0,0,0,0.12); z-index: 301; display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform 0.25s ease; }
+    .files-panel-overlay.open .files-panel { transform: translateX(0); }
+    .files-panel-header { padding: 1.25rem 1.25rem 1rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .files-panel-title { font-size: 15px; font-weight: 500; }
+    .files-panel-close { background: none; border: none; cursor: pointer; color: var(--text-tertiary);
+      font-size: 20px; line-height: 1; padding: 4px; }
+    .files-panel-close:hover { color: var(--text-primary); }
+    .files-panel-body { overflow-y: auto; padding: 1rem 1.25rem; flex: 1; display: flex;
+      flex-direction: column; gap: 1.25rem; }
+    .files-group-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.5rem; }
+    .files-item { display: flex; align-items: center; justify-content: space-between;
+      padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .files-item:last-child { border-bottom: none; }
+    .files-item-name { color: var(--text-secondary); }
+    .files-item-link { color: var(--teal); font-size: 12px; text-decoration: underline;
+      text-underline-offset: 2px; }
+    .files-item-soon { font-size: 11px; color: var(--text-tertiary); background: var(--bg-secondary);
+      border: 1px solid var(--border); padding: 2px 8px; border-radius: 100px; }
+
+    @media (max-width: 600px) {
+      .files-fab { right: 1rem; }
+      .files-panel { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="3" fill="#FDB515"/>
+        <path d="M10 3C10 3 14.5 6 14.5 10C14.5 14 10 17 10 17C10 17 5.5 14 5.5 10C5.5 6 10 3 10 3Z" stroke="#FDB515" stroke-width="1.25" fill="none"/>
+        <path d="M3 10C3 10 6 6 10 6C14 6 17 10 17 10C17 10 14 14 10 14C6 14 3 10 3 10Z" stroke="white" stroke-width="1.25" fill="none" opacity="0.55"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">NEU C61</div>
+      <div class="logo-sub">Fall 2026</div>
+    </div>
+  </a>
+  <ul>
+    <li><a href="../syllabus/index.html">Syllabus</a></li>
+    <li><a href="../staff/index.html">Teaching staff</a></li>
+    <li><a href="../tools/index.html">Tools</a></li>
+    <li><a href="index.html" class="active">Resources</a></li>
+    <li><a href="../feedback/index.html">Feedback</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="../index.html">NEU C61</a>
+    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    Resources
+  </div>
+  <h1>Resources</h1>
+  <p class="page-desc">Weekly readings, assignments, and tools. The current week opens automatically.</p>
+</div>
+
+<div class="legend">
+  <span class="legend-label">Key</span>
+  <span class="chip chip-reading">Reading</span>
+  <span class="chip chip-tool">Tool</span>
+  <span class="chip chip-reflection">Reflection</span>
+  <span class="chip chip-project">Debate</span>
+  <span class="chip chip-exam">Exam</span>
+</div>
+
+<div class="files-fab">
+  <button class="files-fab-btn" onclick="openFilesPanel()">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Assignments & files
+  </button>
+</div>
+
+<div class="files-panel-overlay" id="files-panel-overlay" onclick="closeFilesPanel(event)">
+  <div class="files-panel">
+    <div class="files-panel-header">
+      <span class="files-panel-title">Assignments & guides</span>
+      <button class="files-panel-close" onclick="closeFilesPanel()">×</button>
+    </div>
+    <div class="files-panel-body">
+      <div>
+        <div class="files-group-label">Guides</div>
+        <div class="files-item">
+          <span class="files-item-name">Debate guidelines</span>
+          <span class="files-item-soon">Coming soon</span>
+        </div>
+        <div class="files-item">
+          <span class="files-item-name">iClicker instructions</span>
+          <span class="files-item-soon">Coming soon</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="weeks">
+
+  <!-- WEEK 1 -->
+  <div class="week-card" id="week-1">
+    <div class="week-header" onclick="toggleWeek('week-1')">
+      <span class="week-number">Week 1</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 8/25</span>
+          <span class="session-topic">No Class</span>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 8/28</span>
+          <span class="session-topic">Intro / History / What is Mind?</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 1</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 2 -->
+  <div class="week-card" id="week-2">
+    <div class="week-header" onclick="toggleWeek('week-2')">
+      <span class="week-number">Week 2</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 9/1</span>
+          <span class="session-topic">Neuroanatomy, Cells</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 2; Chapter 7</span></div>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 9/4</span>
+          <span class="session-topic">Ion Channels, Membrane Potential</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 3</span></div>
+          <div class="session-row"><span class="chip chip-tool">Tool</span><span class="session-row-content"><a href="../tools/resting-potential/index.html">Resting potential explorer →</a></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 3 -->
+  <div class="week-card" id="week-3">
+    <div class="week-header" onclick="toggleWeek('week-3')">
+      <span class="week-number">Week 3</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 9/8</span>
+          <span class="session-topic">Action Potential</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 4</span></div>
+          <div class="session-row"><span class="chip chip-tool">Tool</span><span class="session-row-content"><a href="../tools/action-potential/index.html">Action potential explorer →</a></span></div>
+          <div class="session-row"><span class="chip chip-tool">Tool</span><span class="session-row-content"><a href="../tools/myelination/index.html">Myelination explorer →</a></span></div>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 9/11</span>
+          <span class="session-topic">Synaptic Transmission</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 5</span></div>
+          <div class="session-row"><span class="chip chip-tool">Tool</span><span class="session-row-content"><a href="../tools/synaptic-transmission/index.html">Synaptic transmission explorer →</a></span></div>
+          <div class="session-row"><span class="chip chip-due">Due</span><span class="session-row-content">Pre-course survey due 11:59pm</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 4 -->
+  <div class="week-card" id="week-4">
+    <div class="week-header" onclick="toggleWeek('week-4')">
+      <span class="week-number">Week 4</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 9/15</span>
+          <span class="session-topic">Neurotransmitters</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 6</span></div>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 9/18</span>
+          <span class="session-topic">Drugs</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 15</span></div>
+          <div class="session-row"><span class="chip chip-reflection">Reflection</span><span class="session-row-content">In-class Reflection 1</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 5 -->
+  <div class="week-card" id="week-5">
+    <div class="week-header" onclick="toggleWeek('week-5')">
+      <span class="week-number">Week 5</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 9/22</span>
+          <span class="session-topic">Development / Plasticity</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 23</span></div>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 9/25</span>
+          <span class="session-topic">Review Session or Guest Lecture</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 6 -->
+  <div class="week-card" id="week-6">
+    <div class="week-header" onclick="toggleWeek('week-6')">
+      <span class="week-number">Week 6</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 9/29</span>
+          <span class="session-topic">MIDTERM 1</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-exam">Exam</span><span class="session-row-content">Midterm 1 — in class</span></div>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 10/2</span>
+          <span class="session-topic">Probing the Brain</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">p. 86 (electrodes); p. 90 (optogenetics); pp. 203–209 (new views of the brain); pp. 705–712 (EEG, EMG, ECoG); p. 840 (TMS); pp. 843–844 (DBS)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 7 -->
+  <div class="week-card" id="week-7">
+    <div class="week-header" onclick="toggleWeek('week-7')">
+      <span class="week-number">Week 7</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 10/6</span>
+          <span class="session-topic">Vision 1</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 9</span></div>
+          <div class="session-row"><span class="chip chip-tool">Tool</span><span class="session-row-content"><a href="../tools/receptive-fields/index.html">Visual receptive fields explorer →</a></span></div>
+          <div class="session-row"><span class="chip chip-project">Debate 1</span><span class="session-row-content">In discussion section — guidelines coming soon</span></div>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 10/9</span>
+          <span class="session-topic">Vision 2</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 10</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 8 -->
+  <div class="week-card" id="week-8">
+    <div class="week-header" onclick="toggleWeek('week-8')">
+      <span class="week-number">Week 8</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 10/13</span>
+          <span class="session-topic">Olfaction</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 8</span></div>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 10/16</span>
+          <span class="session-topic">Taste</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 8</span></div>
+          <div class="session-row"><span class="chip chip-reflection">Reflection</span><span class="session-row-content">In-class Reflection 2</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 9 -->
+  <div class="week-card" id="week-9">
+    <div class="week-header" onclick="toggleWeek('week-9')">
+      <span class="week-number">Week 9</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 10/20</span>
+          <span class="session-topic">Hearing</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 11</span></div>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 10/23</span>
+          <span class="session-topic">Somatosensation</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 12</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 10 -->
+  <div class="week-card" id="week-10">
+    <div class="week-header" onclick="toggleWeek('week-10')">
+      <span class="week-number">Week 10</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 10/27</span>
+          <span class="session-topic">Review Session or Guest Lecture</span>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 10/30</span>
+          <span class="session-topic">MIDTERM 2</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-exam">Exam</span><span class="session-row-content">Midterm 2 — in class</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 11 -->
+  <div class="week-card" id="week-11">
+    <div class="week-header" onclick="toggleWeek('week-11')">
+      <span class="week-number">Week 11</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 11/3</span>
+          <span class="session-topic">Language</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 20</span></div>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 11/6</span>
+          <span class="session-topic">Memory Systems</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 24</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 12 -->
+  <div class="week-card" id="week-12">
+    <div class="week-header" onclick="toggleWeek('week-12')">
+      <span class="week-number">Week 12</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 11/10</span>
+          <span class="session-topic">Cellular Mechanisms of Memory</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 25</span></div>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 11/13</span>
+          <span class="session-topic">Sleep</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 19</span></div>
+          <div class="session-row"><span class="chip chip-reflection">Reflection</span><span class="session-row-content">In-class Reflection 3</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 13 -->
+  <div class="week-card" id="week-13">
+    <div class="week-header" onclick="toggleWeek('week-13')">
+      <span class="week-number">Week 13</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 11/17</span>
+          <span class="session-topic">Emotions</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 18</span></div>
+          <div class="session-row"><span class="chip chip-project">Debate 2</span><span class="session-row-content">In discussion section — guidelines coming soon</span></div>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 11/20</span>
+          <span class="session-topic">Motivated Behavior</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 16</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 14 -->
+  <div class="week-card" id="week-14">
+    <div class="week-header" onclick="toggleWeek('week-14')">
+      <span class="week-number">Week 14</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 11/24</span>
+          <span class="session-topic">Social Behavior</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">TBD</span></div>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 11/27</span>
+          <span class="session-topic">No Class - Thanksgiving</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 15 -->
+  <div class="week-card" id="week-15">
+    <div class="week-header" onclick="toggleWeek('week-15')">
+      <span class="week-number">Week 15</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Tue 12/1</span>
+          <span class="session-topic">Mental Health</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 22</span></div>
+        </div>
+      </div>
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Fri 12/4</span>
+          <span class="session-topic">Consciousness + Intelligence</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-reading">Reading</span><span class="session-row-content">Chapter 21</span></div>
+          <div class="session-row"><span class="chip chip-reflection">Reflection</span><span class="session-row-content">In-class Reflection 4</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINAL EXAM -->
+  <div class="week-card" id="week-final">
+    <div class="week-header" onclick="toggleWeek('week-final')">
+      <span class="week-number">Final</span>
+      <svg class="week-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="week-body">
+      <div class="session">
+        <div class="session-header">
+          <span class="session-date">Thu 12/17</span>
+          <span class="session-topic">FINAL EXAM</span>
+        </div>
+        <div class="session-rows">
+          <div class="session-row"><span class="chip chip-exam">Exam</span><span class="session-row-content">Final exam, 11:30am–2:30pm</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>Tara Raam, Ph.D. · UC Berkeley Neuroscience</span>
+  <span>tararaam.github.io/neu-c61</span>
+</footer>
+
+<script>
+
+function openFilesPanel() {
+  document.getElementById('files-panel-overlay').classList.add('open');
+}
+function closeFilesPanel(e) {
+  if (!e || e.target === document.getElementById('files-panel-overlay') || e.currentTarget.classList.contains('files-panel-close')) {
+    document.getElementById('files-panel-overlay').classList.remove('open');
+  }
+}
+function toggleWeek(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function toggleDrawer() {
+  document.getElementById('files-drawer').classList.toggle('open');
+}
+
+// Auto-open current week
+const now = new Date();
+const weeks = [
+  { id: 'week-1', start: new Date('2026-08-23'), end: new Date('2026-08-30') },
+  { id: 'week-2', start: new Date('2026-08-30'), end: new Date('2026-09-06') },
+  { id: 'week-3', start: new Date('2026-09-06'), end: new Date('2026-09-13') },
+  { id: 'week-4', start: new Date('2026-09-13'), end: new Date('2026-09-20') },
+  { id: 'week-5', start: new Date('2026-09-20'), end: new Date('2026-09-27') },
+  { id: 'week-6', start: new Date('2026-09-27'), end: new Date('2026-10-04') },
+  { id: 'week-7', start: new Date('2026-10-04'), end: new Date('2026-10-11') },
+  { id: 'week-8', start: new Date('2026-10-11'), end: new Date('2026-10-18') },
+  { id: 'week-9', start: new Date('2026-10-18'), end: new Date('2026-10-25') },
+  { id: 'week-10', start: new Date('2026-10-25'), end: new Date('2026-11-01') },
+  { id: 'week-11', start: new Date('2026-11-01'), end: new Date('2026-11-08') },
+  { id: 'week-12', start: new Date('2026-11-08'), end: new Date('2026-11-15') },
+  { id: 'week-13', start: new Date('2026-11-15'), end: new Date('2026-11-22') },
+  { id: 'week-14', start: new Date('2026-11-22'), end: new Date('2026-11-29') },
+  { id: 'week-15', start: new Date('2026-11-29'), end: new Date('2026-12-06') },
+  { id: 'week-final', start: new Date('2026-12-17'), end: new Date('2026-12-18') },
+];
+
+const current = weeks.find(w => now >= w.start && now < w.end);
+if (current) {
+  const card = document.getElementById(current.id);
+  card.classList.add('open', 'current');
+} else {
+  // Before course starts — open week 1
+  document.getElementById('week-1').classList.add('open');
+}
+</script>
+</body>
+</html>

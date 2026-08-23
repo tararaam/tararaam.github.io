@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resting Membrane Potential Explorer - NEU C61</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --berkeley-blue: #003262; --berkeley-gold: #FDB515;
+      --blue-light: #E8EFF7; --gold-light: #FEF5E0; --gold-text: #A07000;
+      --teal: #0F6E56; --teal-light: #E1F5EE;
+      --purple: #7C3AED; --purple-light: #EEEDFE;
+      --text-primary: #1a1a1a; --text-secondary: #555; --text-tertiary: #999;
+      --border: #e5e5e5; --bg: #fff; --bg-secondary: #f8f8f8;
+      --radius-md: 8px; --radius-lg: 12px;
+      --na-color: #2563EB; --k-color: #DC2626; --neg-color: #7C3AED;
+      --mode-0: #6B7280; --mode-1: #0F6E56; --mode-2: #003262;
+    }
+    body { font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--bg); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+
+    /* NAV */
+    .top-nav { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.97); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 100; }
+    .logo { display: flex; align-items: center; gap: 8px; }
+    .logo-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--berkeley-blue); display: flex; align-items: center; justify-content: center; }
+    .logo-mark svg { width: 17px; height: 17px; }
+    .logo-text { font-size: 13px; font-weight: 500; line-height: 1.2; }
+    .logo-sub { font-size: 11px; color: var(--text-secondary); }
+    .back-link { font-size: 12px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px; }
+    .back-link svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .back-link:hover { color: var(--text-primary); }
+
+    /* APP */
+    .app { display: grid; grid-template-columns: 60fr 40fr; height: calc(100vh - 53px); overflow: hidden; }
+
+    /* LEFT */
+    .left-panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow: hidden; }
+    .tool-header { padding: 1rem 1.5rem 0.875rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .tool-header h1 { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; margin-bottom: 0.15rem; }
+    .tool-header p { font-size: 12px; color: var(--text-secondary); }
+
+    /* MODE STEPPER */
+    .mode-stepper { display: flex; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); gap: 4px; flex-shrink: 0; }
+    .mode-btn { flex: 1; padding: 5px 4px; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 500; color: var(--text-secondary); text-align: center; transition: all 0.15s; line-height: 1.3; }
+    .mode-btn:hover { border-color: #bbb; color: var(--text-primary); }
+    .mode-btn.active { color: white; border-color: transparent; }
+    .mode-btn[data-mode="0"].active { background: var(--mode-0); }
+    .mode-btn[data-mode="1"].active { background: var(--mode-1); }
+    .mode-btn[data-mode="2"].active { background: var(--mode-2); }
+    .mode-btn.visited { opacity: 0.55; }
+
+    /* VIZ */
+    .viz-area { flex: 1; overflow-y: auto; padding: 1rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .viz-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0.875rem; }
+    .viz-card-label { font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.625rem; }
+
+    /* CANVASES */
+    #membrane-canvas { width: 100%; height: 220px; display: block; border-radius: 6px; }
+    #voltage-bar-canvas { width: 100%; height: 80px; display: block; border-radius: 6px; }
+    #voltmeter-canvas { width: 100%; height: 120px; display: block; border-radius: 6px; }
+
+    /* PUMP TOGGLE */
+    .pump-toggle-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); flex-shrink: 0; }
+    .pump-toggle-left .pump-label { font-size: 13px; font-weight: 500; }
+    .pump-toggle-left .pump-sub { font-size: 11px; color: var(--text-secondary); }
+    .pump-btns { display: flex; gap: 4px; }
+    .pump-btn { padding: 5px 14px; border-radius: 100px; border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+    .pump-btn:disabled { opacity: 0.4; cursor: default; }
+    .pump-btn.active-on { background: var(--teal); color: white; border-color: var(--teal); }
+    .pump-btn.active-off { background: var(--red, #DC2626); color: white; border-color: var(--red, #DC2626); }
+
+    /* PERMEABILITY SLIDERS (Mode 2 + 3) */
+    .slider-section { display: flex; flex-direction: column; gap: 0.625rem; }
+    .slider-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .slider-row label { min-width: 120px; color: var(--text-secondary); }
+    .slider-row input[type=range] { flex: 1; }
+    .slider-row .slider-val { min-width: 36px; text-align: right; font-size: 12px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+
+    /* NAV BUTTONS */
+    .nav-btns { display: flex; gap: 8px; padding: 0.75rem 1.5rem; border-top: 1px solid var(--border); flex-shrink: 0; flex-direction: column; }
+    .nav-row { display: flex; gap: 8px; }
+    .prev-btn { padding: 7px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 5px; transition: background 0.15s; }
+    .prev-btn:hover { background: var(--bg-secondary); }
+    .prev-btn:disabled { opacity: 0.35; cursor: default; }
+    .prev-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .next-btn { flex: 1; padding: 7px 16px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.15s; }
+    .next-btn:hover:not(:disabled) { opacity: 0.88; }
+    .next-btn:disabled { opacity: 0.45; cursor: default; background: #888; }
+    .next-btn svg { width: 13px; height: 13px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .soft-nudge { font-size: 11px; color: var(--gold-text); background: var(--gold-light); border: 1px solid #F5D78A; border-radius: var(--radius-md); padding: 5px 10px; display: none; }
+
+    /* FORWARD LINK */
+    .forward-link { display: none; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; background: var(--teal-light); border: 1px solid #9FE1CB; border-radius: var(--radius-md); font-size: 13px; color: var(--teal); font-weight: 500; cursor: pointer; text-decoration: none; transition: background 0.15s; }
+    .forward-link:hover { background: #C4EFE3; }
+    .forward-link svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* RIGHT */
+    .right-panel { display: flex; flex-direction: column; overflow: hidden; }
+
+    /* MODE TOGGLE */
+    .mode-toggle-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--bg-secondary); }
+    .mode-toggle-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); }
+    .mode-toggle-btns { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 100px; padding: 2px; gap: 2px; }
+    .mode-toggle-btn { padding: 4px 14px; border-radius: 100px; border: none; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--text-secondary); background: transparent; transition: all 0.15s; }
+    .mode-toggle-btn.active { background: var(--berkeley-blue); color: white; }
+
+    .phase-info { padding: 1rem 1.25rem 0.875rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .phase-title { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; margin-bottom: 0.4rem; }
+    .phase-description { font-size: 12.5px; color: var(--text-secondary); line-height: 1.7; }
+
+    /* TUTOR */
+    .tutor-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; border-top: 1px solid var(--border); }
+    .tutor-header { padding: 0.625rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+    .tutor-title { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+    .tutor-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); flex-shrink: 0; }
+    .api-key-btn { font-size: 11px; color: var(--text-tertiary); cursor: pointer; background: none; border: none; font-family: 'DM Sans', sans-serif; }
+    .api-key-btn:hover { color: var(--text-primary); }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 0.75rem 1.25rem; display: flex; flex-direction: column; gap: 0.625rem; }
+    .message { display: flex; flex-direction: column; gap: 2px; max-width: 93%; }
+    .message.tutor { align-self: flex-start; }
+    .message.student { align-self: flex-end; }
+    .message-sender { font-size: 9px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); padding: 0 4px; }
+    .message-bubble { padding: 0.55rem 0.8rem; border-radius: var(--radius-lg); font-size: 12.5px; line-height: 1.6; }
+    .message.tutor .message-bubble { background: var(--bg-secondary); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .message.student .message-bubble { background: var(--berkeley-blue); color: white; border-bottom-right-radius: 4px; }
+    .message.thinking .message-bubble { color: var(--text-tertiary); font-style: italic; }
+    .prediction-prompt { background: var(--gold-light); border: 1px solid #F5D78A; border-radius: var(--radius-lg); padding: 0.65rem 0.8rem; font-size: 12.5px; color: var(--gold-text); line-height: 1.6; align-self: flex-start; max-width: 93%; }
+    .prediction-prompt strong { display: block; font-weight: 500; margin-bottom: 2px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .input-area { padding: 0.625rem 1.25rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .input-row { display: flex; gap: 7px; align-items: flex-end; }
+    .input-row textarea { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 12.5px; padding: 7px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); resize: none; line-height: 1.5; color: var(--text-primary); background: var(--bg); min-height: 36px; max-height: 90px; transition: border-color 0.15s; }
+    .input-row textarea:focus { outline: none; border-color: var(--berkeley-blue); }
+    .input-row textarea::placeholder { color: var(--text-tertiary); }
+    .send-btn { width: 34px; height: 34px; border-radius: var(--radius-md); background: var(--berkeley-blue); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.15s; }
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: default; }
+    .send-btn svg { width: 14px; height: 14px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--bg); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 380px; width: 90%; border: 1px solid var(--border); }
+    .modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 0.4rem; }
+    .modal p { font-size: 12.5px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 0.875rem; }
+    .modal input { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 0.875rem; color: var(--text-primary); }
+    .modal input:focus { outline: none; border-color: var(--berkeley-blue); }
+    .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-secondary { padding: 6px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 12.5px; cursor: pointer; color: var(--text-secondary); }
+    .btn-primary { padding: 6px 14px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; cursor: pointer; color: white; }
+
+    /* ION LEGEND */
+    .ion-legend { display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap; }
+    .ion-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-secondary); }
+    .ion-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    @media (max-width: 800px) {
+      .app { grid-template-columns: 1fr; height: auto; overflow: visible; }
+      .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
+      .right-panel { height: 580px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="../../index.html" class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="3" fill="#FDB515"/>
+        <path d="M10 3C10 3 14.5 6 14.5 10C14.5 14 10 17 10 17C10 17 5.5 14 5.5 10C5.5 6 10 3 10 3Z" stroke="#FDB515" stroke-width="1.25" fill="none"/>
+        <path d="M3 10C3 10 6 6 10 6C14 6 17 10 17 10C17 10 14 14 10 14C6 14 3 10 3 10Z" stroke="white" stroke-width="1.25" fill="none" opacity="0.55"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">NEU C61</div>
+      <div class="logo-sub">UC Berkeley</div>
+    </div>
+  </a>
+  <a href="../index.html" class="back-link">
+    <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Tools
+  </a>
+</nav>
+
+<div class="app">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="tool-header">
+      <h1>Resting membrane potential explorer</h1>
+      <p>Discover why neurons sit at −70 mV - and what happens when that balance is disturbed.</p>
+    </div>
+
+    <div class="mode-stepper">
+      <button class="mode-btn active" data-mode="0" onclick="goToMode(0)">Concentration<br>gradients</button>
+      <button class="mode-btn" data-mode="1" onclick="goToMode(1)">Selective<br>permeability</button>
+      <button class="mode-btn" data-mode="2" onclick="goToMode(2)">What sets<br>−70 mV?</button>
+    </div>
+
+
+    <div class="viz-area">
+      <div class="viz-card">
+        <div class="viz-card-label" id="membrane-label">Membrane - ion concentrations</div>
+        <canvas id="membrane-canvas"></canvas>
+        <div class="ion-legend">
+          <div class="ion-legend-item"><div class="ion-dot" style="background:#2563EB"></div> Na⁺ (sodium)</div>
+          <div class="ion-legend-item"><div class="ion-dot" style="background:#DC2626"></div> K⁺ (potassium)</div>
+          <div class="ion-legend-item"><div class="ion-dot" style="background:#7C3AED"></div> A⁻ (large anions, trapped inside)</div>
+        </div>
+      </div>
+
+      <!-- Mode 0 only: pump toggle -->
+      <div class="pump-toggle-bar" id="pump-toggle-bar">
+        <div class="pump-toggle-left">
+          <div class="pump-label">Na⁺/K⁺ ATPase pump</div>
+          <div class="pump-sub">Maintains concentration gradients</div>
+          <div class="pump-sub" style="margin-top:2px; color:#A07000; font-style:italic;">Toggle on and off to see what happens</div>
+        </div>
+        <div class="pump-btns">
+          <button class="pump-btn active-on" id="btn-pump-on" onclick="setPump(true)">On</button>
+          <button class="pump-btn" id="btn-pump-off" onclick="setPump(false)" disabled>Off</button>
+        </div>
+      </div>
+
+      <!-- Mode 1 only: start button -->
+      <div class="pump-toggle-bar" id="mode1-start-bar" style="display:none;">
+        <div class="pump-toggle-left">
+          <div class="pump-label">K⁺ leak channels</div>
+          <div class="pump-sub">Watch what happens when K⁺ flows out</div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="pump-btn active-on" id="btn-start-mode1" onclick="startMode1()" disabled>Start</button>
+          <button class="pump-btn" id="btn-reset-mode1" onclick="resetMode1()" style="display:none;">Reset</button>
+        </div>
+      </div>
+
+      <!-- Voltmeter for modes 0-1 -->
+      <div class="viz-card" id="voltmeter-card">
+        <div class="viz-card-label">Membrane potential - qualitative</div>
+        <canvas id="voltmeter-canvas"></canvas>
+      </div>
+
+      <!-- Mode 2 only: sliders -->
+      <div class="viz-card" id="slider-card" style="display:none;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+          <div class="viz-card-label" style="margin-bottom:0;">Adjust conditions</div>
+          <button onclick="resetSliders()" style="font-size:11px; color:var(--text-tertiary); background:none; border:1px solid var(--border); border-radius:var(--radius-md); padding:3px 10px; cursor:pointer; font-family:'DM Sans',sans-serif;">Reset to baseline</button>
+        </div>
+        <div class="slider-section">
+          <div class="slider-row">
+            <label>Extracellular K⁺</label>
+            <input type="range" id="sl-ek" min="1" max="20" value="5" oninput="onSlider('ek')">
+            <span class="slider-val" id="sv-ek">5 mM</span>
+          </div>
+          <div class="slider-row">
+            <label>Extracellular Na⁺</label>
+            <input type="range" id="sl-ena" min="50" max="200" value="145" oninput="onSlider('ena')">
+            <span class="slider-val" id="sv-ena">145 mM</span>
+          </div>
+          <div class="slider-row">
+            <label>K⁺ permeability</label>
+            <input type="range" id="sl-pk" min="1" max="100" value="90" oninput="onSlider('pk')">
+            <span class="slider-val" id="sv-pk">90%</span>
+          </div>
+          <div class="slider-row">
+            <label>Na⁺ permeability</label>
+            <input type="range" id="sl-pna" min="0" max="100" value="10" oninput="onSlider('pna')">
+            <span class="slider-val" id="sv-pna">10%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="viz-card" id="voltage-card" style="display:none;">
+        <div class="viz-card-label">Resting membrane potential</div>
+        <canvas id="voltage-bar-canvas"></canvas>
+      </div>
+    </div>
+
+    <div class="nav-btns">
+      <div class="nav-row">
+        <button class="prev-btn" id="prev-btn" onclick="prevMode()" disabled>
+          <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Prev
+        </button>
+        <button class="next-btn" id="next-btn" onclick="nextMode()">
+          Next
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+      <div class="soft-nudge" id="soft-nudge">Answer the tutor's question to get feedback before moving on</div>
+      <a href="../action-potential/index.html" class="forward-link" id="forward-link">
+        This −70 mV is where the action potential begins - explore what happens next
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="mode-toggle-bar">
+      <span class="mode-toggle-label">Mode</span>
+      <div class="mode-toggle-btns">
+        <button class="mode-toggle-btn active" id="btn-guided" onclick="setExploreMode('guided')">AI guided</button>
+        <button class="mode-toggle-btn" id="btn-explore" onclick="setExploreMode('explore')">Explore</button>
+      </div>
+    </div>
+
+    <div class="phase-info">
+      <div class="phase-title" id="phase-title">Concentration gradients</div>
+      <div class="phase-description" id="phase-description"></div>
+    </div>
+
+    <div class="tutor-area">
+      <div class="tutor-header">
+        <div class="tutor-title"><div class="tutor-dot"></div> AI tutor</div>
+        <button class="api-key-btn" id="api-status-btn" onclick="openModal()">Add API key</button>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="input-area">
+        <div class="input-row">
+          <textarea id="student-input" placeholder="Type your prediction or question…" rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h2>Enter your Anthropic API key</h2>
+    <p>Stored in your browser session only.</p>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-…"/>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveApiKey()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const MODES = [
+  {
+    name: 'Concentration gradients',
+    color: '#6B7280',
+    description: 'Neurons maintain an unequal distribution of ions across their membrane - Na⁺ is concentrated outside, K⁺ inside. This is called a concentration gradient. The Na⁺/K⁺ ATPase pump uses ATP to actively move ions across the membrane. What do you think would happen if the pump stopped working?',
+    prediction: 'The Na⁺/K⁺ pump creates the concentration gradients you see here. Before you turn it off: what do you predict will happen to the ion distributions if the pump stops working?',
+    system: 'You are an AI tutor for an introductory neuroscience course. Topic: concentration gradients and the Na/K ATPase pump. The student is learning that the pump creates and maintains Na+ outside and K+ inside the cell. If the pump stops, gradients dissipate over time. Do not bring up mechanisms, channels, or concepts not shown in this simulation unless the student asks. If a student asks about something beyond the scope of the simulation, give a brief honest answer and then gently redirect them back to what they can observe here. Accept reasonable paraphrases and partial answers - prioritize the quality of the student\'s reasoning over precise terminology. If the core concept is correct, affirm it warmly without nitpicking wording.',
+  },
+  {
+    name: 'Selective permeability & equilibrium',
+    color: '#0F6E56',
+    description: 'At rest, the membrane is much more permeable to K⁺ than Na⁺, because K⁺ leak channels are open. K⁺ sits at high concentration inside the cell. What do you think will happen when the channels open? Will K⁺ keep flowing indefinitely - or will something stop it?',
+    prediction: 'Before you start the animation: K⁺ is concentrated inside the cell and the membrane is mostly permeable to K⁺. What do you predict will happen when K⁺ starts to flow out - and will it keep flowing indefinitely?',
+    system: 'You are an AI tutor for an introductory neuroscience course. Topic: selective permeability and the K+ equilibrium potential. At rest the membrane is ~10-30x more permeable to K+ than Na+. K+ flows out down concentration gradient, creating negative charge inside. The electrical force eventually opposes and balances the concentration force - this is the K+ equilibrium potential (~-90mV). The actual resting potential (-70mV) is slightly depolarized because of small Na+ permeability. IMPORTANT: the animation shows these forces sequentially for clarity, but in reality both forces act simultaneously from the very first ion that crosses. Only mention this simplification AFTER the student has correctly explained what they observed - frame it as a deeper insight reward. Do not bring up mechanisms, channels, or concepts not shown in this simulation unless the student asks. If a student asks about something beyond the scope of the simulation, give a brief honest answer and then gently redirect them back to what they can observe here. Accept reasonable paraphrases and partial answers - prioritize the quality of the student\'s reasoning over precise terminology. If the core concept is correct, affirm it warmly without nitpicking wording.',
+  },
+  {
+    name: 'What sets −70 mV?',
+    color: '#003262',
+    description: 'The resting potential isn\'t a fixed biological constant - it depends on the concentration of ions and how permeable the membrane is to each one. Use the sliders to explore how changing these conditions affects the membrane potential. What do you predict will happen if you raise extracellular K⁺? What about making Na⁺ and K⁺ equally permeable?',
+    prediction: 'Before you move the sliders: if you raise extracellular K⁺ concentration, what do you predict happens to the resting membrane potential - and in which direction does it shift? Think about what would happen to the K⁺ concentration gradient.',
+    system: `You are an AI tutor for an introductory neuroscience course. Topic: what determines resting membrane potential.
+
+Background knowledge:
+- Goldman equation intuition: resting potential is a weighted average of ion equilibrium potentials, weighted by permeability
+- Raising extracellular K+: reduces K+ gradient → less K+ flows out → less negative inside → depolarization
+- Raising extracellular Na+: increases Na+ gradient → more Na+ leaks in → less negative inside → depolarization (smaller effect because Na+ permeability is low at rest)
+- Raising K+ permeability: membrane more K+-like → potential approaches K+ equilibrium (~-90mV) → hyperpolarization
+- Raising Na+ permeability: membrane more Na+-like → potential approaches Na+ equilibrium (~+60mV) → depolarization
+- Equal permeability → potential approaches 0mV
+
+Your role in this section:
+The student has 4 sliders to explore: extracellular K+, extracellular Na+, K+ permeability, Na+ permeability.
+After the student correctly answers the initial prediction about extracellular K+, guide them through the remaining sliders ONE AT A TIME in this order:
+1. First ask them to predict what happens if they raise extracellular Na+ concentration
+2. After they answer that correctly, ask them to predict what happens if they increase K+ permeability
+3. After they answer that correctly, ask them to predict what happens if they increase Na+ permeability
+4. Only after all four sliders have been explored, offer a clinical connection (hyperkalemia → cardiac arrhythmia) as a synthesis question
+
+IMPORTANT: After affirming each correct answer and before posing the next slider question, always remind the student to click "Reset to baseline" first - so each slider's effect is tested from the same starting point and the results aren't confounded by a previous change.
+
+Keep each follow-up question focused on the next slider only. Do not skip ahead or combine sliders. Be warm, specific, and Socratic - affirm correct reasoning before moving on. Do not bring up mechanisms, channels, or concepts not shown in this simulation unless the student asks. If a student asks about something beyond the scope of the simulation, give a brief honest answer and then gently redirect them back to what they can observe here. Accept reasonable paraphrases and partial answers - prioritize the quality of the student's reasoning over precise terminology. If the core concept is correct, affirm it warmly without nitpicking wording.`,
+  },
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentMode = 0;
+let pumpOn = true;
+let explorationMode = false;
+let freeExploration = false;
+let answeredCurrentMode = false;
+let animFrame = null;
+let apiKey = sessionStorage.getItem('neuc64_api_key') || '';
+let chatHistory = [];
+
+// Ion positions for animation
+let ions = [];
+let pumpIons = [];
+let equilibrating = false; // pump-off equilibration
+let equilibrationProgress = 0; // 0=normal, 1=equilibrated
+
+// Mode 1: competing force animation state
+let kOutFlow = []; // K+ ions flowing out
+let negCharges = []; // negative charges building up inside
+let forceBalance = 0; // 0=unbalanced, 1=balanced
+let mode1Running = false; // true once student clicks Start
+let mode1Phase = 1; // 1 = concentration force only, 2 = electrical force builds
+let mode1Phase1Progress = 0; // 0→1 during phase 1
+let mode1PauseTimer = 0; // brief pause between phases
+
+// Mode 2 slider values
+let slEk = 5, slEna = 145, slPk = 90, slPna = 10;
+// Track which sliders have been touched
+let sliderstouched = { ek: false, ena: false, pk: false, pna: false };
+
+// Equilibration crossing ions (pump off)
+let equilIons = [];
+
+// Each equilIon IS the background dot - it moves from its dot position
+// to the channel, crosses out, then parks outside as a new extracellular dot.
+// Phases: 'wait' → 'drift' → 'cross' → 'parked' (outside)
+function initEquilIons(w, midY) {
+  equilIons = [];
+  const chX = w * 0.38;
+  const spacing = w / 10;
+  const intY = midY + 45;
+  const extY = midY - 35;
+
+  // Pick 4 random indices from 0-7 to leave
+  const allIndices = [0,1,2,3,4,5,6,7];
+  for (let i = allIndices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allIndices[i], allIndices[j]] = [allIndices[j], allIndices[i]];
+  }
+  const leavingIndices = allIndices.slice(0, 4).sort((a,b) => a-b);
+
+  leavingIndices.forEach((dotIdx, order) => {
+    const startX = spacing * (dotIdx + 0.5) + (dotIdx % 2) * 5;
+    const startY = intY + (dotIdx % 2) * 12;
+    const parkX = spacing * (order * 1.8 + 0.5);
+    const parkY = extY - 8 - (order % 3) * 10;
+    equilIons.push({
+      x: startX, y: startY,
+      startX, startY,
+      parkX, parkY,
+      chX,
+      phase: 'wait',
+      waitFrames: order * 35,
+      waitTimer: 0,
+      speed: 0.6 + Math.random() * 0.2,
+      dotIndex: dotIdx,
+      leavingOrder: order,
+    });
+  });
+
+  // Store which indices stay so we can always draw them
+  equilIons._stayingIndices = allIndices.slice(4);
+}
+
+function updateEquilIons(midY) {
+  equilIons.forEach(ion => {
+    if (ion.phase === 'wait') {
+      ion.waitTimer++;
+      if (ion.waitTimer >= ion.waitFrames) ion.phase = 'drift';
+    } else if (ion.phase === 'drift') {
+      // Drift toward channel entrance (just below membrane)
+      const targetX = ion.chX + (ion.dotIndex % 2 === 0 ? -3 : 3);
+      const targetY = midY + 16;
+      const dx = targetX - ion.x;
+      const dy = targetY - ion.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 3) {
+        ion.phase = 'cross';
+        ion.x = targetX;
+      } else {
+        ion.x += (dx / dist) * ion.speed * 1.3;
+        ion.y += (dy / dist) * ion.speed * 1.3;
+      }
+    } else if (ion.phase === 'cross') {
+      // Travel straight up through channel
+      ion.y -= ion.speed;
+      if (ion.y < midY - 45) ion.phase = 'park_drift';
+    } else if (ion.phase === 'park_drift') {
+      // Drift to final parking spot outside
+      const dx = ion.parkX - ion.x;
+      const dy = ion.parkY - ion.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 2) {
+        ion.phase = 'parked';
+        ion.x = ion.parkX;
+        ion.y = ion.parkY;
+      } else {
+        ion.x += (dx / dist) * ion.speed;
+        ion.y += (dy / dist) * ion.speed;
+      }
+    }
+    // 'parked' - stays put
+  });
+}
+
+function drawEquilIons(ctx) {
+  equilIons.forEach(ion => {
+    if (ion.phase === 'wait') return; // still a background dot, drawn elsewhere
+    ctx.beginPath(); ctx.arc(ion.x, ion.y, 4.5, 0, Math.PI*2);
+    ctx.fillStyle = '#DC2626'; ctx.globalAlpha = 0.9; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.fillStyle = '#DC2626'; ctx.font = 'bold 8px DM Sans'; ctx.textAlign = 'center';
+    ctx.globalAlpha = 0.85;
+    ctx.fillText('K⁺', ion.x + 9, ion.y + 3);
+    ctx.globalAlpha = 1; ctx.textAlign = 'left';
+  });
+}
+
+// ── CANVASES ──────────────────────────────────────────────────────────────────
+const mCanvas = document.getElementById('membrane-canvas');
+const mCtx = mCanvas.getContext('2d');
+const vCanvas = document.getElementById('voltage-bar-canvas');
+const vCtx = vCanvas.getContext('2d');
+const vmCanvas = document.getElementById('voltmeter-canvas');
+const vmCtx = vmCanvas.getContext('2d');
+
+function resizeCanvases() {
+  const dpr = window.devicePixelRatio || 1;
+  const mw = mCanvas.parentElement.clientWidth - 28;
+  mCanvas.width = mw * dpr; mCanvas.height = 220 * dpr;
+  mCanvas.style.width = mw + 'px'; mCanvas.style.height = '220px';
+  mCtx.scale(dpr, dpr);
+
+  const vw = vCanvas.parentElement.clientWidth - 28;
+  vCanvas.width = vw * dpr; vCanvas.height = 80 * dpr;
+  vCanvas.style.width = vw + 'px'; vCanvas.style.height = '80px';
+  vCtx.scale(dpr, dpr);
+
+  const vmEl = document.getElementById('voltmeter-canvas');
+  if (vmEl) {
+    const vmw = vmEl.parentElement.clientWidth - 28;
+    vmEl.width = vmw * dpr; vmEl.height = 120 * dpr;
+    vmEl.style.width = vmw + 'px'; vmEl.style.height = '120px';
+    vmCtx.scale(dpr, dpr);
+  }
+}
+
+// ── VOLTAGE BAR ───────────────────────────────────────────────────────────────
+function calcRestingPotential() {
+  // Simplified Goldman: Vm ≈ (Pk*Ek + Pna*Ena) / (Pk + Pna)
+  // Ek depends on extracellular K+: Ek = 61.5 * log([K]o / [K]i)
+  // With [K]i = 140mM (fixed), [Na]i = 15mM (fixed)
+  const Ki = 140, Nai = 15;
+  const Ek = 61.5 * Math.log10(slEk / Ki);   // typically ~-90mV at rest
+  const Ena = 61.5 * Math.log10(slEna / Nai); // typically ~+60mV at rest
+  const Pk = slPk / 100, Pna = slPna / 100;
+  if (Pk + Pna === 0) return -70;
+  return (Pk * Ek + Pna * Ena) / (Pk + Pna);
+}
+
+function drawVoltageBar(vm) {
+  const w = vCanvas.width / (window.devicePixelRatio || 1);
+  const h = vCanvas.height / (window.devicePixelRatio || 1);
+  vCtx.clearRect(0, 0, w, h);
+  vCtx.fillStyle = '#f8f8f8';
+  vCtx.fillRect(0, 0, w, h);
+
+  const minV = -100, maxV = 50;
+  const range = maxV - minV;
+  const zeroX = ((0 - minV) / range) * (w - 80) + 40;
+
+  // Scale line
+  vCtx.strokeStyle = '#e5e5e5';
+  vCtx.lineWidth = 1;
+  [-100,-80,-60,-40,-20,0,20,40].forEach(v => {
+    const x = ((v - minV) / range) * (w - 80) + 40;
+    vCtx.beginPath(); vCtx.moveTo(x, 20); vCtx.lineTo(x, 55); vCtx.stroke();
+    vCtx.fillStyle = '#aaa'; vCtx.font = '9px DM Sans'; vCtx.textAlign = 'center';
+    vCtx.fillText(v, x, 68);
+  });
+
+  // Zero line
+  vCtx.strokeStyle = '#ccc'; vCtx.lineWidth = 1.5;
+  vCtx.setLineDash([3,3]);
+  vCtx.beginPath(); vCtx.moveTo(zeroX, 18); vCtx.lineTo(zeroX, 56); vCtx.stroke();
+  vCtx.setLineDash([]);
+
+  // VM indicator bar
+  const vmX = Math.max(40, Math.min(w - 40, ((vm - minV) / range) * (w - 80) + 40));
+  const barColor = vm < -60 ? '#003262' : vm < -40 ? '#D97706' : '#DC2626';
+
+  vCtx.fillStyle = barColor;
+  vCtx.beginPath();
+  vCtx.roundRect(Math.min(vmX, zeroX), 28, Math.abs(vmX - zeroX), 20, 3);
+  vCtx.fill();
+
+  // VM label
+  vCtx.fillStyle = '#fff';
+  vCtx.font = 'bold 10px DM Sans';
+  vCtx.textAlign = 'center';
+  const labelX = vmX < zeroX ? vmX - 20 : vmX + 20;
+  vCtx.fillStyle = barColor;
+  vCtx.fillText(vm.toFixed(1) + ' mV', labelX, 22);
+
+  // Axis label
+  vCtx.fillStyle = '#999'; vCtx.font = '9px DM Sans'; vCtx.textAlign = 'center';
+  vCtx.fillText('mV', w/2, 78);
+}
+
+// ── VOLTMETER DRAWING ─────────────────────────────────────────────────────────
+function drawVoltmeter(normalizedV) {
+  // normalizedV: -1 = most negative (normal), 0 = neutral/depolarized
+  const dpr = window.devicePixelRatio || 1;
+  const w = vmCanvas.width / dpr;
+  const h = vmCanvas.height / dpr;
+  vmCtx.clearRect(0, 0, w, h);
+  vmCtx.fillStyle = '#f8f8f8';
+  vmCtx.fillRect(0, 0, w, h);
+
+  const cx = w / 2;
+  const cy = h - 20;
+  const r = Math.min(w * 0.28, h - 28); // smaller so labels fit outside
+
+  // Arc background (semicircle)
+  vmCtx.beginPath();
+  vmCtx.arc(cx, cy, r, Math.PI, 0, false);
+  vmCtx.strokeStyle = '#e5e5e5';
+  vmCtx.lineWidth = 14;
+  vmCtx.stroke();
+
+  // Colored arc: red on left (negative), blue on right (depolarized)
+  const grad = vmCtx.createLinearGradient(cx - r, cy, cx + r, cy);
+  grad.addColorStop(0, '#003262');
+  grad.addColorStop(0.5, '#6B7280');
+  grad.addColorStop(1, '#DC2626');
+  vmCtx.beginPath();
+  vmCtx.arc(cx, cy, r, Math.PI, 0, false);
+  vmCtx.strokeStyle = grad;
+  vmCtx.lineWidth = 14;
+  vmCtx.stroke();
+
+  // Needle - angle: Math.PI = far left (most negative), 0 = far right (depolarized)
+  // normalizedV: -1 = most negative (normal), 0 = depolarized
+  const angle = Math.PI + (normalizedV + 1) * Math.PI;
+  const nx = cx + (r - 10) * Math.cos(angle);
+  const ny = cy + (r - 10) * Math.sin(angle);
+  vmCtx.strokeStyle = '#1a1a1a';
+  vmCtx.lineWidth = 2.5;
+  vmCtx.lineCap = 'round';
+  vmCtx.beginPath();
+  vmCtx.moveTo(cx, cy);
+  vmCtx.lineTo(nx, ny);
+  vmCtx.stroke();
+
+  // Center dot
+  vmCtx.beginPath();
+  vmCtx.arc(cx, cy, 4, 0, Math.PI*2);
+  vmCtx.fillStyle = '#1a1a1a';
+  vmCtx.fill();
+
+  // Labels - outside arc. Arc outer edge = cx ± (r + 7) since lineWidth=14
+  // Add 8px gap from outer edge
+  vmCtx.font = '8px DM Sans'; vmCtx.fillStyle = '#555';
+  vmCtx.textAlign = 'right';
+  vmCtx.fillText('More negative', cx - r - 7 - 8, cy - 2);
+  vmCtx.textAlign = 'left';
+  vmCtx.fillText('Less negative', cx + r + 7 + 8, cy - 2);
+
+  // Status label below needle
+  const label = normalizedV < -0.6 ? 'Normal resting potential' :
+                normalizedV < -0.2 ? 'Partially depolarized' : 'Depolarized';
+  const labelColor = normalizedV < -0.6 ? '#003262' : normalizedV < -0.2 ? '#D97706' : '#DC2626';
+  vmCtx.font = 'bold 10px DM Sans';
+  vmCtx.fillStyle = labelColor;
+  vmCtx.textAlign = 'center';
+  vmCtx.fillText(label, cx, cy + 14);
+  vmCtx.textAlign = 'left';
+}
+
+// ── MEMBRANE DRAWING ──────────────────────────────────────────────────────────
+function drawMembrane() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = mCanvas.width / dpr;
+  const h = mCanvas.height / dpr;
+  mCtx.clearRect(0, 0, w, h);
+  mCtx.fillStyle = '#f8f8f8';
+  mCtx.fillRect(0, 0, w, h);
+
+  const midY = 105;
+  const memH = 10;
+
+  // Progress: how equilibrated (pump off)
+  const eq = equilibrating ? Math.min(equilibrationProgress, 1) : 0;
+
+  // Labels
+  mCtx.fillStyle = '#aaa';
+  mCtx.font = '10px DM Sans, sans-serif';
+  mCtx.fillText('Extracellular  (high Na⁺, low K⁺)', 8, 11);
+  mCtx.fillText('Intracellular  (high K⁺, low Na⁺, A⁻)', 8, h - 4);
+
+  // Membrane bands
+  mCtx.fillStyle = '#c5d8ee';
+  mCtx.fillRect(0, midY - memH, w, memH * 0.45);
+  mCtx.fillRect(0, midY + memH * 0.55, w, memH * 0.45);
+
+  const extY = midY - 35;
+  const intY = midY + 45;
+  const spacing = w / 10;
+
+  // Na+ outside - scales with slEna slider in mode 2 (baseline 145mM = 8 dots)
+  const naOutCount = currentMode === 2 ? Math.round(2 + (slEna / 200) * 6) : 8;
+  for (let i = 0; i < naOutCount; i++) {
+    const x = spacing * (i + 0.5) + (i % 2) * 5;
+    if (x < w * 0.8) drawDot(mCtx, x, extY - (i % 2) * 12, '#2563EB', 4.5, 'Na⁺');
+  }
+  // K+ outside - scales with slEk slider in mode 2 (baseline 5mM = 2 dots)
+  const kOutCount = currentMode === 2 ? Math.round(1 + (slEk / 20) * 5) : 2;
+  for (let i = 0; i < kOutCount; i++) {
+    const x = spacing * (i * (8 / Math.max(kOutCount, 1)) * 0.9 + 0.5);
+    if (x < w * 0.8) drawDot(mCtx, x, extY + 10, '#DC2626', 4.5, 'K⁺');
+  }
+  // Na+ inside - always fixed (2 dots, low inside)
+  for (let i = 0; i < 2; i++) {
+    const x = spacing * (i * 3 + 1.5);
+    if (x < w * 0.8) drawDot(mCtx, x, intY - 10, '#2563EB', 4.5, 'Na⁺');
+  }
+  // K+ inside - pump off: only 'wait' phase ions drawn; pump on: all 8 fixed dots
+  if (currentMode === 0 && !pumpOn) {
+    // Draw animated ions (wait phase) + always show last 2 that never leave
+    equilIons.forEach(ion => {
+      if (ion.phase === 'wait') {
+        drawDot(mCtx, ion.startX, ion.startY, '#DC2626', 4.5, 'K⁺');
+      }
+    });
+    // Always draw the 4 K+ dots that stay (random indices stored on equilIons)
+    const staying = equilIons._stayingIndices || [4,5,6,7];
+    staying.forEach(i => {
+      const x = spacing * (i + 0.5) + (i % 2) * 5;
+      if (x < w * 0.8) drawDot(mCtx, x, intY + (i % 2) * 12, '#DC2626', 4.5, 'K⁺');
+    });
+  } else {
+    for (let i = 0; i < 8; i++) {
+      const x = spacing * (i + 0.5) + (i % 2) * 5;
+      if (x < w * 0.8) drawDot(mCtx, x, intY + (i % 2) * 12, '#DC2626', 4.5, 'K⁺');
+    }
+  }
+
+  // Draw A- inside (always, fixed - large impermeable anions)
+  for (let i = 0; i < 6; i++) {
+    const x = spacing * (i * 1.4 + 0.3);
+    if (x < w - 20) drawDot(mCtx, x, intY + 28, '#7C3AED', 4, 'A⁻');
+  }
+
+  // Mode 0: 1 K+ leak channel (slow) + pump - balanced steady state
+  if (currentMode === 0) {
+    const cx = w * 0.38;
+    mCtx.strokeStyle = '#DB2777';
+    mCtx.lineWidth = 2.5;
+    mCtx.lineCap = 'round';
+    [-5,5].forEach(off => {
+      mCtx.beginPath(); mCtx.moveTo(cx+off, midY-memH); mCtx.lineTo(cx+off, midY-4); mCtx.stroke();
+      mCtx.beginPath(); mCtx.moveTo(cx+off, midY+memH); mCtx.lineTo(cx+off, midY+4); mCtx.stroke();
+    });
+    mCtx.fillStyle = '#DB2777';
+    mCtx.font = 'bold 9px DM Sans';
+    mCtx.textAlign = 'center';
+    mCtx.fillText('K⁺ leak', cx, midY - memH - 5);
+    mCtx.textAlign = 'left';
+    drawPump(mCtx, w * 0.85, midY, memH, pumpOn);
+  }
+
+  // Mode 1: Draw K+ leak channels with flow arrows + charge buildup
+  if (currentMode === 1) {
+    drawMode1Overlay(mCtx, w, midY, memH);
+  }
+
+  // Mode 2: Draw channels based on permeability sliders
+  if (currentMode === 2) {
+    drawMode2Channels(mCtx, w, midY, memH);
+  }
+}
+
+function drawDot(ctx, x, y, color, r, label) {
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.7;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  if (label) {
+    ctx.fillStyle = color;
+    ctx.font = 'bold 8px DM Sans';
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = 0.8;
+    ctx.fillText(label, x + 9, y + 3);
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+  }
+}
+
+function drawPump(ctx, px, midY, memH, isOn) {
+  const color = isOn ? '#7C3AED' : '#9CA3AF';
+  const pw = 18;
+
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.12;
+  ctx.beginPath();
+  ctx.roundRect(px - pw/2, midY - memH - 2, pw, memH * 2 + 4, 4);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(px - pw/2, midY - memH - 2, pw, memH * 2 + 4, 4);
+  ctx.stroke();
+
+  ctx.fillStyle = color;
+  ctx.font = 'bold 8px DM Sans';
+  ctx.textAlign = 'center';
+  ctx.fillText('Na⁺/K⁺', px, midY - memH - 16);
+  ctx.fillText('pump', px, midY - memH - 7);
+  ctx.font = '8px DM Sans';
+  ctx.fillStyle = isOn ? '#0F6E56' : '#9CA3AF';
+  ctx.fillText(isOn ? 'active' : 'off', px, midY + memH + 12);
+  ctx.textAlign = 'left';
+}
+
+function drawMode1Overlay(ctx, w, midY, memH) {
+  // 2 K+ leak channels
+  const channelXs = [w*0.28, w*0.52];
+  channelXs.forEach(cx => {
+    ctx.strokeStyle = '#DB2777';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    [-5,5].forEach(off => {
+      ctx.beginPath(); ctx.moveTo(cx+off, midY-memH); ctx.lineTo(cx+off, midY-4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+off, midY+memH); ctx.lineTo(cx+off, midY+4); ctx.stroke();
+    });
+    ctx.fillStyle = '#DB2777';
+    ctx.font = 'bold 9px DM Sans';
+    ctx.textAlign = 'center';
+    ctx.fillText('K⁺ leak', cx, midY - memH - 5);
+    ctx.textAlign = 'left';
+  });
+
+  // 1 pump on the right
+  drawPump(ctx, w * 0.85, midY, memH, true);
+
+  // Vertical balance bar - sequential phases
+  const barX = w - 42;
+  const barH = 90;
+  const barTop = midY - barH/2;
+  const barW2 = 14;
+  const midBarY = barTop + barH/2;
+
+  // Track
+  ctx.fillStyle = '#f0f0f0';
+  ctx.beginPath();
+  ctx.roundRect(barX, barTop, barW2, barH, 7);
+  ctx.fill();
+
+  if (!mode1Running) {
+    // Before start: show empty bar with label prompts
+    ctx.font = '8px DM Sans'; ctx.fillStyle = '#bbb'; ctx.textAlign = 'center';
+    ctx.fillText('forces', barX + barW2/2, midBarY - 8);
+    ctx.fillText('will appear', barX + barW2/2, midBarY + 4);
+    ctx.textAlign = 'left';
+  } else if (mode1Phase === 1) {
+    // Phase 1: only concentration force, growing
+    const concH = barH/2 * mode1Phase1Progress;
+    ctx.fillStyle = '#DC262688';
+    ctx.beginPath();
+    ctx.roundRect(barX, midBarY - concH, barW2, concH, [7,7,0,0]);
+    ctx.fill();
+    // Label
+    ctx.save(); ctx.translate(barX - 5, midBarY - 10); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = '#DC2626'; ctx.font = '8px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('conc. force', 0, 0); ctx.restore();
+    // Arrow up
+    ctx.strokeStyle = '#DC2626'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(barX + barW2/2, barTop - 5); ctx.lineTo(barX + barW2/2, barTop - 14); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(barX + barW2/2 - 4, barTop - 10); ctx.lineTo(barX + barW2/2, barTop - 16); ctx.lineTo(barX + barW2/2 + 4, barTop - 10); ctx.stroke();
+  } else {
+    // Phase 2: both forces, electrical grows to balance concentration
+    const bal = Math.min(forceBalance, 1);
+    const concH = barH/2 * (1 - bal * 0.9);
+    const elecH = barH/2 * bal * 0.9;
+    ctx.fillStyle = '#DC262688';
+    ctx.beginPath();
+    ctx.roundRect(barX, midBarY - concH, barW2, concH, [7,7,0,0]);
+    ctx.fill();
+    ctx.fillStyle = '#2563EB88';
+    ctx.beginPath();
+    ctx.roundRect(barX, midBarY, barW2, elecH, [0,0,7,7]);
+    ctx.fill();
+    // Equilibrium line
+    ctx.strokeStyle = '#003262'; ctx.lineWidth = 1.5;
+    ctx.setLineDash([3,2]);
+    ctx.beginPath(); ctx.moveTo(barX - 4, midBarY); ctx.lineTo(barX + barW2 + 4, midBarY); ctx.stroke();
+    ctx.setLineDash([]);
+    // Labels
+    ctx.save(); ctx.translate(barX - 5, midBarY - 20); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = '#DC2626'; ctx.font = '8px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('conc. force', 0, 0); ctx.restore();
+    ctx.save(); ctx.translate(barX - 5, midBarY + 30); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = '#2563EB'; ctx.font = '8px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('elec. force', 0, 0); ctx.restore();
+    // Arrows
+    ctx.strokeStyle = '#DC2626'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(barX + barW2/2, barTop - 5); ctx.lineTo(barX + barW2/2, barTop - 14); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(barX + barW2/2 - 4, barTop - 10); ctx.lineTo(barX + barW2/2, barTop - 16); ctx.lineTo(barX + barW2/2 + 4, barTop - 10); ctx.stroke();
+    ctx.strokeStyle = '#2563EB';
+    ctx.beginPath(); ctx.moveTo(barX + barW2/2, barTop + barH + 5); ctx.lineTo(barX + barW2/2, barTop + barH + 14); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(barX + barW2/2 - 4, barTop + barH + 10); ctx.lineTo(barX + barW2/2, barTop + barH + 16); ctx.lineTo(barX + barW2/2 + 4, barTop + barH + 10); ctx.stroke();
+    if (bal > 0.9) {
+      ctx.fillStyle = '#0F6E56'; ctx.font = 'bold 9px DM Sans'; ctx.textAlign = 'center';
+      ctx.fillText('⚖ balanced!', barX + barW2/2, midBarY - barH/2 - 22);
+      ctx.textAlign = 'left';
+    }
+  }
+}
+
+function drawMode2Channels(ctx, w, midY, memH) {
+  // Show K+ and Na+ channels scaled by permeability
+  const kChannels = Math.round(slPk / 25) + 1;
+  const naChannels = Math.round(slPna / 25) + 1;
+  const positions = [w*0.15, w*0.3, w*0.45, w*0.6, w*0.72, w*0.82];
+
+  for (let i = 0; i < Math.min(kChannels, 4); i++) {
+    const cx = positions[i];
+    ctx.strokeStyle = '#DC2626'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    [-5,5].forEach(off => {
+      ctx.beginPath(); ctx.moveTo(cx+off, midY-memH); ctx.lineTo(cx+off, midY-4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+off, midY+memH); ctx.lineTo(cx+off, midY+4); ctx.stroke();
+    });
+    ctx.fillStyle = '#DC2626'; ctx.font = 'bold 9px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('K⁺', cx, midY - memH - 5); ctx.textAlign = 'left';
+  }
+
+  for (let i = 0; i < Math.min(naChannels, 2); i++) {
+    const cx = positions[4 + i];
+    const isOpen = slPna > 30;
+    ctx.strokeStyle = isOpen ? '#2563EB' : '#9CA3AF'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    if (isOpen) {
+      [-5,5].forEach(off => {
+        ctx.beginPath(); ctx.moveTo(cx+off, midY-memH); ctx.lineTo(cx+off, midY-4); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx+off, midY+memH); ctx.lineTo(cx+off, midY+4); ctx.stroke();
+      });
+    } else {
+      [-5,5].forEach(off => {
+        ctx.beginPath(); ctx.moveTo(cx+off, midY-memH); ctx.lineTo(cx+off, midY+memH); ctx.stroke();
+      });
+      ctx.fillStyle = '#9CA3AF'; ctx.beginPath(); ctx.roundRect(cx-7, midY-4, 14, 8, 3); ctx.fill();
+    }
+    ctx.fillStyle = isOpen ? '#2563EB' : '#9CA3AF'; ctx.font = 'bold 9px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('Na⁺', cx, midY - memH - 5); ctx.textAlign = 'left';
+  }
+}
+
+// ── PUMP IONS ─────────────────────────────────────────────────────────────────
+let pumpNaIons = []; // 3 Na+ moving out (upward)
+let pumpKIons  = []; // 2 K+ moving in (downward)
+
+function initPumpIons(px, midY) {
+  pumpNaIons = [];
+  pumpKIons  = [];
+  for (let i = 0; i < 3; i++) {
+    pumpNaIons.push({ x: px - 3 + i*3, y: midY + 25 + Math.random()*20, speed: 0.4 + Math.random()*0.2 });
+  }
+  for (let i = 0; i < 2; i++) {
+    pumpKIons.push({ x: px - 2 + i*4, y: midY - 25 - Math.random()*20, speed: 0.35 + Math.random()*0.2 });
+  }
+}
+
+function updatePumpIons(px, midY) {
+  pumpNaIons.forEach(ion => {
+    ion.y -= ion.speed;
+    if (ion.y < midY - 45) ion.y = midY + 25 + Math.random()*15;
+  });
+  pumpKIons.forEach(ion => {
+    ion.y += ion.speed;
+    if (ion.y > midY + 45) ion.y = midY - 25 - Math.random()*15;
+  });
+}
+
+function drawPumpIons(ctx) {
+  pumpNaIons.forEach(ion => {
+    ctx.beginPath(); ctx.arc(ion.x, ion.y, 4, 0, Math.PI*2);
+    ctx.fillStyle = '#2563EB'; ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.fillStyle = '#2563EB'; ctx.font = 'bold 7px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('Na⁺', ion.x + 9, ion.y + 3); ctx.textAlign = 'left';
+  });
+  pumpKIons.forEach(ion => {
+    ctx.beginPath(); ctx.arc(ion.x, ion.y, 4, 0, Math.PI*2);
+    ctx.fillStyle = '#DC2626'; ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.fillStyle = '#DC2626'; ctx.font = 'bold 7px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('K⁺', ion.x + 8, ion.y + 3); ctx.textAlign = 'left';
+  });
+}
+
+// ── K+ LEAK IONS (Mode 1) - bidirectional based on forceBalance ──────────────
+let leakKIons = [];
+
+function initLeakKIons(channelXs, midY, baseSpeed) {
+  leakKIons = [];
+  const spd = baseSpeed || 0.5;
+  channelXs.forEach(cx => {
+    // 3 ions per channel: direction determined dynamically by forceBalance
+    for (let i = 0; i < 3; i++) {
+      const goingOut = i < 2; // start with 2 out, 1 in
+      leakKIons.push({
+        x: cx + (Math.random()-0.5)*4,
+        y: goingOut ? midY + 15 + Math.random()*25 : midY - 15 - Math.random()*25,
+        speed: spd + Math.random()*0.15,
+        cx,
+        dir: goingOut ? 'out' : 'in',
+        phase: Math.random() * 60,
+      });
+    }
+  });
+}
+
+function updateLeakKIons(midY) {
+  leakKIons.forEach((ion, idx) => {
+    const outFraction = 1 - forceBalance * 0.5;
+    const shouldGoOut = (idx % 3) < Math.round(3 * outFraction);
+    ion.dir = shouldGoOut ? 'out' : 'in';
+
+    if (ion.dir === 'out') {
+      ion.y -= ion.speed;
+      if (ion.y < midY - 55) {
+        ion.x = ion.cx + (Math.random()-0.5)*3; // snap back to channel x
+        ion.y = midY + 15 + Math.random()*20;
+      }
+    } else {
+      ion.y += ion.speed;
+      if (ion.y > midY + 55) {
+        ion.x = ion.cx + (Math.random()-0.5)*3;
+        ion.y = midY - 15 - Math.random()*20;
+      }
+    }
+  });
+}
+
+function drawLeakKIons(ctx) {
+  leakKIons.forEach(ion => {
+    ctx.beginPath(); ctx.arc(ion.x, ion.y, 4, 0, Math.PI*2);
+    ctx.fillStyle = '#DC2626'; ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.fillStyle = '#DC2626'; ctx.font = 'bold 7px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('K⁺', ion.x + 8, ion.y + 3); ctx.textAlign = 'left';
+  });
+}
+
+// ── ANIMATION LOOP ────────────────────────────────────────────────────────────
+function animate() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = mCanvas.width / dpr;
+  const midY = 105;
+  const px = w * 0.85;
+
+  // Mode 0: pump animation + leak K+ always flowing
+  if (currentMode === 0 && pumpOn) {
+    if (pumpNaIons.length === 0) initPumpIons(px, midY);
+    updatePumpIons(px, midY);
+    equilIons = []; // clear crossing ions when pump is on
+    // Leak K+ in mode 0: just 1 channel, slower to match pump rate
+    const leakXs0 = [w*0.38];
+    if (leakKIons.length === 0) initLeakKIons(leakXs0, midY, 0.25);
+    updateLeakKIons(midY);
+  } else if (currentMode === 0 && !pumpOn) {
+    pumpNaIons = []; pumpKIons = []; leakKIons = []; // clear all pump/leak ions immediately
+    if (equilIons.length === 0) initEquilIons(w, midY);
+    updateEquilIons(midY);
+    if (equilibrationProgress < 1) {
+      equilibrationProgress = Math.min(equilibrationProgress + 0.004, 1);
+      equilibrating = true;
+    }
+  }
+
+  // Mode 1: sequential phases
+  if (currentMode === 1) {
+    if (mode1Running) {
+      const channelXs = [w*0.28, w*0.52];
+      if (leakKIons.length === 0) initLeakKIons(channelXs, midY);
+      if (mode1Phase === 1) {
+        // Phase 1: K+ flows out freely, concentration force builds
+        updateLeakKIons(midY);
+        mode1Phase1Progress = Math.min(mode1Phase1Progress + 0.004, 1);
+        if (mode1Phase1Progress >= 1) {
+          mode1PauseTimer++;
+          if (mode1PauseTimer > 60) { // 1 second pause
+            mode1Phase = 2;
+          }
+        }
+      } else if (mode1Phase === 2) {
+        // Phase 2: electrical force builds, K+ flow slows to equilibrium
+        updateLeakKIons(midY);
+        if (forceBalance < 1) forceBalance = Math.min(forceBalance + 0.003, 1);
+      }
+    }
+    if (pumpNaIons.length === 0) initPumpIons(px, midY);
+    updatePumpIons(px, midY);
+  } else if (currentMode !== 0) {
+    leakKIons = [];
+  }
+
+  // Reset pump ions when leaving mode 0 and mode 1
+  if (currentMode !== 0 && currentMode !== 1) { pumpNaIons = []; pumpKIons = []; }
+
+  drawMembrane();
+
+  // Draw animated ions on top
+  if ((currentMode === 0 && pumpOn) || currentMode === 1) drawPumpIons(mCtx);
+  if (currentMode === 0 && pumpOn) drawLeakKIons(mCtx);
+  if (currentMode === 0 && !pumpOn) drawEquilIons(mCtx);
+  if (currentMode === 1 && mode1Running) drawLeakKIons(mCtx);
+
+  if (currentMode === 0 || currentMode === 1) {
+    let nv;
+    if (currentMode === 0) {
+      if (pumpOn) {
+        nv = -1;
+      } else {
+        // Continuous: each ion contributes based on how far it has traveled
+        // from startY (inside) to parkY (outside) - no discrete jumps
+        let total = 0;
+        equilIons.forEach(ion => {
+          if (ion.phase === 'wait') {
+            total += 0;
+          } else if (ion.phase === 'parked') {
+            total += 1;
+          } else {
+            const travelTotal = ion.startY - ion.parkY;
+            const travelDone = ion.startY - ion.y;
+            total += Math.max(0, Math.min(1, travelDone / travelTotal));
+          }
+        });
+        nv = -1 + Math.min(total / 4, 1) * 0.85;
+      }
+    } else {
+      // Mode 1: phase 1 = slight depol as K+ leaves, phase 2 = stabilizes at equilibrium
+      if (!mode1Running) {
+        nv = -1;
+      } else if (mode1Phase === 1) {
+        nv = -1 - mode1Phase1Progress * 0.15; // depolarizes slightly as K+ leaves
+      } else {
+        nv = -1.15 + forceBalance * 0.15; // returns toward equilibrium
+      }
+    }
+    drawVoltmeter(Math.max(-1, Math.min(0, nv)));
+  }
+  if (currentMode === 2) {
+    const vm = calcRestingPotential();
+    drawVoltageBar(vm);
+  }
+
+  animFrame = requestAnimationFrame(animate);
+}
+
+function startAnimation() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  animFrame = requestAnimationFrame(animate);
+}
+
+// ── PUMP TOGGLE ───────────────────────────────────────────────────────────────
+function setPump(on) {
+  pumpOn = on;
+  document.getElementById('btn-pump-on').className = 'pump-btn' + (on ? ' active-on' : '');
+  document.getElementById('btn-pump-off').className = 'pump-btn' + (!on ? ' active-off' : '');
+  if (!on) {
+    equilibrating = true;
+    // Add tutor message when pump is disabled
+    addTutorMessage('The pump is off. Watch what happens to the K⁺ distribution and the membrane potential. Once you’ve observed it - why do you think the membrane becomes less negative over time, even though positive ions (K⁺) are leaving the cell?');
+  } else {
+    equilibrating = false;
+    equilibrationProgress = 0;
+    equilIons = [];
+    addTutorMessage('Pump back on - the gradients are being restored. This is why the pump runs continuously and uses so much of the brain\'s energy.');
+  }
+}
+
+// ── SLIDERS ───────────────────────────────────────────────────────────────────
+function resetSliders() {
+  slEk = 5; slEna = 145; slPk = 90; slPna = 10;
+  slidersTouched = { ek: false, ena: false, pk: false, pna: false };
+  document.getElementById('sl-ek').value = 5;
+  document.getElementById('sl-ena').value = 145;
+  document.getElementById('sl-pk').value = 90;
+  document.getElementById('sl-pna').value = 10;
+  document.getElementById('sv-ek').textContent = '5 mM';
+  document.getElementById('sv-ena').textContent = '145 mM';
+  document.getElementById('sv-pk').textContent = '90%';
+  document.getElementById('sv-pna').textContent = '10%';
+}
+
+function onSlider(which) {
+  slEk = parseInt(document.getElementById('sl-ek').value);
+  slEna = parseInt(document.getElementById('sl-ena').value);
+  slPk = parseInt(document.getElementById('sl-pk').value);
+  slPna = parseInt(document.getElementById('sl-pna').value);
+  document.getElementById('sv-ek').textContent = slEk + ' mM';
+  document.getElementById('sv-ena').textContent = slEna + ' mM';
+  document.getElementById('sv-pk').textContent = slPk + '%';
+  document.getElementById('sv-pna').textContent = slPna + '%';
+  if (which) slidersTouched[which] = true;
+  checkAllSlidersTouched();
+}
+
+function checkAllSlidersTouched() {
+  if (!explorationMode && !freeExploration && currentMode === 2 && answeredCurrentMode) {
+    const all = slidersTouched.ek && slidersTouched.ena && slidersTouched.pk && slidersTouched.pna;
+    if (all) setTimeout(() => unlockFreeExploration(), 800);
+  }
+}
+
+// ── MODE 1 START ─────────────────────────────────────────────────────────────
+function startMode1() {
+  mode1Running = true;
+  document.getElementById('btn-start-mode1').disabled = true;
+  document.getElementById('btn-start-mode1').textContent = 'Running…';
+  document.getElementById('btn-reset-mode1').style.display = 'inline-block';
+}
+
+function resetMode1() {
+  mode1Running = false;
+  forceBalance = 0;
+  mode1Phase = 1; mode1Phase1Progress = 0; mode1PauseTimer = 0;
+  leakKIons = [];
+  const startBtn = document.getElementById('btn-start-mode1');
+  startBtn.disabled = (!(explorationMode || freeExploration) && !answeredCurrentMode);
+  startBtn.textContent = 'Start';
+  document.getElementById('btn-reset-mode1').style.display = 'none';
+}
+
+// ── MODE NAVIGATION ───────────────────────────────────────────────────────────
+function goToMode(m) {
+  currentMode = m;
+  answeredCurrentMode = explorationMode || freeExploration;
+  equilibrationProgress = 0; equilibrating = false; pumpOn = true;
+  forceBalance = 0;
+  leakKIons = []; pumpNaIons = []; pumpKIons = [];
+  mode1Running = false; mode1Phase = 1; mode1Phase1Progress = 0; mode1PauseTimer = 0;
+  slidersTouched = { ek: false, ena: false, pk: false, pna: false };
+  updateUI(m);
+}
+
+function nextMode() {
+  if (currentMode < 2) { currentMode++; answeredCurrentMode = false; updateUI(currentMode); }
+  else if (freeExploration) { currentMode = 0; answeredCurrentMode = true; updateUI(0); }
+}
+
+function prevMode() {
+  if (currentMode > 0) { currentMode--; answeredCurrentMode = explorationMode || freeExploration; updateUI(currentMode); }
+}
+
+function updateUI(m) {
+  const p = MODES[m];
+
+  document.getElementById('phase-title').textContent = p.name;
+  document.getElementById('phase-description').textContent = p.description;
+
+  // Mode stepper - gate future modes in guided mode
+  document.querySelectorAll('.mode-btn').forEach((btn, i) => {
+    btn.classList.remove('active','visited');
+    if (i === m) btn.classList.add('active');
+    if (i < m) btn.classList.add('visited');
+    // In guided mode, only allow navigating to visited/current modes
+    if (!explorationMode && !freeExploration && i > m) {
+      btn.disabled = true; btn.style.opacity = '0.4';
+    } else {
+      btn.disabled = false; btn.style.opacity = '';
+    }
+  });
+
+  // Show/hide mode-specific panels
+  document.getElementById('pump-toggle-bar').style.display = m === 0 ? 'flex' : 'none';
+  document.getElementById('mode1-start-bar').style.display = m === 1 ? 'flex' : 'none';
+  if (m === 1) {
+    const startBtn = document.getElementById('btn-start-mode1');
+    const nudge1 = document.getElementById('mode1-nudge');
+    const needsAnswer = !explorationMode && !freeExploration && !answeredCurrentMode;
+    startBtn.disabled = needsAnswer;
+    startBtn.textContent = 'Start';
+    document.getElementById('btn-reset-mode1').style.display = 'none';
+    if (nudge1) nudge1.style.display = needsAnswer ? 'block' : 'none';
+  }
+  // Gate pump-off in guided mode until student answers
+  const pumpOffBtn = document.getElementById('btn-pump-off');
+  if (pumpOffBtn) {
+    pumpOffBtn.disabled = (!explorationMode && !answeredCurrentMode && m === 0);
+  }
+  document.getElementById('slider-card').style.display = m === 2 ? 'block' : 'none';
+  document.getElementById('voltage-card').style.display = m === 2 ? 'block' : 'none';
+  if (m === 2) {
+    // Re-scale voltage bar canvas now that it's visible
+    setTimeout(() => {
+      const dpr = window.devicePixelRatio || 1;
+      const vw = vCanvas.parentElement.clientWidth - 28;
+      vCanvas.width = vw * dpr; vCanvas.height = 80 * dpr;
+      vCanvas.style.width = vw + 'px'; vCanvas.style.height = '80px';
+      vCtx.scale(dpr, dpr);
+    }, 50);
+  }
+  document.getElementById('voltmeter-card').style.display = m < 2 ? 'block' : 'none';
+  document.getElementById('forward-link').style.display = (m === 2 && freeExploration) ? 'flex' : 'none';
+
+  // Nav buttons
+  document.getElementById('prev-btn').disabled = m === 0;
+
+  const nb = document.getElementById('next-btn');
+  const nudge = document.getElementById('soft-nudge');
+
+  if (m === 2 && freeExploration) {
+    nb.textContent = 'Start over';
+    nb.disabled = false; nudge.style.display = 'none';
+    document.getElementById('forward-link').style.display = 'flex';
+  } else if (explorationMode || freeExploration) {
+    nb.innerHTML = 'Next <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+    nb.disabled = m === 2; nudge.style.display = 'none';
+  } else {
+    nb.innerHTML = 'Next <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+    nb.disabled = !answeredCurrentMode;
+    nudge.style.display = answeredCurrentMode ? 'none' : 'block';
+  }
+
+  // Add prediction prompt
+  if (!explorationMode && p.prediction) {
+    addPredictionPrompt(p.prediction);
+  }
+  if (m === 2 && !explorationMode && !freeExploration) {
+    // Will show forward link after answering
+  }
+}
+
+// ── EXPLORE MODE TOGGLE ───────────────────────────────────────────────────────
+function setExploreMode(mode) {
+  explorationMode = mode === 'explore';
+  document.getElementById('btn-guided').classList.toggle('active', !explorationMode);
+  document.getElementById('btn-explore').classList.toggle('active', explorationMode);
+
+  if (explorationMode) {
+    freeExploration = true;
+    answeredCurrentMode = true;
+    document.getElementById('soft-nudge').style.display = 'none';
+    document.getElementById('chat-messages').innerHTML = '';
+    addTutorMessage('You\'re in Explore mode. Move between sections freely and ask me anything - no prediction prompts, just open exploration.');
+    const pumpOffBtnEx = document.getElementById('btn-pump-off');
+    if (pumpOffBtnEx) pumpOffBtnEx.disabled = false;
+    const startBtnEx = document.getElementById('btn-start-mode1');
+    if (startBtnEx) { startBtnEx.disabled = false; startBtnEx.textContent = 'Start'; }
+    const nudge1Ex = document.getElementById('mode1-nudge');
+    if (nudge1Ex) nudge1Ex.style.display = 'none';
+    updateUI(currentMode);
+  } else {
+    explorationMode = false;
+    freeExploration = false;
+    answeredCurrentMode = false;
+    document.getElementById('chat-messages').innerHTML = '';
+    updateUI(currentMode);
+  }
+}
+
+function unlockFreeExploration() {
+  freeExploration = true;
+  document.getElementById('forward-link').style.display = 'flex';
+  addTutorMessage('You\'ve worked through all three sections - well done. You can now explore freely, or head to the Action Potential Explorer to see what happens once the neuron is at −70 mV.');
+  updateUI(currentMode);
+}
+
+// ── CHAT ──────────────────────────────────────────────────────────────────────
+function addPredictionPrompt(text) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'prediction-prompt';
+  el.innerHTML = `<strong>Predict</strong>${text}`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+}
+
+function addTutorMessage(text, thinking=false) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = `message tutor${thinking?' thinking':''}`;
+  el.innerHTML = `<span class="message-sender">Tutor</span><div class="message-bubble">${text}</div>`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+  return el;
+}
+
+function addStudentMessage(text) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'message student';
+  el.innerHTML = `<span class="message-sender">You</span><div class="message-bubble">${text}</div>`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('student-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!apiKey) { openModal(); return; }
+
+  input.value = ''; autoResize(input);
+  addStudentMessage(text);
+  const thinking = addTutorMessage('Thinking…', true);
+  document.getElementById('send-btn').disabled = true;
+
+  const p = MODES[currentMode];
+  const system = p.system + `\n\nYour role:\n- Respond warmly and with Socratic engagement\n- Engage with their specific reasoning\n- If right: affirm specifically, then follow up with a clinical/real-world application question\n- If partially right: acknowledge what's correct, guide toward what's missing\n- If wrong: ask a guiding question rather than giving the answer\n- 2–4 sentences, conversational, no bullet points`;
+
+  chatHistory.push({ role: 'user', content: text });
+
+  const trimmedHistory = chatHistory.slice(-10); // keep last 10 messages
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 300, system, messages: trimmedHistory }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      const apiErrMsg = data.error.message || '';
+      thinking.querySelector('.message-bubble').textContent = apiErrMsg.toLowerCase().includes('overload') ? 'The AI tutor is busy right now — please wait a moment and try again.' : 'API error: ' + apiErrMsg;
+      chatHistory.pop();
+    } else {
+      const reply = data.content[0].text;
+      thinking.classList.remove('thinking');
+      thinking.querySelector('.message-bubble').textContent = reply;
+      chatHistory.push({ role: 'assistant', content: reply });
+
+      if (!freeExploration && !explorationMode) {
+        answeredCurrentMode = true;
+        document.getElementById('soft-nudge').style.display = 'none';
+        document.getElementById('next-btn').disabled = false;
+        // Unlock pump toggle in mode 0
+        const pumpOffBtn = document.getElementById('btn-pump-off');
+        if (pumpOffBtn) pumpOffBtn.disabled = false;
+        // Unlock start button in mode 1
+        const startBtn = document.getElementById('btn-start-mode1');
+        if (startBtn) startBtn.disabled = false;
+        const nudge1 = document.getElementById('mode1-nudge');
+        if (nudge1) nudge1.style.display = 'none';
+        // Unlock next mode button in stepper
+        document.querySelectorAll('.mode-btn').forEach((btn, i) => {
+          if (i <= currentMode + 1) { btn.disabled = false; btn.style.opacity = ''; }
+        });
+        if (currentMode === 2) checkAllSlidersTouched(); // only unlock after all sliders touched
+      }
+    }
+  } catch(e) {
+    const errMsg = error.message || '';
+    thinking.querySelector('.message-bubble').textContent = errMsg.includes('overload') ? 'The AI tutor is busy right now — please wait a moment and try again.' : 'Could not reach the tutor. Check your API key and try again.';
+    chatHistory.pop();
+  }
+
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('chat-messages').scrollTop = 99999;
+}
+
+function handleKey(e) { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,90)+'px'; }
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal() { document.getElementById('modal-overlay').classList.add('open'); document.getElementById('api-key-input').focus(); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function saveApiKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  if (k) {
+    apiKey = k; sessionStorage.setItem('neuc64_api_key', k);
+    document.getElementById('api-status-btn').textContent = 'Key saved ✓';
+    document.getElementById('api-status-btn').style.color = '#0F6E56';
+    closeModal();
+  }
+}
+document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target===document.getElementById('modal-overlay')) closeModal(); });
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => { resizeCanvases(); });
+if (apiKey) {
+  document.getElementById('api-status-btn').textContent = 'Key saved ✓';
+  document.getElementById('api-status-btn').style.color = '#0F6E56';
+}
+resizeCanvases();
+answeredCurrentMode = false;
+updateUI(0);
+document.getElementById('next-btn').disabled = true;
+startAnimation();
+</script>
+</body>
+</html>

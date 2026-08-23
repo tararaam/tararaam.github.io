@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Myelination Explorer — NEU C61</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --berkeley-blue: #003262; --blue-light: #E8EFF7;
+      --gold-light: #FEF5E0; --gold-text: #A07000;
+      --teal: #0F6E56; --teal-light: #E1F5EE;
+      --text-primary: #1a1a1a; --text-secondary: #555; --text-tertiary: #999;
+      --border: #e5e5e5; --bg: #fff; --bg-secondary: #f8f8f8;
+      --radius-md: 8px; --radius-lg: 12px;
+      --myelin-color: #003262; --unmyelin-color: #6B7280; --ms-color: #7C3AED;
+    }
+    body { font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--bg); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+
+    .top-nav { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.97); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 100; }
+    .logo { display: flex; align-items: center; gap: 8px; }
+    .logo-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--berkeley-blue); display: flex; align-items: center; justify-content: center; }
+    .logo-mark svg { width: 17px; height: 17px; }
+    .logo-text { font-size: 13px; font-weight: 500; line-height: 1.2; }
+    .logo-sub { font-size: 11px; color: var(--text-secondary); }
+    .mode-tabs { display: flex; gap: 2px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 3px; }
+    .mode-tab { padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer; border: none; background: transparent; font-family: 'DM Sans', sans-serif; transition: all 0.15s; white-space: nowrap; }
+    .mode-tab:hover { color: var(--text-primary); }
+    .mode-tab.active { background: var(--bg); color: var(--berkeley-blue); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .back-link { font-size: 12px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px; }
+    .back-link svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .back-link:hover { color: var(--text-primary); }
+
+    .app { display: grid; grid-template-columns: 60fr 40fr; height: calc(100vh - 53px); overflow: hidden; }
+    .left-panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow: hidden; }
+    .tool-header { padding: 1rem 1.5rem 0.875rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .tool-header h1 { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; margin-bottom: 0.15rem; }
+    .tool-header p { font-size: 12px; color: var(--text-secondary); }
+
+    .viz-area { flex: 1; overflow-y: auto; padding: 1rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .viz-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0.875rem; }
+    .viz-card-label { font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.75rem; }
+
+    /* AXON ROWS */
+    .axon-race { display: flex; flex-direction: column; gap: 0; }
+    .axon-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .axon-row:last-child { border-bottom: none; }
+    .axon-label-col { width: 105px; flex-shrink: 0; }
+    .axon-type-name { font-size: 12px; font-weight: 500; }
+    .axon-speed { font-size: 10px; color: var(--text-tertiary); margin-top: 1px; }
+    .axon-canvas-wrap { flex: 1; position: relative; }
+    .axon-canvas { width: 100%; display: block; }
+    .axon-result { width: 82px; flex-shrink: 0; text-align: right; font-size: 11px; color: var(--text-tertiary); line-height: 1.4; }
+    .axon-result.done { color: var(--teal); font-weight: 500; }
+    .axon-result.failed { color: #A32D2D; font-weight: 500; }
+
+    .timer-row { display: flex; align-items: baseline; justify-content: space-between; padding: 0.75rem 0 0.25rem; }
+    .timer-label { font-size: 11px; color: var(--text-tertiary); }
+    .timer-val { font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .timer-unit { font-size: 11px; color: var(--text-tertiary); margin-left: 3px; }
+
+    .ruler-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-tertiary); }
+    .ruler-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; }
+    .ruler-fill { height: 100%; border-radius: 2px; background: var(--berkeley-blue); width: 0%; }
+
+    /* MS CARD */
+    .ms-card { background: #EEEDFE; border: 1px solid #CECBF6; border-radius: var(--radius-lg); padding: 1rem 1.25rem; flex-shrink: 0; }
+    .ms-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; }
+    .ms-badge { font-size: 10px; font-weight: 500; background: #7C3AED; color: white; padding: 2px 8px; border-radius: 100px; }
+    .ms-card-title { font-size: 14px; font-weight: 500; color: #3C3489; }
+    .ms-card-text { font-size: 12.5px; color: #534AB7; line-height: 1.65; }
+
+    /* CONTROLS */
+    .controls { display: flex; gap: 8px; padding: 0.75rem 1.5rem; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .fire-btn { flex: 1; padding: 8px 16px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.15s; }
+    .fire-btn:hover:not(:disabled) { opacity: 0.88; }
+    .fire-btn:disabled { opacity: 0.45; cursor: default; background: #888; }
+    .fire-btn svg { width: 14px; height: 14px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .reset-btn { padding: 8px 16px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-secondary); cursor: pointer; }
+    .reset-btn:hover { background: var(--bg-secondary); }
+
+    /* RIGHT */
+    .right-panel { display: flex; flex-direction: column; overflow: hidden; }
+    .info-section { padding: 1rem 1.25rem 0.875rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .info-title { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; margin-bottom: 0.4rem; }
+    .info-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.7; }
+
+    .speed-table-wrap { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .section-label { font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.5rem; }
+    .speed-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .speed-table td { padding: 4px 0; color: var(--text-secondary); }
+    .speed-table td:last-child { text-align: right; font-weight: 500; }
+    .speed-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+    /* TUTOR */
+    .tutor-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; border-top: 1px solid var(--border); }
+    .tutor-header { padding: 0.625rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+    .tutor-title { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+    .tutor-dot { width: 6px; height: 6px; border-radius: 50%; background: #0F6E56; flex-shrink: 0; }
+    .api-key-btn { font-size: 11px; color: var(--text-tertiary); cursor: pointer; background: none; border: none; font-family: 'DM Sans', sans-serif; }
+    .api-key-btn:hover { color: var(--text-primary); }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 0.75rem 1.25rem; display: flex; flex-direction: column; gap: 0.625rem; }
+    .message { display: flex; flex-direction: column; gap: 2px; max-width: 93%; }
+    .message.tutor { align-self: flex-start; }
+    .message.student { align-self: flex-end; }
+    .message-sender { font-size: 9px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); padding: 0 4px; }
+    .message-bubble { padding: 0.55rem 0.8rem; border-radius: var(--radius-lg); font-size: 12.5px; line-height: 1.6; }
+    .message.tutor .message-bubble { background: var(--bg-secondary); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .message.student .message-bubble { background: var(--berkeley-blue); color: white; border-bottom-right-radius: 4px; }
+    .message.thinking .message-bubble { color: var(--text-tertiary); font-style: italic; }
+    .prediction-prompt { background: var(--gold-light); border: 1px solid #F5D78A; border-radius: var(--radius-lg); padding: 0.65rem 0.8rem; font-size: 12.5px; color: var(--gold-text); line-height: 1.6; align-self: flex-start; max-width: 93%; }
+    .prediction-prompt strong { display: block; font-weight: 500; margin-bottom: 2px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .input-area { padding: 0.625rem 1.25rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .input-row { display: flex; gap: 7px; align-items: flex-end; }
+    .input-row textarea { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 12.5px; padding: 7px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); resize: none; line-height: 1.5; color: var(--text-primary); background: var(--bg); min-height: 36px; max-height: 90px; transition: border-color 0.15s; }
+    .input-row textarea:focus { outline: none; border-color: var(--berkeley-blue); }
+    .input-row textarea::placeholder { color: var(--text-tertiary); }
+    .send-btn { width: 34px; height: 34px; border-radius: var(--radius-md); background: var(--berkeley-blue); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.15s; }
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: default; }
+    .send-btn svg { width: 14px; height: 14px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--bg); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 380px; width: 90%; border: 1px solid var(--border); }
+    .modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 0.4rem; }
+    .modal p { font-size: 12.5px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 0.875rem; }
+    .modal input { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 0.875rem; color: var(--text-primary); }
+    .modal input:focus { outline: none; border-color: var(--berkeley-blue); }
+    .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-secondary { padding: 6px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 12.5px; cursor: pointer; color: var(--text-secondary); }
+    .btn-primary { padding: 6px 14px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; cursor: pointer; color: white; }
+
+    @media (max-width: 800px) {
+      .app { grid-template-columns: 1fr; height: auto; overflow: visible; }
+      .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
+      .right-panel { height: 580px; }
+      .mode-tabs { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="../../index.html" class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="3" fill="#FDB515"/>
+        <path d="M10 3C10 3 14.5 6 14.5 10C14.5 14 10 17 10 17C10 17 5.5 14 5.5 10C5.5 6 10 3 10 3Z" stroke="#FDB515" stroke-width="1.25" fill="none"/>
+        <path d="M3 10C3 10 6 6 10 6C14 6 17 10 17 10C17 10 14 14 10 14C6 14 3 10 3 10Z" stroke="white" stroke-width="1.25" fill="none" opacity="0.55"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">NEU C61</div>
+      <div class="logo-sub">UC Berkeley</div>
+    </div>
+  </a>
+  <a href="../index.html" class="back-link">
+    <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Tools
+  </a>
+</nav>
+
+<div class="app">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="tool-header">
+      <h1>Myelination explorer</h1>
+      <p>Answer the tutor's question, then fire an action potential and watch how it travels in three types of axon.</p>
+    </div>
+
+    <div class="viz-area">
+      <div class="viz-card">
+        <div class="viz-card-label">Axon conduction race — same distance, same stimulus</div>
+        <div class="axon-race">
+
+          <div class="axon-row">
+            <div class="axon-label-col">
+              <div class="axon-type-name" style="color:var(--myelin-color)">Myelinated</div>
+              <div class="axon-speed">70–120 m/s</div>
+            </div>
+            <div class="axon-canvas-wrap">
+              <canvas class="axon-canvas" id="canvas-myelin" height="44"></canvas>
+            </div>
+            <div class="axon-result" id="result-myelin">—</div>
+          </div>
+
+          <div class="axon-row">
+            <div class="axon-label-col">
+              <div class="axon-type-name" style="color:var(--unmyelin-color)">Unmyelinated</div>
+              <div class="axon-speed">0.5–2 m/s</div>
+            </div>
+            <div class="axon-canvas-wrap">
+              <canvas class="axon-canvas" id="canvas-unmyelin" height="44"></canvas>
+            </div>
+            <div class="axon-result" id="result-unmyelin">—</div>
+          </div>
+
+          <div class="axon-row">
+            <div class="axon-label-col">
+              <div class="axon-type-name" style="color:var(--ms-color)">MS model</div>
+              <div class="axon-speed">Slow / variable</div>
+            </div>
+            <div class="axon-canvas-wrap">
+              <canvas class="axon-canvas" id="canvas-ms" height="44"></canvas>
+            </div>
+            <div class="axon-result" id="result-ms">—</div>
+          </div>
+
+        </div>
+
+        <div class="timer-row">
+          <span class="timer-label">Elapsed time</span>
+          <span><span class="timer-val" id="timer-val">0.0</span><span class="timer-unit">ms (compressed)</span></span>
+        </div>
+        <div class="ruler-row">
+          <span>0 cm</span>
+          <div class="ruler-bar"><div class="ruler-fill" id="ruler-fill"></div></div>
+          <span>10 cm</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ms-card" style="margin: 0 1.5rem; border-radius: var(--radius-lg);">
+      <div class="ms-card-header">
+        <div class="ms-badge">What is MS?</div>
+        <div class="ms-card-title">Multiple sclerosis</div>
+      </div>
+      <div class="ms-card-text">Multiple sclerosis (MS) is an autoimmune disease in which the immune system mistakenly attacks myelin — the insulating sheath around axons. The damaged regions are called lesions. Without intact myelin, action potentials slow dramatically, become unreliable, or fail to propagate entirely. This explains MS symptoms: muscle weakness, numbness, vision problems, and fatigue — all reflecting disrupted neural signaling across the nervous system.</div>
+    </div>
+
+    <div class="controls">
+      <button class="fire-btn" id="fire-btn" onclick="fireAP()" disabled>
+        <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Fire action potential
+      </button>
+      <button class="reset-btn" onclick="resetRace()">Reset</button>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+
+    <div class="speed-table-wrap">
+      <div class="section-label">Reference speeds</div>
+      <table class="speed-table">
+        <tr>
+          <td><span class="speed-dot" style="background:#003262"></span>Myelinated</td>
+          <td><span class="speed-val" id="speed-myelin" data-value="70–120 m/s">?</span></td>
+        </tr>
+        <tr>
+          <td><span class="speed-dot" style="background:#6B7280"></span>Unmyelinated</td>
+          <td><span class="speed-val" id="speed-unmyelin" data-value="0.5–2 m/s">?</span></td>
+        </tr>
+        <tr>
+          <td><span class="speed-dot" style="background:#7C3AED"></span>MS (demyelinated)</td>
+          <td><span class="speed-val" id="speed-ms" data-value="<5 m/s, unreliable">?</span></td>
+        </tr>
+      </table>
+      <div id="speed-hint" style="margin-top:0.5rem;font-size:11px;color:var(--text-tertiary);line-height:1.5;">Run the simulation to reveal actual speeds.</div>
+      <div id="speed-note" style="display:none;margin-top:0.5rem;font-size:11px;color:var(--text-tertiary);line-height:1.5;">Speeds are compressed for visualization. In reality, myelinated axons are ~60–200× faster than unmyelinated axons of the same diameter.</div>
+    </div>
+
+    <div class="tutor-area">
+      <div class="tutor-header">
+        <div class="tutor-title"><div class="tutor-dot"></div> AI tutor</div>
+        <button class="api-key-btn" id="api-status-btn" onclick="openModal()">Add API key</button>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="input-area">
+        <div class="input-row">
+          <textarea id="student-input" placeholder="Type your prediction or question…" rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h2>Enter your Anthropic API key</h2>
+    <p>Stored in your browser session only.</p>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-…"/>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveApiKey()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+// 5 nodes of Ranvier at equal spacing (as fractions of axon length)
+// Node 0 = left end (start), Node 4 = right end (finish)
+const NODE_FRACS = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]; // 6 points = 5 internodal segments
+
+const AXON_H = 44;   // canvas height px
+const MID_Y = 22;    // center y
+const AXON_Y_TOP = 14;
+const AXON_Y_BOT = 30;
+const MYELIN_THICKNESS = 10; // half-height of myelin band
+const AXON_CORE = 3;         // half-height of axon core
+
+// Colors
+const C_MYELIN_SHEATH = '#B8D0E8';
+const C_MYELIN_STROKE = '#7AAACB';
+const C_AXON_CORE_M   = '#003262';
+const C_AXON_CORE_U   = '#9CA3AF';
+const C_AXON_CORE_MS  = '#7C3AED';
+const C_NODE          = '#003262';
+const C_NODE_MS       = '#7C3AED';
+const C_LESION_FILL   = 'rgba(124,58,232,0.12)';
+const C_LESION_STROKE = '#7C3AED';
+const C_WAVE_M        = '#FDB515';
+const C_WAVE_U        = '#374151';
+const C_WAVE_MS       = '#F59E0B';
+
+// MS lesions: between which node segments (0-indexed internodal segment)
+// Segment 0 = between node[0] and node[1], etc.
+// Lesions on segments 1 and 3 (second and fourth internodal spans)
+const MS_LESION_SEGMENTS = [1, 3];
+const MS_LESION_FAIL_PROB = 0.45; // probability signal fails at each lesion
+
+// ── CANVAS SETUP ──────────────────────────────────────────────────────────────
+const canvases = {
+  myelin:   document.getElementById('canvas-myelin'),
+  unmyelin: document.getElementById('canvas-unmyelin'),
+  ms:       document.getElementById('canvas-ms'),
+};
+
+function resizeCanvases() {
+  const dpr = window.devicePixelRatio || 1;
+  Object.entries(canvases).forEach(([key, c]) => {
+    const w = c.parentElement.clientWidth;
+    c.width = w * dpr;
+    c.height = AXON_H * dpr;
+    c.style.width = w + 'px';
+    c.style.height = AXON_H + 'px';
+    c.getContext('2d').scale(dpr, dpr);
+  });
+}
+
+function cw(key) { return canvases[key].width / (window.devicePixelRatio || 1); }
+function ctx(key) { return canvases[key].getContext('2d'); }
+
+// ── DRAW AXONS ────────────────────────────────────────────────────────────────
+
+function drawAxon(key, wavePos) {
+  // wavePos: null = no wave, number 0..1 = position along axon
+  const c = canvases[key];
+  const cx = ctx(key);
+  const w = cw(key);
+  cx.clearRect(0, 0, w, AXON_H);
+
+  const nodeXs = NODE_FRACS.map(f => f * w);
+
+  if (key === 'myelin') drawMyelinated(cx, w, nodeXs, wavePos, false);
+  else if (key === 'unmyelin') drawUnmyelinated(cx, w, nodeXs, wavePos);
+  else if (key === 'ms') drawMSAxon(cx, w, nodeXs, wavePos);
+}
+
+function drawMyelinated(cx, w, nodeXs, wavePos, isMS) {
+  const sheath   = isMS ? 'rgba(180,140,240,0.55)' : C_MYELIN_SHEATH;
+  const sheathSt = isMS ? '#A78BFA' : C_MYELIN_STROKE;
+  const coreCol  = isMS ? C_AXON_CORE_MS : C_AXON_CORE_M;
+  const nodeCol  = isMS ? C_NODE_MS : C_NODE;
+
+  // Draw internodal myelin segments (thick bands)
+  for (let i = 0; i < nodeXs.length - 1; i++) {
+    const x0 = nodeXs[i] + 5;
+    const x1 = nodeXs[i+1] - 5;
+    const segW = x1 - x0;
+    if (segW <= 0) continue;
+
+    // Skip or thin if MS lesion
+    const isLesion = isMS && MS_LESION_SEGMENTS.includes(i);
+
+    if (isLesion) {
+      // Thin/patchy myelin at lesion
+      cx.fillStyle = C_LESION_FILL;
+      cx.strokeStyle = C_LESION_STROKE;
+      cx.lineWidth = 1;
+      cx.beginPath();
+      cx.roundRect(x0, MID_Y - MYELIN_THICKNESS * 0.4, segW, MYELIN_THICKNESS * 0.8, 3);
+      cx.fill();
+      cx.stroke();
+      // Label
+      cx.fillStyle = '#7C3AED';
+      cx.font = 'bold 8px DM Sans, sans-serif';
+      cx.textAlign = 'center';
+      cx.fillText('lesion', x0 + segW/2, MID_Y + MYELIN_THICKNESS + 7);
+      cx.textAlign = 'left';
+    } else {
+      // Normal thick myelin sheath
+      cx.fillStyle = sheath;
+      cx.strokeStyle = sheathSt;
+      cx.lineWidth = 1;
+      cx.beginPath();
+      cx.roundRect(x0, MID_Y - MYELIN_THICKNESS, segW, MYELIN_THICKNESS * 2, 4);
+      cx.fill();
+      cx.stroke();
+    }
+  }
+
+  // Axon core (thin line through center)
+  cx.strokeStyle = coreCol;
+  cx.lineWidth = AXON_CORE;
+  cx.lineCap = 'round';
+  cx.beginPath();
+  cx.moveTo(0, MID_Y);
+  cx.lineTo(w, MID_Y);
+  cx.stroke();
+
+  // Nodes of Ranvier (exposed gaps — small circles on axon)
+  // Only inner nodes (not start/end for labeling clarity)
+  for (let i = 1; i < nodeXs.length - 1; i++) {
+    const nx = nodeXs[i];
+    // Node circle
+    cx.beginPath();
+    cx.arc(nx, MID_Y, 5, 0, Math.PI * 2);
+    cx.fillStyle = '#fff';
+    cx.fill();
+    cx.strokeStyle = nodeCol;
+    cx.lineWidth = 2;
+    cx.stroke();
+  }
+
+  // Label first node
+  if (!isMS) {
+    cx.fillStyle = '#6B7280';
+    cx.font = '8px DM Sans, sans-serif';
+    cx.textAlign = 'center';
+    cx.fillText('Node of Ranvier', nodeXs[1], AXON_H - 2);
+    cx.fillText('Myelin sheath', (nodeXs[0] + nodeXs[1]) / 2, 9);
+    cx.textAlign = 'left';
+  } else {
+    cx.fillStyle = '#7C3AED';
+    cx.font = '8px DM Sans, sans-serif';
+    cx.textAlign = 'center';
+    cx.fillText('Node', nodeXs[1], AXON_H - 2);
+    cx.textAlign = 'left';
+  }
+
+  // Wave
+  if (wavePos !== null) {
+    const wx = wavePos * w;
+    const waveCol = isMS ? C_WAVE_MS : C_WAVE_M;
+    cx.beginPath();
+    cx.arc(wx, MID_Y, 8, 0, Math.PI * 2);
+    cx.fillStyle = waveCol;
+    cx.globalAlpha = 0.9;
+    cx.fill();
+    cx.globalAlpha = 1;
+    // Glow ring
+    cx.beginPath();
+    cx.arc(wx, MID_Y, 12, 0, Math.PI * 2);
+    cx.strokeStyle = waveCol;
+    cx.lineWidth = 1.5;
+    cx.globalAlpha = 0.3;
+    cx.stroke();
+    cx.globalAlpha = 1;
+  }
+}
+
+function drawUnmyelinated(cx, w, nodeXs, wavePos) {
+  // Single thin axon, no myelin, no nodes
+  cx.strokeStyle = C_AXON_CORE_U;
+  cx.lineWidth = 5;
+  cx.lineCap = 'round';
+  cx.beginPath();
+  cx.moveTo(0, MID_Y);
+  cx.lineTo(w, MID_Y);
+  cx.stroke();
+
+  // Label removed — students should reason about this themselves
+
+  // Wave: continuous smooth dot
+  if (wavePos !== null) {
+    const wx = wavePos * w;
+    cx.beginPath();
+    cx.arc(wx, MID_Y, 7, 0, Math.PI * 2);
+    cx.fillStyle = C_WAVE_U;
+    cx.globalAlpha = 0.85;
+    cx.fill();
+    cx.globalAlpha = 1;
+  }
+}
+
+function drawMSAxon(cx, w, nodeXs, wavePos) {
+  drawMyelinated(cx, w, nodeXs, wavePos, true);
+}
+
+// ── ANIMATION STATE ───────────────────────────────────────────────────────────
+let isRunning = false;
+let animFrame = null;
+let elapsed = 0;
+let lastTs = null;
+let answeredPrediction = false;
+
+// Per-axon state
+// Saltatory: currentNode = which node we're at (0=start), pausing = true while waiting at node
+const state = {
+  myelin:   { pos: 0, currentNode: 0, pausing: false, pauseStart: null, done: false },
+  unmyelin: { pos: 0, done: false },
+  ms:       { pos: 0, currentNode: 0, pausing: false, pauseStart: null, done: false, failed: false, failedAtNode: -1 },
+};
+
+// Speeds (fraction of axon per second, compressed)
+const SPEED_MYELIN   = 1.4;   // crosses full axon in ~0.7s
+const SPEED_UNMYELIN = 0.012; // very slow
+const SPEED_MS_INTER = 0.18;  // between nodes
+const SPEED_MS_LESION = 0.025; // in lesion segment
+const NODE_PAUSE_MS  = 90;    // ms pause at each node
+
+function getSegmentForNode(nodeIdx) {
+  // Returns which internodal segment index is between nodeIdx and nodeIdx+1
+  return nodeIdx; // segment i is between node[i] and node[i+1]
+}
+
+function isLesionSegment(segIdx) {
+  return MS_LESION_SEGMENTS.includes(segIdx);
+}
+
+function tickFn(ts) {
+  if (!lastTs) lastTs = ts;
+  const dt = Math.min((ts - lastTs) / 1000, 0.05); // seconds, capped
+  lastTs = ts;
+  elapsed += dt * 1000;
+
+  document.getElementById('timer-val').textContent = elapsed.toFixed(1);
+
+  let anyActive = false;
+
+  // ── MYELINATED: saltatory ──────────────────────────────────────────────
+  const ma = state.myelin;
+  if (!ma.done) {
+    anyActive = true;
+    if (ma.pausing) {
+      // Waiting at node
+      if (elapsed - ma.pauseStart >= NODE_PAUSE_MS) {
+        ma.pausing = false;
+        ma.currentNode++;
+        if (ma.currentNode >= NODE_FRACS.length) {
+          ma.done = true;
+          ma.pos = 1.0;
+          showResult('myelin', 'done', '1st — fastest ✓');
+        } else {
+          ma.pos = NODE_FRACS[ma.currentNode];
+        }
+      }
+      // Stay at current node position while pausing
+    } else {
+      // Jump to next node instantly (saltatory)
+      if (ma.currentNode < NODE_FRACS.length - 1) {
+        const nextNodeFrac = NODE_FRACS[ma.currentNode + 1];
+        // Move quickly to next node
+        ma.pos = Math.min(ma.pos + SPEED_MYELIN * dt, nextNodeFrac);
+        if (ma.pos >= nextNodeFrac) {
+          ma.pos = nextNodeFrac;
+          // Pause at node
+          if (ma.currentNode + 1 < NODE_FRACS.length - 1) {
+            ma.pausing = true;
+            ma.pauseStart = elapsed;
+            ma.currentNode++;
+          } else {
+            // Reached end
+            ma.done = true;
+            ma.pos = 1.0;
+            showResult('myelin', 'done', '1st — fastest ✓');
+          }
+        }
+      }
+    }
+    if (!ma.done) drawAxon('myelin', ma.pos);
+    else drawAxon('myelin', null);
+  }
+
+  // ── UNMYELINATED: continuous ───────────────────────────────────────────
+  const ua = state.unmyelin;
+  if (!ua.done) {
+    anyActive = true;
+    ua.pos = Math.min(ua.pos + SPEED_UNMYELIN * dt, 1.0);
+    if (ua.pos >= 1.0) { ua.done = true; showResult('unmyelin', 'done', 'Arrived ✓'); }
+    drawAxon('unmyelin', ua.done ? null : ua.pos);
+  }
+
+  // ── MS: saltatory but slows/fails at lesions ───────────────────────────
+  const sa = state.ms;
+  if (!sa.done && !sa.failed) {
+    anyActive = true;
+    if (sa.pausing) {
+      if (elapsed - sa.pauseStart >= NODE_PAUSE_MS * 2) { // longer pause at MS nodes
+        sa.pausing = false;
+        sa.currentNode++;
+        if (sa.currentNode >= NODE_FRACS.length) {
+          sa.done = true;
+          sa.pos = 1.0;
+          showResult('ms', 'done', 'Arrived (slow)');
+        } else {
+          sa.pos = NODE_FRACS[sa.currentNode];
+        }
+      }
+    } else {
+      if (sa.currentNode < NODE_FRACS.length - 1) {
+        const nextNodeFrac = NODE_FRACS[sa.currentNode + 1];
+        const seg = getSegmentForNode(sa.currentNode);
+        const inLesion = isLesionSegment(seg);
+        const speed = inLesion ? SPEED_MS_LESION : SPEED_MS_INTER;
+
+        sa.pos = Math.min(sa.pos + speed * dt, nextNodeFrac);
+
+        // Random failure in lesion segment
+        if (inLesion && Math.random() < MS_LESION_FAIL_PROB * dt * 3) {
+          sa.failed = true;
+          sa.failedAtNode = sa.currentNode;
+          drawAxon('ms', sa.pos);
+          showResult('ms', 'failed', 'Signal blocked');
+        } else if (sa.pos >= nextNodeFrac) {
+          sa.pos = nextNodeFrac;
+          if (sa.currentNode + 1 < NODE_FRACS.length - 1) {
+            sa.pausing = true;
+            sa.pauseStart = elapsed;
+            sa.currentNode++;
+          } else {
+            sa.done = true;
+            sa.pos = 1.0;
+            showResult('ms', 'done', 'Arrived (slow)');
+          }
+        }
+
+        if (!sa.failed) drawAxon('ms', sa.pos);
+      }
+    }
+    if (!sa.failed && !sa.done) drawAxon('ms', sa.pos);
+  }
+
+  // Ruler (based on myelinated progress)
+  const mPct = Math.min(state.myelin.pos * 100, 100);
+  document.getElementById('ruler-fill').style.width = mPct + '%';
+
+  const allFinished = (state.myelin.done) &&
+                      (state.unmyelin.done) &&
+                      (state.ms.done || state.ms.failed);
+
+  if (anyActive && !allFinished) {
+    animFrame = requestAnimationFrame(tickFn);
+  } else if (allFinished) {
+    isRunning = false;
+    document.getElementById('fire-btn').disabled = false;
+    onRaceComplete();
+  } else if (!anyActive) {
+    isRunning = false;
+    document.getElementById('fire-btn').disabled = false;
+  }
+}
+
+function showResult(id, type, text) {
+  const el = document.getElementById('result-' + id);
+  el.textContent = text;
+  el.className = 'axon-result ' + type;
+}
+
+function fireAP() {
+  if (isRunning || !answeredPrediction) return;
+  resetRace(false);
+  isRunning = true;
+  elapsed = 0;
+  lastTs = null;
+  document.getElementById('fire-btn').disabled = true;
+  document.getElementById('timer-val').textContent = '0.0';
+  drawAxon('myelin', 0);
+  drawAxon('unmyelin', 0);
+  drawAxon('ms', 0);
+  animFrame = requestAnimationFrame(tickFn);
+}
+
+function resetRace(redraw = true) {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  isRunning = false;
+  elapsed = 0;
+  lastTs = null;
+
+  Object.assign(state.myelin,   { pos: 0, currentNode: 0, pausing: false, pauseStart: null, done: false });
+  Object.assign(state.unmyelin, { pos: 0, done: false });
+  Object.assign(state.ms,       { pos: 0, currentNode: 0, pausing: false, pauseStart: null, done: false, failed: false, failedAtNode: -1 });
+
+  ['myelin','unmyelin','ms'].forEach(k => {
+    document.getElementById('result-' + k).textContent = '—';
+    document.getElementById('result-' + k).className = 'axon-result';
+  });
+  document.getElementById('timer-val').textContent = '0.0';
+  document.getElementById('ruler-fill').style.width = '0%';
+  document.getElementById('fire-btn').disabled = !answeredPrediction;
+
+  if (redraw) {
+    drawAxon('myelin', null);
+    drawAxon('unmyelin', null);
+    drawAxon('ms', null);
+  }
+}
+
+function onRaceComplete() {
+  // Reveal speed numbers
+  ['myelin','unmyelin','ms'].forEach(id => {
+    const el = document.getElementById('speed-' + id);
+    if (el) {
+      el.textContent = el.dataset.value;
+      el.style.transition = 'color 0.4s';
+      el.style.color = 'var(--teal)';
+    }
+  });
+  document.getElementById('speed-hint').style.display = 'none';
+  document.getElementById('speed-note').style.display = 'block';
+
+  const msMsg = state.ms.failed
+    ? 'the MS signal was blocked at a lesion site and failed to arrive'
+    : 'the MS signal arrived, but slowly and unreliably';
+  addTutorMessage(`The race is complete — myelinated arrived first, unmyelinated is still traveling, and ${msMsg}. What does this tell you about why myelin matters for nervous system function? And thinking about MS — if a patient has lesions at multiple sites, what would you expect to happen to signal reliability over time?`);
+}
+
+// ── CHAT ──────────────────────────────────────────────────────────────────────
+function addPredictionPrompt(text) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'prediction-prompt';
+  el.innerHTML = `<strong>Predict</strong>${text}`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+}
+
+function addTutorMessage(text, thinking=false) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = `message tutor${thinking?' thinking':''}`;
+  el.innerHTML = `<span class="message-sender">Tutor</span><div class="message-bubble">${text}</div>`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+  return el;
+}
+
+function addStudentMessage(text) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'message student';
+  el.innerHTML = `<span class="message-sender">You</span><div class="message-bubble">${text}</div>`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+}
+
+let apiKey = sessionStorage.getItem('neuc64_api_key') || '';
+let chatHistory = [];
+
+async function sendMessage() {
+  const input = document.getElementById('student-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!apiKey) { openModal(); return; }
+
+  input.value = '';
+  autoResize(input);
+  addStudentMessage(text);
+  const thinking = addTutorMessage('Thinking…', true);
+  document.getElementById('send-btn').disabled = true;
+
+  const system = `You are an AI tutor in a conduction velocity simulator for NEU C61 at UC Berkeley. Students are intro-level undergraduates.
+
+The simulation shows three axon types:
+- Myelinated: 70–120 m/s, AP jumps between 5 Nodes of Ranvier (saltatory conduction)
+- Unmyelinated: 0.5–2 m/s, continuous propagation along entire membrane  
+- MS model: slow and unreliable, may fail at demyelinated lesion sites
+
+MS = multiple sclerosis, an autoimmune disease attacking myelin. Lesions slow or block AP conduction, explaining symptoms like weakness, numbness, vision problems.
+
+Your role:
+- Respond warmly and with Socratic questioning
+- If right: affirm specifically, add one layer of depth
+- If partially right: acknowledge what's correct, guide toward what's missing with a question
+- If wrong: ask a guiding question rather than giving the answer
+- 2–4 sentences, conversational, no bullet points
+- After the student answers the prediction, unlock the simulation by saying clearly that they can now fire the action potential
+- Do not bring up diseases, drugs, or mechanisms beyond myelination and MS unless the student asks. MS is relevant and fair game. If a student asks something tangential, give a brief honest answer and redirect back to the simulation.
+- Accept reasonable paraphrases and partial answers. Prioritize the quality of the student's reasoning over precise terminology. If the core concept is right, affirm it warmly without nitpicking wording.`;
+
+  chatHistory.push({ role: 'user', content: text });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        system,
+        messages: chatHistory.slice(-10),
+      }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      const apiErr = data.error.message || 'Unknown error';
+      thinking.querySelector('.message-bubble').textContent = apiErr.toLowerCase().includes('overload') ? 'The AI tutor is busy right now — please wait a moment and try again.' : 'API error: ' + apiErr;
+      chatHistory.pop();
+    } else {
+      const reply = data.content[0].text;
+      thinking.classList.remove('thinking');
+      thinking.querySelector('.message-bubble').textContent = reply;
+      chatHistory.push({ role: 'assistant', content: reply });
+
+      // Unlock fire button after first response
+      if (!answeredPrediction) {
+        answeredPrediction = true;
+        document.getElementById('fire-btn').disabled = false;
+      }
+    }
+  } catch(e) {
+    thinking.querySelector('.message-bubble').textContent = 'Could not reach the tutor. Check your API key and try again.';
+    chatHistory.pop();
+  }
+
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('chat-messages').scrollTop = 99999;
+}
+
+function handleKey(e) { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,90)+'px'; }
+
+function openModal() { document.getElementById('modal-overlay').classList.add('open'); document.getElementById('api-key-input').focus(); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function saveApiKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  if (k) {
+    apiKey = k;
+    sessionStorage.setItem('neuc64_api_key', k);
+    document.getElementById('api-status-btn').textContent = 'Key saved ✓';
+    document.getElementById('api-status-btn').style.color = '#0F6E56';
+    closeModal();
+  }
+}
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  resizeCanvases();
+  drawAxon('myelin', null);
+  drawAxon('unmyelin', null);
+  drawAxon('ms', null);
+});
+
+if (apiKey) {
+  document.getElementById('api-status-btn').textContent = 'Key saved ✓';
+  document.getElementById('api-status-btn').style.color = '#0F6E56';
+}
+
+resizeCanvases();
+drawAxon('myelin', null);
+drawAxon('unmyelin', null);
+drawAxon('ms', null);
+
+addPredictionPrompt('Three axons are lined up — myelinated, unmyelinated, and one modeled after a demyelinated MS axon. Before firing: predict the order they finish, and explain what you think myelin actually does to speed up conduction. Take a look at the diagram above for clues.');
+</script>
+</body>
+</html>

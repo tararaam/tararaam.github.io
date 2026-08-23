@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ion Manipulation — NEU C61</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --berkeley-blue: #003262;
+      --berkeley-gold: #FDB515;
+      --blue-light: #E8EFF7;
+      --gold-light: #FEF5E0;
+      --gold-text: #A07000;
+      --teal: #0F6E56;
+      --teal-light: #E1F5EE;
+      --red: #A32D2D;
+      --red-light: #FCEBEB;
+      --purple: #3C3489;
+      --purple-light: #EEEDFE;
+      --text-primary: #1a1a1a;
+      --text-secondary: #555;
+      --text-tertiary: #999;
+      --border: #e5e5e5;
+      --bg: #fff;
+      --bg-secondary: #f8f8f8;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --na-color: #2563EB;
+      --k-color: #DC2626;
+    }
+    body { font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--bg); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+
+    /* NAV */
+    .top-nav { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.97); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 100; }
+    .logo { display: flex; align-items: center; gap: 8px; }
+    .logo-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--berkeley-blue); display: flex; align-items: center; justify-content: center; }
+    .logo-mark svg { width: 17px; height: 17px; }
+    .logo-text { font-size: 13px; font-weight: 500; line-height: 1.2; }
+    .logo-sub { font-size: 11px; color: var(--text-secondary); }
+    .mode-tabs { display: flex; gap: 2px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 3px; }
+    .mode-tab { padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer; border: none; background: transparent; font-family: 'DM Sans', sans-serif; transition: all 0.15s; white-space: nowrap; }
+    .mode-tab:hover { color: var(--text-primary); }
+    .mode-tab.active { background: var(--bg); color: var(--berkeley-blue); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .back-link { font-size: 12px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px; }
+    .back-link svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .back-link:hover { color: var(--text-primary); }
+
+    /* LAYOUT */
+    .app { display: grid; grid-template-columns: 60fr 40fr; height: calc(100vh - 53px); overflow: hidden; }
+
+    /* LEFT */
+    .left-panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow: hidden; }
+    .tool-header { padding: 1rem 1.5rem 0.875rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .tool-header h1 { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; margin-bottom: 0.15rem; }
+    .tool-header p { font-size: 12px; color: var(--text-secondary); }
+
+    /* PRESET SELECTOR */
+    .preset-bar { display: flex; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); gap: 6px; flex-shrink: 0; overflow-x: auto; }
+    .preset-btn { flex-shrink: 0; padding: 5px 14px; border-radius: 100px; border: 1.5px solid var(--border); background: var(--bg); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--text-secondary); transition: all 0.15s; }
+    .preset-btn:hover { border-color: #bbb; color: var(--text-primary); }
+    .preset-btn.active { color: white; border-color: transparent; }
+    .preset-btn.p-normal.active { background: #6B7280; }
+    .preset-btn.p-hyperk.active { background: #D97706; }
+    .preset-btn.p-hypona.active { background: #2563EB; }
+    .preset-btn.p-ttx.active { background: #A32D2D; }
+    .preset-btn.p-kblock.active { background: #7C3AED; }
+
+    /* VIZ AREA */
+    .viz-area { flex: 1; overflow-y: auto; padding: 1rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .viz-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0.875rem; }
+    .viz-card-label { font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.625rem; }
+
+    #voltage-canvas { width: 100%; height: 160px; display: block; border-radius: 6px; }
+
+    /* SLIDER CARD */
+    .slider-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+    .slider-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+    .slider-name { font-size: 14px; font-weight: 500; }
+    .slider-value { font-size: 13px; color: var(--text-secondary); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 2px 10px; }
+    .slider-row { display: flex; align-items: center; gap: 10px; }
+    .slider-row input[type=range] { flex: 1; }
+    .slider-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
+
+    /* CLINICAL CARD */
+    .clinical-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+    .clinical-header { display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; }
+    .clinical-icon { width: 28px; height: 28px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .clinical-title { font-size: 14px; font-weight: 500; }
+    .clinical-text { font-size: 13px; color: var(--text-secondary); line-height: 1.65; }
+
+    /* NAV BUTTONS */
+    .nav-btns { display: flex; gap: 8px; padding: 0.75rem 1.5rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .reset-btn { padding: 7px 16px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: background 0.15s; }
+    .reset-btn:hover { background: var(--bg-secondary); }
+
+    /* RIGHT */
+    .right-panel { display: flex; flex-direction: column; overflow: hidden; }
+    .preset-info { padding: 1rem 1.25rem 0.875rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .preset-badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 500; padding: 2px 9px; border-radius: 100px; margin-bottom: 0.6rem; color: white; }
+    .preset-title { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; margin-bottom: 0.4rem; }
+    .preset-description { font-size: 12.5px; color: var(--text-secondary); line-height: 1.7; }
+
+    /* MECHANISM */
+    .mechanism { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .section-label { font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.5rem; }
+    .mechanism-grid { display: flex; flex-direction: column; gap: 5px; }
+    .mechanism-row { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; }
+    .mechanism-name { color: var(--text-secondary); }
+    .mechanism-effect { font-size: 10px; font-weight: 500; padding: 2px 9px; border-radius: 100px; }
+    .effect-up { background: #FCEBEB; color: #A32D2D; border: 1px solid #F7C1C1; }
+    .effect-down { background: #E1F5EE; color: #0F6E56; border: 1px solid #9FE1CB; }
+    .effect-blocked { background: #EEEDFE; color: #3C3489; border: 1px solid #CECBF6; }
+    .effect-normal { background: var(--bg-secondary); color: var(--text-tertiary); border: 1px solid var(--border); }
+    .effect-hidden { background: var(--bg-secondary); color: var(--text-tertiary); border: 1px dashed var(--border); font-style: italic; letter-spacing: 0.05em; }
+
+    /* TUTOR */
+    .tutor-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; border-top: 1px solid var(--border); }
+    .tutor-header { padding: 0.625rem 1.25rem; border-bottom: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+    .tutor-title { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+    .tutor-dot { width: 6px; height: 6px; border-radius: 50%; background: #0F6E56; flex-shrink: 0; }
+    .api-key-btn { font-size: 11px; color: var(--text-tertiary); cursor: pointer; background: none; border: none; font-family: 'DM Sans', sans-serif; }
+    .api-key-btn:hover { color: var(--text-primary); }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 0.75rem 1.25rem; display: flex; flex-direction: column; gap: 0.625rem; }
+    .message { display: flex; flex-direction: column; gap: 2px; max-width: 93%; }
+    .message.tutor { align-self: flex-start; }
+    .message.student { align-self: flex-end; }
+    .message-sender { font-size: 9px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); padding: 0 4px; }
+    .message-bubble { padding: 0.55rem 0.8rem; border-radius: var(--radius-lg); font-size: 12.5px; line-height: 1.6; }
+    .message.tutor .message-bubble { background: var(--bg-secondary); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .message.student .message-bubble { background: var(--berkeley-blue); color: white; border-bottom-right-radius: 4px; }
+    .message.thinking .message-bubble { color: var(--text-tertiary); font-style: italic; }
+    .prediction-prompt { background: var(--gold-light); border: 1px solid #F5D78A; border-radius: var(--radius-lg); padding: 0.65rem 0.8rem; font-size: 12.5px; color: var(--gold-text); line-height: 1.6; align-self: flex-start; max-width: 93%; }
+    .prediction-prompt strong { display: block; font-weight: 500; margin-bottom: 2px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .input-area { padding: 0.625rem 1.25rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .input-row { display: flex; gap: 7px; align-items: flex-end; }
+    .input-row textarea { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 12.5px; padding: 7px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); resize: none; line-height: 1.5; color: var(--text-primary); background: var(--bg); min-height: 36px; max-height: 90px; transition: border-color 0.15s; }
+    .input-row textarea:focus { outline: none; border-color: var(--berkeley-blue); }
+    .input-row textarea::placeholder { color: var(--text-tertiary); }
+    .send-btn { width: 34px; height: 34px; border-radius: var(--radius-md); background: var(--berkeley-blue); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.15s; }
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: default; }
+    .send-btn svg { width: 14px; height: 14px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--bg); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 380px; width: 90%; border: 1px solid var(--border); }
+    .modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 0.4rem; }
+    .modal p { font-size: 12.5px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 0.875rem; }
+    .modal input { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 0.875rem; color: var(--text-primary); }
+    .modal input:focus { outline: none; border-color: var(--berkeley-blue); }
+    .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-secondary { padding: 6px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 12.5px; cursor: pointer; color: var(--text-secondary); }
+    .btn-primary { padding: 6px 14px; border-radius: var(--radius-md); border: none; background: var(--berkeley-blue); font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; cursor: pointer; color: white; }
+
+    @media (max-width: 800px) {
+      .app { grid-template-columns: 1fr; height: auto; overflow: visible; }
+      .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
+      .right-panel { height: 580px; }
+      .mode-tabs { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="../../index.html" class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="3" fill="#FDB515"/>
+        <path d="M10 3C10 3 14.5 6 14.5 10C14.5 14 10 17 10 17C10 17 5.5 14 5.5 10C5.5 6 10 3 10 3Z" stroke="#FDB515" stroke-width="1.25" fill="none"/>
+        <path d="M3 10C3 10 6 6 10 6C14 6 17 10 17 10C17 10 14 14 10 14C6 14 3 10 3 10Z" stroke="white" stroke-width="1.25" fill="none" opacity="0.55"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">NEU C61</div>
+      <div class="logo-sub">UC Berkeley</div>
+    </div>
+  </a>
+  <div class="mode-tabs">
+    <button class="mode-tab" onclick="location.href='index.html'">AP explorer</button>
+    <button class="mode-tab active">Ion manipulation</button>
+  </div>
+  <a href="../index.html" class="back-link">
+    <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Tools
+  </a>
+</nav>
+
+<div class="app">
+  <!-- LEFT -->
+  <div class="left-panel">
+    <div class="tool-header">
+      <h1>Ion manipulation</h1>
+      <p>Disrupt the conditions that make an action potential possible. Predict what happens, then see it.</p>
+    </div>
+
+    <div class="preset-bar">
+      <button class="preset-btn p-normal active" onclick="setPreset('normal')">Normal</button>
+      <button class="preset-btn p-hyperk" onclick="setPreset('hyperk')">Hyperkalemia</button>
+      <button class="preset-btn p-hypona" onclick="setPreset('hyponad')">Hyponatremia</button>
+      <button class="preset-btn p-ttx" onclick="setPreset('ttx')">TTX (Na⁺ block)</button>
+      <button class="preset-btn p-kblock" onclick="setPreset('kblock')">K⁺ channel block</button>
+    </div>
+
+    <div class="viz-area">
+
+      <div class="viz-card">
+        <div class="viz-card-label">Membrane potential (mV) — predicted effect</div>
+        <canvas id="voltage-canvas"></canvas>
+      </div>
+
+      <div class="slider-card" id="slider-card">
+        <div class="slider-top">
+          <span class="slider-name" id="slider-name">Severity</span>
+          <span class="slider-value" id="slider-value-display">Normal</span>
+        </div>
+        <div class="slider-row">
+          <input type="range" id="severity-slider" min="0" max="100" value="0" oninput="onSlider(this.value)">
+        </div>
+        <div class="slider-ends">
+          <span id="slider-left">Normal</span>
+          <span id="slider-right">Severe</span>
+        </div>
+      </div>
+
+      <div class="clinical-card" id="clinical-card">
+        <div class="clinical-header">
+          <div class="clinical-icon" id="clinical-icon">🏥</div>
+          <div class="clinical-title" id="clinical-title">Clinical context</div>
+        </div>
+        <div class="clinical-text" id="clinical-text">Select a condition above to explore its effect on the action potential.</div>
+      </div>
+
+    </div>
+
+    <div class="nav-btns">
+      <button class="reset-btn" onclick="resetAll()">Reset to normal</button>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-panel">
+    <div class="preset-info">
+      <div class="preset-badge" id="preset-badge" style="background:#6B7280">Normal</div>
+      <div class="preset-title" id="preset-title">Normal conditions</div>
+      <div class="preset-description" id="preset-description">The neuron is in its normal ionic environment. Extracellular Na⁺ and intracellular K⁺ concentrations are at physiological levels, and all channels are functioning normally.</div>
+    </div>
+
+    <div class="mechanism">
+      <div class="section-label">What changes</div>
+      <div class="mechanism-grid" id="mechanism-grid">
+        <div class="mechanism-row"><span class="mechanism-name">Resting membrane potential</span><span class="mechanism-effect effect-normal">Normal (−70 mV)</span></div>
+        <div class="mechanism-row"><span class="mechanism-name">AP threshold</span><span class="mechanism-effect effect-normal">Normal (−55 mV)</span></div>
+        <div class="mechanism-row"><span class="mechanism-name">AP amplitude</span><span class="mechanism-effect effect-normal">Normal (+40 mV)</span></div>
+        <div class="mechanism-row"><span class="mechanism-name">Repolarization</span><span class="mechanism-effect effect-normal">Normal</span></div>
+      </div>
+    </div>
+
+    <div class="tutor-area">
+      <div class="tutor-header">
+        <div class="tutor-title"><div class="tutor-dot"></div> AI tutor</div>
+        <button class="api-key-btn" id="api-status-btn" onclick="openModal()">Add API key</button>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="input-area">
+        <div class="input-row">
+          <textarea id="student-input" placeholder="Type your prediction or question…" rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h2>Enter your Anthropic API key</h2>
+    <p>Stored in your browser session only.</p>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-…"/>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveApiKey()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── PRESETS ───────────────────────────────────────────────────────────────────
+const PRESETS = {
+  normal: {
+    label: 'Normal',
+    color: '#6B7280',
+    title: 'Normal conditions',
+    description: 'The neuron is in its normal ionic environment. Extracellular Na⁺ and intracellular K⁺ concentrations are at physiological levels, and all channels are functioning normally. Use this as your reference point.',
+    sliderName: 'Condition severity',
+    sliderLeft: 'Normal',
+    sliderRight: 'N/A',
+    clinicalIcon: '✓',
+    clinicalTitle: 'Baseline',
+    clinicalText: 'This is the normal physiological state. Select a condition above to explore what happens when the ionic environment or channel function is disrupted.',
+    prediction: null,
+    mechanism: [
+      { name: 'Resting membrane potential', effect: 'Normal (−70 mV)', cls: 'effect-normal' },
+      { name: 'AP threshold', effect: 'Normal (−55 mV)', cls: 'effect-normal' },
+      { name: 'AP amplitude', effect: 'Normal (+40 mV)', cls: 'effect-normal' },
+      { name: 'Repolarization', effect: 'Normal', cls: 'effect-normal' },
+    ],
+    traceType: 'normal',
+  },
+  hyperk: {
+    label: 'Hyperkalemia',
+    color: '#D97706',
+    title: 'Hyperkalemia',
+    description: 'Hyperkalemia means abnormally high extracellular K⁺. The resting membrane potential is set largely by the K⁺ concentration gradient — the difference between K⁺ inside and outside the cell. Move the slider and predict what happens before you see it.',
+    sliderName: 'Extracellular K⁺ concentration',
+    sliderLeft: 'Normal (5 mM)',
+    sliderRight: 'Severe (12 mM)',
+    clinicalIcon: '❤️',
+    clinicalTitle: 'Clinical relevance — cardiac arrhythmia',
+    clinicalText: 'Hyperkalemia is most dangerous in the heart. It can occur with kidney failure, certain medications, or severe tissue injury. Tell the tutor what you observe — then think about why this condition is life-threatening.',
+    prediction: 'Extracellular K⁺ is about to increase. The resting membrane potential depends on the K⁺ gradient — the difference in K⁺ concentration across the membrane. Before you move the slider: what do you predict will happen to the resting potential, and how might that affect the neuron\'s ability to fire?',
+    mechanism: [
+      { name: 'Resting membrane potential', effect: 'Depolarized ↑', cls: 'effect-up' },
+      { name: 'AP threshold', effect: 'Unchanged', cls: 'effect-normal' },
+      { name: 'AP amplitude', effect: 'Reduced ↓', cls: 'effect-down' },
+      { name: 'Repolarization', effect: 'Impaired ↓', cls: 'effect-down' },
+    ],
+    traceType: 'hyperk',
+  },
+  hyponad: {
+    label: 'Hyponatremia',
+    color: '#2563EB',
+    title: 'Hyponatremia',
+    description: 'Hyponatremia means abnormally low extracellular Na⁺. Recall that the rising phase of the action potential depends on Na⁺ rushing into the cell — driven by both the concentration gradient and the electrical gradient. Move the slider and predict what happens before you see it.',
+    sliderName: 'Extracellular Na⁺ concentration',
+    sliderLeft: 'Normal (145 mM)',
+    sliderRight: 'Severe (110 mM)',
+    clinicalIcon: '🧠',
+    clinicalTitle: 'Clinical relevance — neurological symptoms',
+    clinicalText: 'Hyponatremia is the most common electrolyte disorder in hospitalized patients — resulting from overhydration, heart failure, or kidney disease. Tell the tutor what you observe — then think about why this would cause neurological symptoms.',
+    prediction: 'Extracellular Na⁺ is about to decrease. Na⁺ flows into the cell down its concentration gradient during depolarization. Before you move the slider: what do you predict happens to the action potential if that gradient is reduced? What about if it\'s reduced severely?',
+    mechanism: [
+      { name: 'Resting membrane potential', effect: 'Slightly depolarized', cls: 'effect-up' },
+      { name: 'AP threshold', effect: 'Unchanged', cls: 'effect-normal' },
+      { name: 'AP amplitude', effect: 'Reduced ↓', cls: 'effect-down' },
+      { name: 'Repolarization', effect: 'Normal', cls: 'effect-normal' },
+    ],
+    traceType: 'hyponad',
+  },
+  ttx: {
+    label: 'TTX (Na⁺ block)',
+    color: '#A32D2D',
+    title: 'Tetrodotoxin (TTX)',
+    description: 'Tetrodotoxin (TTX) is a neurotoxin found in pufferfish. It binds specifically and irreversibly to voltage-gated Na⁺ channels, holding them closed. Na⁺ channels are distinct from Na⁺ leak channels — TTX does not affect the resting membrane potential. Move the slider and predict what happens before you see it.',
+    sliderName: 'TTX concentration',
+    sliderLeft: 'None',
+    sliderRight: 'Full block',
+    clinicalIcon: '🐡',
+    clinicalTitle: 'Clinical relevance — paralysis and pain research',
+    clinicalText: 'TTX poisoning causes progressive paralysis with no antidote. Paradoxically, it\'s being studied as a painkiller — blocking Na⁺ channels in pain-sensing neurons could provide powerful analgesia. Tell the tutor what you observe — then think about why complete Na⁺ channel block is lethal.',
+    prediction: 'TTX is about to block voltage-gated Na⁺ channels. You know Na⁺ influx drives the rising phase of the AP. Before you move the slider: predict what the trace will look like at low TTX concentration versus high — will the change be gradual or sudden?',
+    mechanism: [
+      { name: 'Resting membrane potential', effect: 'Unchanged', cls: 'effect-normal' },
+      { name: 'AP threshold', effect: 'Unchanged', cls: 'effect-normal' },
+      { name: 'AP amplitude', effect: 'Blocked ✕', cls: 'effect-blocked' },
+      { name: 'Na⁺ channel function', effect: 'Blocked ✕', cls: 'effect-blocked' },
+    ],
+    traceType: 'ttx',
+  },
+  kblock: {
+    label: 'K⁺ channel block',
+    color: '#7C3AED',
+    title: 'K⁺ channel block',
+    description: 'Voltage-gated K⁺ channels open during the falling phase to drive repolarization. Unlike Na⁺ channels, they are not involved in depolarization — blocking them leaves the rising phase intact. Move the slider and predict what happens before you see it.',
+    sliderName: 'K⁺ channel block severity',
+    sliderLeft: 'None',
+    sliderRight: 'Full block',
+    clinicalIcon: '⚡',
+    clinicalTitle: 'Clinical relevance — seizures and MS treatment',
+    clinicalText: 'Impaired K⁺ channel function can trigger repetitive firing — a mechanism underlying some seizures. Interestingly, 4-aminopyridine (4-AP), a K⁺ channel blocker, is used in MS to improve conduction in demyelinated axons. Tell the tutor what you observe — then think about why blocking K⁺ channels could have such different effects in different contexts.',
+    prediction: 'Voltage-gated K⁺ channels are about to be blocked. These channels open after the peak to drive repolarization. Before you move the slider: predict how blocking them will change the shape of the AP — think specifically about the falling phase and what happens after.',
+    mechanism: [
+      { name: 'Resting membrane potential', effect: 'Unchanged', cls: 'effect-normal' },
+      { name: 'AP threshold', effect: 'Unchanged', cls: 'effect-normal' },
+      { name: 'AP duration', effect: 'Prolonged ↑', cls: 'effect-up' },
+      { name: 'Repolarization', effect: 'Impaired ✕', cls: 'effect-blocked' },
+    ],
+    traceType: 'kblock',
+  },
+};
+
+// ── VOLTAGE CURVE GENERATION ──────────────────────────────────────────────────
+function generateTrace(type, severity) {
+  // severity: 0-100
+  const s = severity / 100;
+
+  // Normal AP keypoints: [xfrac, mV]
+  const normal = [
+    [0.00,-70],[0.18,-70],[0.26,-68],[0.32,-55],
+    [0.37,40],[0.44,-70],[0.50,-80],[0.65,-72],[0.80,-70],[1.00,-70]
+  ];
+
+  if (type === 'normal') return normal;
+
+  if (type === 'hyperk') {
+    if (s === 0) return normal;
+    const restShift = s * 20;
+    const ampReduction = s * 50;
+    const repolarImpair = s * 15;
+    return [
+      [0.00, -70 + restShift],
+      [0.18, -70 + restShift],
+      [0.26, -68 + restShift],
+      [0.32, -55 + restShift * 0.5],
+      [0.37, 40 - ampReduction],
+      [0.44, -70 + repolarImpair + restShift * 0.3],
+      [0.50, -80 + repolarImpair + restShift * 0.5],
+      [0.65, -72 + restShift * 0.5],
+      [0.80, -70 + restShift],
+      [1.00, -70 + restShift],
+    ];
+  }
+
+  if (type === 'hyponad') {
+    if (s === 0) return normal;
+    const peak = 40 - s * 110;
+    if (peak < -55) {
+      const hump = -62 + Math.min(s * 5, 6);
+      return [
+        [0.00,-70],[0.18,-70],[0.26,-66],[0.40, hump],[0.60,-67],[0.80,-70],[1.00,-70]
+      ];
+    }
+    const undershoot = -80 + s * 20;
+    return [
+      [0.00,-70],[0.18,-70],[0.26,-68],[0.32,-55],
+      [0.37, peak],[0.44,-70],[0.50, undershoot],[0.65,-71],[0.80,-70],[1.00,-70]
+    ];
+  }
+
+  if (type === 'ttx') {
+    // Below 20%: normal-looking AP with slightly reduced amplitude
+    // 20-50%: spike shrinks progressively toward threshold
+    // Above 50%: no spike, just subthreshold depolarization hump
+    // All transitions are smooth — no hard cutoffs
+    const peak = 40 - s * 95; // +40 at s=0, crosses threshold at ~s=0.5, goes below -55 beyond that
+    if (peak < -55) {
+      // No AP — subthreshold hump only, grows slightly with severity
+      const hump = -58 + Math.min(s * 8, 8);
+      return [
+        [0.00,-70],[0.18,-70],[0.26,-68],[0.38, hump],[0.58,-66],[0.78,-70],[1.00,-70]
+      ];
+    }
+    // Spike present but shrinking
+    const undershoot = -80 + s * 30; // undershoot also reduces as spike shrinks
+    return [
+      [0.00,-70],[0.18,-70],[0.26,-68],[0.32,-55],
+      [0.37, peak],[0.44,-70],[0.50, undershoot],[0.65,-72],[0.80,-70],[1.00,-70]
+    ];
+  }
+
+  if (type === 'kblock') {
+    if (s === 0) return normal;
+    // As block increases: repolarization slows, undershoot shrinks then disappears
+    const prolongation = s * 0.22;
+    const undershootReduction = s * 80;
+    const stalledV = -70 + s * 55; // where repolarization stalls
+    return [
+      [0.00,-70],[0.18,-70],[0.26,-68],[0.32,-55],
+      [0.37, 40],
+      [0.50 + prolongation, stalledV],
+      [0.70 + prolongation, -80 + undershootReduction],
+      [0.88 + prolongation*0.3, -70],
+      [1.00,-70],
+    ];
+  }
+
+  return normal;
+}
+
+// ── CANVAS ────────────────────────────────────────────────────────────────────
+const vCanvas = document.getElementById('voltage-canvas');
+const vCtx = vCanvas.getContext('2d');
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = vCanvas.parentElement.clientWidth - 28;
+  vCanvas.width = w * dpr; vCanvas.height = 160 * dpr;
+  vCanvas.style.width = w + 'px'; vCanvas.style.height = '160px';
+  vCtx.scale(dpr, dpr);
+}
+
+function interpV(curve, xf) {
+  for (let i = 0; i < curve.length - 1; i++) {
+    const [x0,v0] = curve[i], [x1,v1] = curve[i+1];
+    if (xf >= x0 && xf <= x1) {
+      const t = (xf-x0)/(x1-x0);
+      const e = t<0.5 ? 2*t*t : -1+(4-2*t)*t;
+      return v0+(v1-v0)*e;
+    }
+  }
+  return -70;
+}
+
+function vToY(v, h) {
+  const minV = -95, maxV = 50;
+  return h - ((v-minV)/(maxV-minV))*h;
+}
+
+function drawTrace(type, severity, color) {
+  const w = vCanvas.width/(window.devicePixelRatio||1);
+  const h = vCanvas.height/(window.devicePixelRatio||1);
+  vCtx.clearRect(0,0,w,h);
+  vCtx.fillStyle = '#f8f8f8';
+  vCtx.fillRect(0,0,w,h);
+
+  // Grid
+  [-80,-70,-55,0,40].forEach(v => {
+    const y = vToY(v,h);
+    vCtx.strokeStyle = v === -70 ? '#ccc' : v === -55 ? '#D97706' : '#ebebeb';
+    vCtx.lineWidth = v === -70 ? 1 : v === -55 ? 1 : 0.5;
+    vCtx.setLineDash(v === -70 || v === -55 ? [4,3] : []);
+    vCtx.beginPath(); vCtx.moveTo(28,y); vCtx.lineTo(w,y); vCtx.stroke();
+    vCtx.setLineDash([]);
+    vCtx.fillStyle = v === -55 ? '#D97706' : '#aaa';
+    vCtx.font = '10px DM Sans, sans-serif';
+    vCtx.textAlign = 'right';
+    vCtx.fillText(v > 0 ? '+'+v : v, 24, y+3.5);
+  });
+
+  // Threshold label
+  vCtx.fillStyle = '#D97706';
+  vCtx.font = '9px DM Sans, sans-serif';
+  vCtx.textAlign = 'left';
+  vCtx.fillText('threshold', 30, vToY(-55,h)-3);
+  vCtx.fillStyle = '#999';
+  vCtx.fillText('resting', 30, vToY(-70,h)-3);
+
+  // Normal trace (ghost)
+  if (type !== 'normal') {
+    const normalCurve = generateTrace('normal', 0);
+    vCtx.beginPath();
+    vCtx.strokeStyle = '#ddd';
+    vCtx.lineWidth = 1.5;
+    vCtx.lineJoin = 'round';
+    let started = false;
+    for (let px = 28; px <= w; px++) {
+      const xf = (px-28)/(w-28);
+      const y = vToY(interpV(normalCurve, xf),h);
+      if (!started) { vCtx.moveTo(px,y); started=true; } else vCtx.lineTo(px,y);
+    }
+    vCtx.stroke();
+  }
+
+  // Current trace
+  const curve = generateTrace(type, severity);
+  vCtx.beginPath();
+  vCtx.strokeStyle = type === 'normal' ? '#003262' : color;
+  vCtx.lineWidth = 2.5;
+  vCtx.lineJoin = 'round';
+  let started = false;
+  for (let px = 28; px <= w; px++) {
+    const xf = (px-28)/(w-28);
+    const y = vToY(interpV(curve, xf),h);
+    if (!started) { vCtx.moveTo(px,y); started=true; } else vCtx.lineTo(px,y);
+  }
+  vCtx.stroke();
+
+  // Legend if showing both
+  if (type !== 'normal') {
+    vCtx.fillStyle = '#ccc';
+    vCtx.font = '9px DM Sans, sans-serif';
+    vCtx.textAlign = 'right';
+    vCtx.fillText('normal (reference)', w-4, 12);
+    vCtx.fillStyle = color;
+    vCtx.fillText('current condition', w-4, 24);
+    vCtx.textAlign = 'left';
+  }
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentPreset = 'normal';
+let currentSeverity = 0;
+let apiKey = sessionStorage.getItem('neuc64_api_key') || '';
+let chatHistory = [];
+let predictionShown = false;
+
+// ── PRESET LOGIC ──────────────────────────────────────────────────────────────
+function setPreset(key) {
+  currentPreset = key;
+  currentSeverity = 0;
+  predictionShown = false;
+
+  const p = PRESETS[key];
+
+  // Update preset buttons
+  document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`.p-${key === 'hyponad' ? 'hypona' : key}`).classList.add('active');
+
+  // Update badge + info
+  const badge = document.getElementById('preset-badge');
+  badge.textContent = p.label;
+  badge.style.background = p.color;
+  document.getElementById('preset-title').textContent = p.title;
+  document.getElementById('preset-description').textContent = p.description;
+
+  // Update slider — hide for normal
+  const sliderCard = document.getElementById('slider-card');
+  sliderCard.style.display = key === 'normal' ? 'none' : 'block';
+  const slider = document.getElementById('severity-slider');
+  slider.value = 0;
+  slider.style.accentColor = p.color;
+  document.getElementById('slider-name').textContent = p.sliderName;
+  document.getElementById('slider-left').textContent = p.sliderLeft;
+  document.getElementById('slider-right').textContent = p.sliderRight;
+  document.getElementById('slider-value-display').textContent = p.sliderLeft;
+
+  // Update clinical card
+  document.getElementById('clinical-icon').textContent = p.clinicalIcon;
+  document.getElementById('clinical-title').textContent = p.clinicalTitle;
+  document.getElementById('clinical-text').textContent = p.clinicalText;
+
+  // Update mechanism grid — effects hidden until student answers
+  const isNormal = key === 'normal';
+  document.getElementById('mechanism-grid').innerHTML = p.mechanism.map(m =>
+    `<div class="mechanism-row">
+      <span class="mechanism-name">${m.name}</span>
+      <span class="mechanism-effect ${isNormal ? m.cls : 'effect-hidden'}" data-effect="${m.effect}" data-cls="${m.cls}">
+        ${isNormal ? m.effect : '?'}
+      </span>
+    </div>`
+  ).join('');
+
+  // Draw trace at severity 0
+  drawTrace(key, 0, p.color);
+
+  // Chat: add prediction prompt
+  if (p.prediction && !predictionShown) {
+    addPredictionPrompt(p.prediction);
+    predictionShown = true;
+  } else if (key === 'normal') {
+    addTutorMessage('You\'re back to normal conditions. All channels functioning, concentrations at physiological levels. Select a condition above to explore what happens when things go wrong.');
+  }
+}
+
+function revealMechanismEffects() {
+  document.querySelectorAll('.mechanism-effect.effect-hidden').forEach(el => {
+    el.textContent = el.dataset.effect;
+    el.className = 'mechanism-effect ' + el.dataset.cls;
+  });
+}
+
+function onSlider(val) {
+  currentSeverity = parseInt(val);
+  const p = PRESETS[currentPreset];
+  const pct = Math.round(currentSeverity);
+  document.getElementById('slider-value-display').textContent =
+    currentSeverity === 0 ? p.sliderLeft : pct + '% severity';
+  drawTrace(currentPreset, currentSeverity, p.color);
+}
+
+function resetAll() {
+  setPreset('normal');
+}
+
+// ── CHAT ──────────────────────────────────────────────────────────────────────
+function addPredictionPrompt(text) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'prediction-prompt';
+  el.innerHTML = `<strong>Predict</strong>${text}`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+}
+
+function addTutorMessage(text, thinking=false) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = `message tutor${thinking?' thinking':''}`;
+  el.innerHTML = `<span class="message-sender">Tutor</span><div class="message-bubble">${text}</div>`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+  return el;
+}
+
+function addStudentMessage(text) {
+  const c = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'message student';
+  el.innerHTML = `<span class="message-sender">You</span><div class="message-bubble">${text}</div>`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('student-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!apiKey) { openModal(); return; }
+
+  input.value = '';
+  autoResize(input);
+  addStudentMessage(text);
+  const thinking = addTutorMessage('Thinking…', true);
+  document.getElementById('send-btn').disabled = true;
+
+  const p = PRESETS[currentPreset];
+  const system = `You are an AI tutor in an ion manipulation simulator for an introductory neuroscience course (NEU C61) at UC Berkeley. Students are undergraduates with no prior biology background.
+
+Current condition: ${p.title}
+Description: ${p.description}
+Clinical context: ${p.clinicalText}
+Current severity: ${currentSeverity}%
+What changes: ${p.mechanism.map(m => m.name+': '+m.effect).join(', ')}
+
+Your role:
+- Respond to the student's prediction or question warmly and with Socratic engagement
+- Engage with their specific reasoning
+- If right: affirm specifically, add one layer of depth
+- If partially right: acknowledge what's correct, guide toward what's missing
+- If wrong: ask a question that guides their thinking rather than giving the answer
+- Keep responses to 2–4 sentences, conversational, no bullet points
+- Reference specific ions, voltages, or mechanisms when relevant
+- Connect to the clinical context when it adds insight
+- Only discuss ion channels, conditions, and mechanisms visible in this simulation. Do not introduce drugs, diseases, or mechanisms beyond what is shown here unless the student asks. If a student asks something tangential, give a brief honest answer and redirect back to the simulation.
+- Accept reasonable paraphrases and partial answers. Prioritize the quality of the student's reasoning over precise terminology. If the core concept is right, affirm it warmly without nitpicking wording.`;
+
+  chatHistory.push({ role: 'user', content: text });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        system,
+        messages: chatHistory.slice(-10),
+      }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      const apiErr = data.error.message || 'Unknown error';
+      thinking.querySelector('.message-bubble').textContent = apiErr.toLowerCase().includes('overload') ? 'The AI tutor is busy right now — please wait a moment and try again.' : 'API error: ' + apiErr;
+      chatHistory.pop();
+    } else {
+      const reply = data.content[0].text;
+      thinking.classList.remove('thinking');
+      thinking.querySelector('.message-bubble').textContent = reply;
+      chatHistory.push({ role: 'assistant', content: reply });
+      // Reveal mechanism effects after first response
+      revealMechanismEffects();
+    }
+  } catch(e) {
+    thinking.querySelector('.message-bubble').textContent = 'Could not reach the tutor. Check your API key and try again.';
+    chatHistory.pop();
+  }
+
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('chat-messages').scrollTop = 99999;
+}
+
+function handleKey(e) { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,90)+'px'; }
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal() { document.getElementById('modal-overlay').classList.add('open'); document.getElementById('api-key-input').focus(); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function saveApiKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  if (k) {
+    apiKey = k;
+    sessionStorage.setItem('neuc64_api_key', k);
+    const btn = document.getElementById('api-status-btn');
+    btn.textContent = 'Key saved ✓';
+    btn.style.color = '#0F6E56';
+    closeModal();
+  }
+}
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => { resizeCanvas(); drawTrace(currentPreset, currentSeverity, PRESETS[currentPreset].color); });
+if (apiKey) {
+  document.getElementById('api-status-btn').textContent = 'Key saved ✓';
+  document.getElementById('api-status-btn').style.color = '#0F6E56';
+}
+resizeCanvas();
+drawTrace('normal', 0, '#6B7280');
+document.getElementById('slider-card').style.display = 'none';
+addTutorMessage('Welcome to ion manipulation. Start by selecting a condition above — before you move the slider, tell me what you predict will happen to the action potential.');
+</script>
+</body>
+</html>
