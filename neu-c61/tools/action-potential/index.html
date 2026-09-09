@@ -419,7 +419,7 @@ const PHASES = [
       { name: 'Na⁺/K⁺ ATPase pump', state: 'Active', cls: 'state-open' },
     ],
     why: 'Na⁺ channel inactivation — not just closure — is critical. An inactivated channel cannot reopen immediately even if voltage returns to threshold. This creates the absolute refractory period and ensures action potentials travel in only one direction.',
-    prediction: 'K⁺ is now leaving the cell rapidly. Where do you predict the membrane potential will end up — and do you think it will stop exactly at −65 mV?',
+    prediction: 'K⁺ is now leaving the cell rapidly. Where do you predict the membrane potential will end up — and do you think it will stop exactly at −70 mV?',
     ionFlow: { na: null, k: { dir: 'out', speed: 1.0, count: 6 } },
   },
   {
@@ -442,16 +442,16 @@ const PHASES = [
 // Shaped to match physiological AP: flat resting, gradual stimulus ramp,
 // near-vertical rise to +30, sharp fall, deep undershoot ~-90, slow recovery
 const V_CURVE = [
-  [0.00, -65],
-  [0.18, -65],
-  [0.26, -63],
+  [0.00, -70],
+  [0.18, -70],
+  [0.26, -67],
   [0.32, -55],
   [0.37, 40],
-  [0.44, -65],
+  [0.44, -70],
   [0.50, -80],
-  [0.65, -68],
-  [0.80, -65],
-  [1.00, -65],
+  [0.65, -72],
+  [0.80, -70],
+  [1.00, -70],
 ];
 const PHASE_X = [0.10, 0.29, 0.37, 0.46, 0.57];
 
@@ -491,34 +491,12 @@ function interpV(xf) {
       return v0 + (v1-v0)*e;
     }
   }
-  return -65;
+  return -70;
 }
 
-// Piecewise, intentionally non-proportional: the -80..-50 band (where resting,
-// threshold, and undershoot sit) gets an expanded share of the canvas so those
-// values are readable; the tall -50..+45 spike region is compressed. Anchor
-// points map a voltage to a fraction of canvas height (0 = top, 1 = bottom).
-const V_ANCHORS = [
-  [45,  0.00],
-  [40,  0.06],
-  [0,   0.34],
-  [-50, 0.60],
-  [-55, 0.70],
-  [-65, 0.84],
-  [-80, 1.00],
-];
 function vToY(v, h) {
-  const a = V_ANCHORS;
-  if (v >= a[0][0]) return a[0][1] * h;
-  if (v <= a[a.length-1][0]) return a[a.length-1][1] * h;
-  for (let i = 0; i < a.length - 1; i++) {
-    const [v0, f0] = a[i], [v1, f1] = a[i+1];
-    if (v <= v0 && v >= v1) {
-      const t = (v - v0) / (v1 - v0);
-      return (f0 + (f1 - f0) * t) * h;
-    }
-  }
-  return a[a.length-1][1] * h;
+  const minV = -85, maxV = 45;
+  return h - ((v - minV) / (maxV - minV)) * h;
 }
 
 function drawTrace(phase) {
@@ -531,12 +509,12 @@ function drawTrace(phase) {
   vCtx.fillRect(0,0,w,h);
 
   // Grid lines + y-axis labels
-  const gridVs = [-80, -65, -55, 0, 40];
+  const gridVs = [-80, -70, -55, 0, 40];
   gridVs.forEach(v => {
     const y = vToY(v, h);
-    vCtx.strokeStyle = v === -65 ? '#ccc' : v === -55 ? '#D97706' : '#ebebeb';
-    vCtx.lineWidth = v === -65 ? 1 : v === -55 ? 1 : 0.5;
-    vCtx.setLineDash(v === -65 || v === -55 ? [4,3] : []);
+    vCtx.strokeStyle = v === -70 ? '#ccc' : v === -55 ? '#D97706' : '#ebebeb';
+    vCtx.lineWidth = v === -70 ? 1 : v === -55 ? 1 : 0.5;
+    vCtx.setLineDash(v === -70 || v === -55 ? [4,3] : []);
     vCtx.beginPath(); vCtx.moveTo(28, y); vCtx.lineTo(w, y); vCtx.stroke();
     vCtx.setLineDash([]);
     vCtx.fillStyle = v === -55 ? '#D97706' : '#aaa';
@@ -554,7 +532,7 @@ function drawTrace(phase) {
 
   // Resting label
   vCtx.fillStyle = '#999';
-  vCtx.fillText('resting', 30, vToY(-65, h) - 3);
+  vCtx.fillText('resting', 30, vToY(-70, h) - 3);
 
   // Draw trace up to current phase
   const endXf = PHASE_X[Math.min(phase, 4)];
