@@ -419,7 +419,7 @@ const PHASES = [
       { name: 'Na⁺/K⁺ ATPase pump', state: 'Active', cls: 'state-open' },
     ],
     why: 'Na⁺ channel inactivation — not just closure — is critical. An inactivated channel cannot reopen immediately even if voltage returns to threshold. This creates the absolute refractory period and ensures action potentials travel in only one direction.',
-    prediction: 'K⁺ is now leaving the cell rapidly. Where do you predict the membrane potential will end up — and do you think it will stop exactly at −70 mV?',
+    prediction: 'K⁺ is now leaving the cell rapidly. Where do you predict the membrane potential will end up — and do you think it will stop exactly at −65 mV?',
     ionFlow: { na: null, k: { dir: 'out', speed: 1.0, count: 6 } },
   },
   {
@@ -442,16 +442,16 @@ const PHASES = [
 // Shaped to match physiological AP: flat resting, gradual stimulus ramp,
 // near-vertical rise to +30, sharp fall, deep undershoot ~-90, slow recovery
 const V_CURVE = [
-  [0.00, -70],
-  [0.18, -70],
-  [0.26, -68],
+  [0.00, -65],
+  [0.18, -65],
+  [0.26, -63],
   [0.32, -55],
   [0.37, 40],
-  [0.44, -70],
+  [0.44, -65],
   [0.50, -80],
-  [0.65, -72],
-  [0.80, -70],
-  [1.00, -70],
+  [0.65, -68],
+  [0.80, -65],
+  [1.00, -65],
 ];
 const PHASE_X = [0.10, 0.29, 0.37, 0.46, 0.57];
 
@@ -491,7 +491,7 @@ function interpV(xf) {
       return v0 + (v1-v0)*e;
     }
   }
-  return -70;
+  return -65;
 }
 
 function vToY(v, h) {
@@ -509,12 +509,12 @@ function drawTrace(phase) {
   vCtx.fillRect(0,0,w,h);
 
   // Grid lines + y-axis labels
-  const gridVs = [-80, -70, -55, 0, 40];
+  const gridVs = [-80, -65, -55, 0, 40];
   gridVs.forEach(v => {
     const y = vToY(v, h);
-    vCtx.strokeStyle = v === -70 ? '#ccc' : v === -55 ? '#D97706' : '#ebebeb';
-    vCtx.lineWidth = v === -70 ? 1 : v === -55 ? 1 : 0.5;
-    vCtx.setLineDash(v === -70 || v === -55 ? [4,3] : []);
+    vCtx.strokeStyle = v === -65 ? '#ccc' : v === -55 ? '#D97706' : '#ebebeb';
+    vCtx.lineWidth = v === -65 ? 1 : v === -55 ? 1 : 0.5;
+    vCtx.setLineDash(v === -65 || v === -55 ? [4,3] : []);
     vCtx.beginPath(); vCtx.moveTo(28, y); vCtx.lineTo(w, y); vCtx.stroke();
     vCtx.setLineDash([]);
     vCtx.fillStyle = v === -55 ? '#D97706' : '#aaa';
@@ -532,7 +532,7 @@ function drawTrace(phase) {
 
   // Resting label
   vCtx.fillStyle = '#999';
-  vCtx.fillText('resting', 30, vToY(-70, h) - 3);
+  vCtx.fillText('resting', 30, vToY(-65, h) - 3);
 
   // Draw trace up to current phase
   const endXf = PHASE_X[Math.min(phase, 4)];
@@ -1158,12 +1158,12 @@ Your role:
 - If right: affirm what they got right specifically, then follow up with a real-world or clinical application question related to this phase (e.g. why lidocaine works, why TTX is lethal, why the refractory period matters for signal direction). This replaces a separate "why this matters" section — weave it naturally into your response.
 - If partially right: acknowledge what's correct and guide toward what's missing with a question
 - If wrong: don't give the answer — ask a question that guides their thinking
-- Keep responses to 2–4 sentences
+- Keep responses to 2–3 sentences
 - Use plain language appropriate for an intro course
 - Never use bullet points — respond conversationally
 - Reference specific ions, channels, or voltages when relevant
-- Do not bring up mechanisms, drugs, channels, or concepts beyond what is shown in this phase of the simulator unless the student asks. If a student asks about something tangential, give a brief honest answer and redirect back to what they can observe here.
-- Accept reasonable paraphrases and partial answers. Prioritize the quality of the student's reasoning over precise terminology. If the core concept is right, affirm it warmly without nitpicking wording.`;
+- Address the student's key point directly and stay on this phase. Do not follow them down off-topic tangents — if they raise something unrelated, give one brief honest sentence and steer straight back to what they can observe here. Do not bring up mechanisms, drugs, channels, or concepts beyond what is shown in this phase unless the student asks.
+- Focus on the underlying idea, not exact wording. There are many valid ways to express a correct concept — if the student's reasoning is sound, credit it warmly even if their terminology is loose or informal, and never make them guess a specific word you have in mind.`;
 
   chatHistory.push({ role: 'user', content: text });
 
@@ -1186,7 +1186,19 @@ Your role:
 
     const data = await res.json();
     if (data.error) {
-      thinking.querySelector('.message-bubble').textContent = 'API error: ' + data.error.message;
+      const type = (data.error.type || '') + ' ' + (data.error.message || '');
+      let msg;
+      if (/overload|rate|429|529/i.test(type) || res.status === 429 || res.status === 529) {
+        msg = 'The tutor is getting a lot of questions right now. Wait a few seconds and send that again.';
+      } else {
+        msg = 'Something went wrong reaching the tutor. Wait a moment and try again — if it keeps happening, check your API key.';
+      }
+      thinking.classList.remove('thinking');
+      thinking.querySelector('.message-bubble').textContent = msg;
+      chatHistory.pop();
+    } else if (!data.content || !data.content[0] || typeof data.content[0].text !== 'string') {
+      thinking.classList.remove('thinking');
+      thinking.querySelector('.message-bubble').textContent = 'The tutor sent back an unexpected response. Please try again.';
       chatHistory.pop();
     } else {
       const reply = data.content[0].text;
@@ -1209,7 +1221,8 @@ Your role:
       }
     }
   } catch(e) {
-    thinking.querySelector('.message-bubble').textContent = 'Could not reach the API. Check your key and try again.';
+    thinking.classList.remove('thinking');
+    thinking.querySelector('.message-bubble').textContent = 'Could not reach the tutor — check your connection and API key, then try again.';
     chatHistory.pop();
   }
 
