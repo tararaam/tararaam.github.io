@@ -383,7 +383,7 @@ const PHASES = [
   {
     name: 'Depolarizing phase',
     color: '#D97706',
-    description: 'A stimulus has depolarized the membrane toward threshold (−55 mV). Voltage-gated Na⁺ channels are sensitive to membrane voltage — their opening probability increases as the membrane depolarizes.',
+    description: 'A stimulus has depolarized the membrane toward threshold (−55 mV). That initial push normally comes from synaptic input upstream — ligand-gated (neurotransmitter-activated) channels on the dendrites and soma letting cations in. This simulator picks up the story at the axon, where the channels are voltage-gated: their opening probability increases as the membrane depolarizes.',
     channels: [
       { name: 'Voltage-gated Na⁺ channels', state: 'Opening', cls: 'state-open' },
       { name: 'Voltage-gated K⁺ channels', state: 'Closed', cls: 'state-closed' },
@@ -494,9 +494,31 @@ function interpV(xf) {
   return -65;
 }
 
+// Piecewise, intentionally non-proportional: the -80..-50 band (where resting,
+// threshold, and undershoot sit) gets an expanded share of the canvas so those
+// values are readable; the tall -50..+45 spike region is compressed. Anchor
+// points map a voltage to a fraction of canvas height (0 = top, 1 = bottom).
+const V_ANCHORS = [
+  [45,  0.00],
+  [40,  0.06],
+  [0,   0.34],
+  [-50, 0.60],
+  [-55, 0.70],
+  [-65, 0.84],
+  [-80, 1.00],
+];
 function vToY(v, h) {
-  const minV = -95, maxV = 50;
-  return h - ((v - minV) / (maxV - minV)) * h;
+  const a = V_ANCHORS;
+  if (v >= a[0][0]) return a[0][1] * h;
+  if (v <= a[a.length-1][0]) return a[a.length-1][1] * h;
+  for (let i = 0; i < a.length - 1; i++) {
+    const [v0, f0] = a[i], [v1, f1] = a[i+1];
+    if (v <= v0 && v >= v1) {
+      const t = (v - v0) / (v1 - v0);
+      return (f0 + (f1 - f0) * t) * h;
+    }
+  }
+  return a[a.length-1][1] * h;
 }
 
 function drawTrace(phase) {
