@@ -192,13 +192,13 @@
   <div class="left-panel">
     <div class="tool-header">
       <h1>Resting membrane potential explorer</h1>
-      <p>Discover why neurons sit at −65 mV - and what happens when that balance is disturbed.</p>
+      <p>Discover why neurons sit at −70 mV - and what happens when that balance is disturbed.</p>
     </div>
 
     <div class="mode-stepper">
       <button class="mode-btn active" data-mode="0" onclick="goToMode(0)">Concentration<br>gradients</button>
       <button class="mode-btn" data-mode="1" onclick="goToMode(1)">Selective<br>permeability</button>
-      <button class="mode-btn" data-mode="2" onclick="goToMode(2)">What sets<br>−65 mV?</button>
+      <button class="mode-btn" data-mode="2" onclick="goToMode(2)">What sets<br>−70 mV?</button>
     </div>
 
 
@@ -268,8 +268,8 @@
           </div>
           <div class="slider-row">
             <label>Na⁺ permeability</label>
-            <input type="range" id="sl-pna" min="0" max="100" value="10" oninput="onSlider('pna')">
-            <span class="slider-val" id="sv-pna">10%</span>
+            <input type="range" id="sl-pna" min="0" max="100" value="13" oninput="onSlider('pna')">
+            <span class="slider-val" id="sv-pna">13%</span>
           </div>
         </div>
       </div>
@@ -293,7 +293,7 @@
       </div>
       <div class="soft-nudge" id="soft-nudge">Answer the tutor's question to get feedback before moving on</div>
       <a href="../action-potential/index.html" class="forward-link" id="forward-link">
-        This −65 mV is where the action potential begins - explore what happens next
+        This −70 mV is where the action potential begins - explore what happens next
         <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </a>
     </div>
@@ -360,10 +360,10 @@ const MODES = [
     color: '#0F6E56',
     description: 'At rest, the membrane is much more permeable to K⁺ than Na⁺, because K⁺ leak channels are open. K⁺ sits at high concentration inside the cell. What do you think will happen when the channels open? Will K⁺ keep flowing indefinitely - or will something stop it?',
     prediction: 'Before you start the animation: K⁺ is concentrated inside the cell and the membrane is mostly permeable to K⁺. What do you predict will happen when K⁺ starts to flow out - and will it keep flowing indefinitely?',
-    system: 'You are an AI tutor for an introductory neuroscience course. Topic: selective permeability and the K+ equilibrium potential. At rest the membrane is ~10-30x more permeable to K+ than Na+. K+ flows out down concentration gradient, creating negative charge inside. The electrical force eventually opposes and balances the concentration force - this is the K+ equilibrium potential (~-90mV). The actual resting potential (-65mV) is slightly depolarized because of small Na+ permeability. IMPORTANT: the animation shows these forces sequentially for clarity, but in reality both forces act simultaneously from the very first ion that crosses. Only mention this simplification AFTER the student has correctly explained what they observed - frame it as a deeper insight reward. Do not bring up mechanisms, channels, or concepts not shown in this simulation unless the student asks. If a student asks about something beyond the scope of the simulation, give a brief honest answer and then gently redirect them back to what they can observe here. Accept reasonable paraphrases and partial answers - prioritize the quality of the student\'s reasoning over precise terminology. If the core concept is correct, affirm it warmly without nitpicking wording.',
+    system: 'You are an AI tutor for an introductory neuroscience course. Topic: selective permeability and the K+ equilibrium potential. At rest the membrane is ~10-30x more permeable to K+ than Na+. K+ flows out down concentration gradient, creating negative charge inside. The electrical force eventually opposes and balances the concentration force - this is the K+ equilibrium potential (~-90mV). The actual resting potential (-70mV) is slightly depolarized because of small Na+ permeability. IMPORTANT: the animation shows these forces sequentially for clarity, but in reality both forces act simultaneously from the very first ion that crosses. Only mention this simplification AFTER the student has correctly explained what they observed - frame it as a deeper insight reward. Do not bring up mechanisms, channels, or concepts not shown in this simulation unless the student asks. If a student asks about something beyond the scope of the simulation, give a brief honest answer and then gently redirect them back to what they can observe here. Accept reasonable paraphrases and partial answers - prioritize the quality of the student\'s reasoning over precise terminology. If the core concept is correct, affirm it warmly without nitpicking wording.',
   },
   {
-    name: 'What sets −65 mV?',
+    name: 'What sets −70 mV?',
     color: '#003262',
     description: 'The resting potential isn\'t a fixed biological constant - it depends on the concentration of ions and how permeable the membrane is to each one. Use the sliders to explore how changing these conditions affects the membrane potential. What do you predict will happen if you raise extracellular K⁺? What about making Na⁺ and K⁺ equally permeable?',
     prediction: 'Before you move the sliders: if you raise extracellular K⁺ concentration, what do you predict happens to the resting membrane potential - and in which direction does it shift? Think about what would happen to the K⁺ concentration gradient.',
@@ -417,7 +417,7 @@ let mode1Phase1Progress = 0; // 0→1 during phase 1
 let mode1PauseTimer = 0; // brief pause between phases
 
 // Mode 2 slider values
-let slEk = 5, slEna = 145, slPk = 90, slPna = 10;
+let slEk = 5, slEna = 145, slPk = 90, slPna = 13;
 // Track which sliders have been touched
 let sliderstouched = { ek: false, ena: false, pk: false, pna: false };
 
@@ -556,7 +556,7 @@ function calcRestingPotential() {
   const Ek = 61.5 * Math.log10(slEk / Ki);   // typically ~-90mV at rest
   const Ena = 61.5 * Math.log10(slEna / Nai); // typically ~+60mV at rest
   const Pk = slPk / 100, Pna = slPna / 100;
-  if (Pk + Pna === 0) return -65;
+  if (Pk + Pna === 0) return -70;
   return (Pk * Ek + Pna * Ena) / (Pk + Pna);
 }
 
@@ -1184,16 +1184,16 @@ function setPump(on) {
 
 // ── SLIDERS ───────────────────────────────────────────────────────────────────
 function resetSliders() {
-  slEk = 5; slEna = 145; slPk = 90; slPna = 10;
+  slEk = 5; slEna = 145; slPk = 90; slPna = 13;
   slidersTouched = { ek: false, ena: false, pk: false, pna: false };
   document.getElementById('sl-ek').value = 5;
   document.getElementById('sl-ena').value = 145;
   document.getElementById('sl-pk').value = 90;
-  document.getElementById('sl-pna').value = 10;
+  document.getElementById('sl-pna').value = 13;
   document.getElementById('sv-ek').textContent = '5 mM';
   document.getElementById('sv-ena').textContent = '145 mM';
   document.getElementById('sv-pk').textContent = '90%';
-  document.getElementById('sv-pna').textContent = '10%';
+  document.getElementById('sv-pna').textContent = '13%';
 }
 
 function onSlider(which) {
@@ -1366,7 +1366,7 @@ function setExploreMode(mode) {
 function unlockFreeExploration() {
   freeExploration = true;
   document.getElementById('forward-link').style.display = 'flex';
-  addTutorMessage('You\'ve worked through all three sections - well done. You can now explore freely, or head to the Action Potential Explorer to see what happens once the neuron is at −65 mV.');
+  addTutorMessage('You\'ve worked through all three sections - well done. You can now explore freely, or head to the Action Potential Explorer to see what happens once the neuron is at −70 mV.');
   updateUI(currentMode);
 }
 
