@@ -1425,8 +1425,18 @@ async function sendMessage() {
     });
     const data = await res.json();
     if (data.error) {
-      const apiErrMsg = data.error.message || '';
-      thinking.querySelector('.message-bubble').textContent = apiErrMsg.toLowerCase().includes('overload') ? 'The AI tutor is busy right now — please wait a moment and try again.' : 'API error: ' + apiErrMsg;
+      const type = (data.error.type || '') + ' ' + (data.error.message || '');
+      let msg;
+      if (/overload|rate|429|529/i.test(type) || res.status === 429 || res.status === 529) {
+        msg = 'The tutor is getting a lot of questions right now. Wait a few seconds and send that again.';
+      } else if (/credit balance|billing|insufficient/i.test(type)) {
+        msg = 'Your Anthropic account is out of API credits. Add credits at console.anthropic.com (Settings → Billing) to keep using the tutor.';
+      } else if (/invalid.*key|authentication|401|permission/i.test(type) || res.status === 401 || res.status === 403) {
+        msg = 'Your API key was rejected. Double-check you pasted the full key correctly, or generate a new one at console.anthropic.com.';
+      } else {
+        msg = 'Something went wrong reaching the tutor. Wait a moment and try again — if it keeps happening, check your API key and account credits at console.anthropic.com.';
+      }
+      thinking.querySelector('.message-bubble').textContent = msg;
       chatHistory.pop();
     } else {
       const reply = data.content[0].text;
