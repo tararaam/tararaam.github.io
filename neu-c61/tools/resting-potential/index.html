@@ -268,8 +268,8 @@
           </div>
           <div class="slider-row">
             <label>Na⁺ permeability</label>
-            <input type="range" id="sl-pna" min="0" max="100" value="10" oninput="onSlider('pna')">
-            <span class="slider-val" id="sv-pna">10%</span>
+            <input type="range" id="sl-pna" min="0" max="100" value="13" oninput="onSlider('pna')">
+            <span class="slider-val" id="sv-pna">13%</span>
           </div>
         </div>
       </div>
@@ -417,7 +417,7 @@ let mode1Phase1Progress = 0; // 0→1 during phase 1
 let mode1PauseTimer = 0; // brief pause between phases
 
 // Mode 2 slider values
-let slEk = 5, slEna = 145, slPk = 90, slPna = 10;
+let slEk = 5, slEna = 145, slPk = 90, slPna = 13;
 // Track which sliders have been touched
 let sliderstouched = { ek: false, ena: false, pk: false, pna: false };
 
@@ -430,9 +430,9 @@ let equilIons = [];
 function initEquilIons(w, midY) {
   equilIons = [];
   const chX = w * 0.38;
-  const spacing = w / 10;
-  const intY = midY + 45;
-  const extY = midY - 35;
+  const spacing = w / 9.2;
+  const intY = midY + 62;
+  const extY = midY - 58;
 
   // Pick 4 random indices from 0-7 to leave
   const allIndices = [0,1,2,3,4,5,6,7];
@@ -443,10 +443,10 @@ function initEquilIons(w, midY) {
   const leavingIndices = allIndices.slice(0, 4).sort((a,b) => a-b);
 
   leavingIndices.forEach((dotIdx, order) => {
-    const startX = spacing * (dotIdx + 0.5) + (dotIdx % 2) * 5;
-    const startY = intY + (dotIdx % 2) * 12;
+    const startX = spacing * (dotIdx + 0.5) + (dotIdx % 2) * 7;
+    const startY = intY + (dotIdx % 2) * 16;
     const parkX = spacing * (order * 1.8 + 0.5);
-    const parkY = extY - 8 - (order % 3) * 10;
+    const parkY = extY - 10 - (order % 3) * 12;
     equilIons.push({
       x: startX, y: startY,
       startX, startY,
@@ -473,7 +473,7 @@ function updateEquilIons(midY) {
     } else if (ion.phase === 'drift') {
       // Drift toward channel entrance (just below membrane)
       const targetX = ion.chX + (ion.dotIndex % 2 === 0 ? -3 : 3);
-      const targetY = midY + 16;
+      const targetY = midY + 22;
       const dx = targetX - ion.x;
       const dy = targetY - ion.y;
       const dist = Math.sqrt(dx*dx + dy*dy);
@@ -487,7 +487,7 @@ function updateEquilIons(midY) {
     } else if (ion.phase === 'cross') {
       // Travel straight up through channel
       ion.y -= ion.speed;
-      if (ion.y < midY - 45) ion.phase = 'park_drift';
+      if (ion.y < midY - 24) ion.phase = 'park_drift';
     } else if (ion.phase === 'park_drift') {
       // Drift to final parking spot outside
       const dx = ion.parkX - ion.x;
@@ -509,11 +509,11 @@ function updateEquilIons(midY) {
 function drawEquilIons(ctx) {
   equilIons.forEach(ion => {
     if (ion.phase === 'wait') return; // still a background dot, drawn elsewhere
-    ctx.beginPath(); ctx.arc(ion.x, ion.y, 4.5, 0, Math.PI*2);
+    ctx.beginPath(); ctx.arc(ion.x, ion.y, 6.5, 0, Math.PI*2);
     ctx.fillStyle = '#DC2626'; ctx.globalAlpha = 0.9; ctx.fill(); ctx.globalAlpha = 1;
-    ctx.fillStyle = '#DC2626'; ctx.font = 'bold 8px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#DC2626'; ctx.font = 'bold 10px DM Sans'; ctx.textAlign = 'center';
     ctx.globalAlpha = 0.85;
-    ctx.fillText('K⁺', ion.x + 9, ion.y + 3);
+    ctx.fillText('K⁺', ion.x + 11, ion.y + 3);
     ctx.globalAlpha = 1; ctx.textAlign = 'left';
   });
 }
@@ -689,84 +689,84 @@ function drawMembrane() {
   mCtx.fillRect(0, 0, w, h);
 
   const midY = 105;
-  const memH = 10;
+  const memH = 16;
 
   // Progress: how equilibrated (pump off)
   const eq = equilibrating ? Math.min(equilibrationProgress, 1) : 0;
 
   // Labels
   mCtx.fillStyle = '#aaa';
-  mCtx.font = '10px DM Sans, sans-serif';
-  mCtx.fillText('Extracellular  (high Na⁺, low K⁺)', 8, 11);
-  mCtx.fillText('Intracellular  (high K⁺, low Na⁺, A⁻)', 8, h - 4);
+  mCtx.font = '11px DM Sans, sans-serif';
+  mCtx.fillText('Extracellular  (high Na⁺, low K⁺)', 8, 13);
+  mCtx.fillText('Intracellular  (high K⁺, low Na⁺, A⁻)', 8, h - 5);
 
   // Membrane bands
   mCtx.fillStyle = '#c5d8ee';
   mCtx.fillRect(0, midY - memH, w, memH * 0.45);
   mCtx.fillRect(0, midY + memH * 0.55, w, memH * 0.45);
 
-  const extY = midY - 35;
-  const intY = midY + 45;
-  const spacing = w / 10;
+  const extY = midY - 58;
+  const intY = midY + 62;
+  const spacing = w / 9.2;
 
   // Na+ outside - scales with slEna slider in mode 2 (baseline 145mM = 8 dots)
   const naOutCount = currentMode === 2 ? Math.round(2 + (slEna / 200) * 6) : 8;
   for (let i = 0; i < naOutCount; i++) {
-    const x = spacing * (i + 0.5) + (i % 2) * 5;
-    if (x < w * 0.8) drawDot(mCtx, x, extY - (i % 2) * 12, '#2563EB', 4.5, 'Na⁺');
+    const x = spacing * (i + 0.5) + (i % 2) * 7;
+    if (x < w * 0.92) drawDot(mCtx, x, extY - (i % 2) * 16, '#2563EB', 6.5, 'Na⁺');
   }
   // K+ outside - scales with slEk slider in mode 2 (baseline 5mM = 2 dots)
   const kOutCount = currentMode === 2 ? Math.round(1 + (slEk / 20) * 5) : 2;
   for (let i = 0; i < kOutCount; i++) {
     const x = spacing * (i * (8 / Math.max(kOutCount, 1)) * 0.9 + 0.5);
-    if (x < w * 0.8) drawDot(mCtx, x, extY + 10, '#DC2626', 4.5, 'K⁺');
+    if (x < w * 0.92) drawDot(mCtx, x, extY + 14, '#DC2626', 6.5, 'K⁺');
   }
   // Na+ inside - always fixed (2 dots, low inside)
   for (let i = 0; i < 2; i++) {
     const x = spacing * (i * 3 + 1.5);
-    if (x < w * 0.8) drawDot(mCtx, x, intY - 10, '#2563EB', 4.5, 'Na⁺');
+    if (x < w * 0.92) drawDot(mCtx, x, intY - 14, '#2563EB', 6.5, 'Na⁺');
   }
   // K+ inside - pump off: only 'wait' phase ions drawn; pump on: all 8 fixed dots
   if (currentMode === 0 && !pumpOn) {
     // Draw animated ions (wait phase) + always show last 2 that never leave
     equilIons.forEach(ion => {
       if (ion.phase === 'wait') {
-        drawDot(mCtx, ion.startX, ion.startY, '#DC2626', 4.5, 'K⁺');
+        drawDot(mCtx, ion.startX, ion.startY, '#DC2626', 6.5, 'K⁺');
       }
     });
     // Always draw the 4 K+ dots that stay (random indices stored on equilIons)
     const staying = equilIons._stayingIndices || [4,5,6,7];
     staying.forEach(i => {
-      const x = spacing * (i + 0.5) + (i % 2) * 5;
-      if (x < w * 0.8) drawDot(mCtx, x, intY + (i % 2) * 12, '#DC2626', 4.5, 'K⁺');
+      const x = spacing * (i + 0.5) + (i % 2) * 7;
+      if (x < w * 0.92) drawDot(mCtx, x, intY + (i % 2) * 16, '#DC2626', 6.5, 'K⁺');
     });
   } else {
     for (let i = 0; i < 8; i++) {
-      const x = spacing * (i + 0.5) + (i % 2) * 5;
-      if (x < w * 0.8) drawDot(mCtx, x, intY + (i % 2) * 12, '#DC2626', 4.5, 'K⁺');
+      const x = spacing * (i + 0.5) + (i % 2) * 7;
+      if (x < w * 0.92) drawDot(mCtx, x, intY + (i % 2) * 16, '#DC2626', 6.5, 'K⁺');
     }
   }
 
   // Draw A- inside (always, fixed - large impermeable anions)
   for (let i = 0; i < 6; i++) {
     const x = spacing * (i * 1.4 + 0.3);
-    if (x < w - 20) drawDot(mCtx, x, intY + 28, '#7C3AED', 4, 'A⁻');
+    if (x < w - 20) drawDot(mCtx, x, intY + 34, '#7C3AED', 6, 'A⁻');
   }
 
   // Mode 0: 1 K+ leak channel (slow) + pump - balanced steady state
   if (currentMode === 0) {
     const cx = w * 0.38;
     mCtx.strokeStyle = '#DB2777';
-    mCtx.lineWidth = 2.5;
+    mCtx.lineWidth = 3;
     mCtx.lineCap = 'round';
-    [-5,5].forEach(off => {
-      mCtx.beginPath(); mCtx.moveTo(cx+off, midY-memH); mCtx.lineTo(cx+off, midY-4); mCtx.stroke();
-      mCtx.beginPath(); mCtx.moveTo(cx+off, midY+memH); mCtx.lineTo(cx+off, midY+4); mCtx.stroke();
+    [-6,6].forEach(off => {
+      mCtx.beginPath(); mCtx.moveTo(cx+off, midY-memH); mCtx.lineTo(cx+off, midY-5); mCtx.stroke();
+      mCtx.beginPath(); mCtx.moveTo(cx+off, midY+memH); mCtx.lineTo(cx+off, midY+5); mCtx.stroke();
     });
     mCtx.fillStyle = '#DB2777';
-    mCtx.font = 'bold 9px DM Sans';
+    mCtx.font = 'bold 10px DM Sans';
     mCtx.textAlign = 'center';
-    mCtx.fillText('K⁺ leak', cx, midY - memH - 5);
+    mCtx.fillText('K⁺ leak', cx, midY - memH - 6);
     mCtx.textAlign = 'left';
     drawPump(mCtx, w * 0.85, midY, memH, pumpOn);
   }
@@ -791,10 +791,10 @@ function drawDot(ctx, x, y, color, r, label) {
   ctx.globalAlpha = 1;
   if (label) {
     ctx.fillStyle = color;
-    ctx.font = 'bold 8px DM Sans';
+    ctx.font = 'bold 10px DM Sans';
     ctx.textAlign = 'center';
     ctx.globalAlpha = 0.8;
-    ctx.fillText(label, x + 9, y + 3);
+    ctx.fillText(label, x + 11, y + 3);
     ctx.globalAlpha = 1;
     ctx.textAlign = 'left';
   }
@@ -829,20 +829,20 @@ function drawPump(ctx, px, midY, memH, isOn) {
 }
 
 function drawMode1Overlay(ctx, w, midY, memH) {
-  // 2 K+ leak channels
-  const channelXs = [w*0.28, w*0.52];
+  // 1 K+ leak channel
+  const channelXs = [w*0.38];
   channelXs.forEach(cx => {
     ctx.strokeStyle = '#DB2777';
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 3;
     ctx.lineCap = 'round';
-    [-5,5].forEach(off => {
-      ctx.beginPath(); ctx.moveTo(cx+off, midY-memH); ctx.lineTo(cx+off, midY-4); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(cx+off, midY+memH); ctx.lineTo(cx+off, midY+4); ctx.stroke();
+    [-6,6].forEach(off => {
+      ctx.beginPath(); ctx.moveTo(cx+off, midY-memH); ctx.lineTo(cx+off, midY-5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+off, midY+memH); ctx.lineTo(cx+off, midY+5); ctx.stroke();
     });
     ctx.fillStyle = '#DB2777';
-    ctx.font = 'bold 9px DM Sans';
+    ctx.font = 'bold 10px DM Sans';
     ctx.textAlign = 'center';
-    ctx.fillText('K⁺ leak', cx, midY - memH - 5);
+    ctx.fillText('K⁺ leak', cx, midY - memH - 6);
     ctx.textAlign = 'left';
   });
 
@@ -931,32 +931,32 @@ function drawMode2Channels(ctx, w, midY, memH) {
 
   for (let i = 0; i < Math.min(kChannels, 4); i++) {
     const cx = positions[i];
-    ctx.strokeStyle = '#DC2626'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
-    [-5,5].forEach(off => {
-      ctx.beginPath(); ctx.moveTo(cx+off, midY-memH); ctx.lineTo(cx+off, midY-4); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(cx+off, midY+memH); ctx.lineTo(cx+off, midY+4); ctx.stroke();
+    ctx.strokeStyle = '#DC2626'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    [-6,6].forEach(off => {
+      ctx.beginPath(); ctx.moveTo(cx+off, midY-memH); ctx.lineTo(cx+off, midY-5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+off, midY+memH); ctx.lineTo(cx+off, midY+5); ctx.stroke();
     });
-    ctx.fillStyle = '#DC2626'; ctx.font = 'bold 9px DM Sans'; ctx.textAlign = 'center';
-    ctx.fillText('K⁺', cx, midY - memH - 5); ctx.textAlign = 'left';
+    ctx.fillStyle = '#DC2626'; ctx.font = 'bold 10px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('K⁺', cx, midY - memH - 6); ctx.textAlign = 'left';
   }
 
   for (let i = 0; i < Math.min(naChannels, 2); i++) {
     const cx = positions[4 + i];
     const isOpen = slPna > 30;
-    ctx.strokeStyle = isOpen ? '#2563EB' : '#9CA3AF'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    ctx.strokeStyle = isOpen ? '#2563EB' : '#9CA3AF'; ctx.lineWidth = 3; ctx.lineCap = 'round';
     if (isOpen) {
-      [-5,5].forEach(off => {
-        ctx.beginPath(); ctx.moveTo(cx+off, midY-memH); ctx.lineTo(cx+off, midY-4); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(cx+off, midY+memH); ctx.lineTo(cx+off, midY+4); ctx.stroke();
+      [-6,6].forEach(off => {
+        ctx.beginPath(); ctx.moveTo(cx+off, midY-memH); ctx.lineTo(cx+off, midY-5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx+off, midY+memH); ctx.lineTo(cx+off, midY+5); ctx.stroke();
       });
     } else {
-      [-5,5].forEach(off => {
+      [-6,6].forEach(off => {
         ctx.beginPath(); ctx.moveTo(cx+off, midY-memH); ctx.lineTo(cx+off, midY+memH); ctx.stroke();
       });
-      ctx.fillStyle = '#9CA3AF'; ctx.beginPath(); ctx.roundRect(cx-7, midY-4, 14, 8, 3); ctx.fill();
+      ctx.fillStyle = '#9CA3AF'; ctx.beginPath(); ctx.roundRect(cx-8, midY-5, 16, 10, 3); ctx.fill();
     }
-    ctx.fillStyle = isOpen ? '#2563EB' : '#9CA3AF'; ctx.font = 'bold 9px DM Sans'; ctx.textAlign = 'center';
-    ctx.fillText('Na⁺', cx, midY - memH - 5); ctx.textAlign = 'left';
+    ctx.fillStyle = isOpen ? '#2563EB' : '#9CA3AF'; ctx.font = 'bold 10px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('Na⁺', cx, midY - memH - 6); ctx.textAlign = 'left';
   }
 }
 
@@ -988,16 +988,16 @@ function updatePumpIons(px, midY) {
 
 function drawPumpIons(ctx) {
   pumpNaIons.forEach(ion => {
-    ctx.beginPath(); ctx.arc(ion.x, ion.y, 4, 0, Math.PI*2);
+    ctx.beginPath(); ctx.arc(ion.x, ion.y, 5.5, 0, Math.PI*2);
     ctx.fillStyle = '#2563EB'; ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
-    ctx.fillStyle = '#2563EB'; ctx.font = 'bold 7px DM Sans'; ctx.textAlign = 'center';
-    ctx.fillText('Na⁺', ion.x + 9, ion.y + 3); ctx.textAlign = 'left';
+    ctx.fillStyle = '#2563EB'; ctx.font = 'bold 9px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('Na⁺', ion.x + 11, ion.y + 3); ctx.textAlign = 'left';
   });
   pumpKIons.forEach(ion => {
-    ctx.beginPath(); ctx.arc(ion.x, ion.y, 4, 0, Math.PI*2);
+    ctx.beginPath(); ctx.arc(ion.x, ion.y, 5.5, 0, Math.PI*2);
     ctx.fillStyle = '#DC2626'; ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
-    ctx.fillStyle = '#DC2626'; ctx.font = 'bold 7px DM Sans'; ctx.textAlign = 'center';
-    ctx.fillText('K⁺', ion.x + 8, ion.y + 3); ctx.textAlign = 'left';
+    ctx.fillStyle = '#DC2626'; ctx.font = 'bold 9px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('K⁺', ion.x + 10, ion.y + 3); ctx.textAlign = 'left';
   });
 }
 
@@ -1047,10 +1047,10 @@ function updateLeakKIons(midY) {
 
 function drawLeakKIons(ctx) {
   leakKIons.forEach(ion => {
-    ctx.beginPath(); ctx.arc(ion.x, ion.y, 4, 0, Math.PI*2);
+    ctx.beginPath(); ctx.arc(ion.x, ion.y, 5.5, 0, Math.PI*2);
     ctx.fillStyle = '#DC2626'; ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
-    ctx.fillStyle = '#DC2626'; ctx.font = 'bold 7px DM Sans'; ctx.textAlign = 'center';
-    ctx.fillText('K⁺', ion.x + 8, ion.y + 3); ctx.textAlign = 'left';
+    ctx.fillStyle = '#DC2626'; ctx.font = 'bold 9px DM Sans'; ctx.textAlign = 'center';
+    ctx.fillText('K⁺', ion.x + 10, ion.y + 3); ctx.textAlign = 'left';
   });
 }
 
@@ -1083,7 +1083,7 @@ function animate() {
   // Mode 1: sequential phases
   if (currentMode === 1) {
     if (mode1Running) {
-      const channelXs = [w*0.28, w*0.52];
+      const channelXs = [w*0.38];
       if (leakKIons.length === 0) initLeakKIons(channelXs, midY);
       if (mode1Phase === 1) {
         // Phase 1: K+ flows out freely, concentration force builds
@@ -1184,16 +1184,16 @@ function setPump(on) {
 
 // ── SLIDERS ───────────────────────────────────────────────────────────────────
 function resetSliders() {
-  slEk = 5; slEna = 145; slPk = 90; slPna = 10;
+  slEk = 5; slEna = 145; slPk = 90; slPna = 13;
   slidersTouched = { ek: false, ena: false, pk: false, pna: false };
   document.getElementById('sl-ek').value = 5;
   document.getElementById('sl-ena').value = 145;
   document.getElementById('sl-pk').value = 90;
-  document.getElementById('sl-pna').value = 10;
+  document.getElementById('sl-pna').value = 13;
   document.getElementById('sv-ek').textContent = '5 mM';
   document.getElementById('sv-ena').textContent = '145 mM';
   document.getElementById('sv-pk').textContent = '90%';
-  document.getElementById('sv-pna').textContent = '10%';
+  document.getElementById('sv-pna').textContent = '13%';
 }
 
 function onSlider(which) {
@@ -1411,7 +1411,7 @@ async function sendMessage() {
   document.getElementById('send-btn').disabled = true;
 
   const p = MODES[currentMode];
-  const system = p.system + `\n\nYour role:\n- Respond warmly and with Socratic engagement\n- Engage with their specific reasoning\n- If right: affirm specifically, then follow up with a clinical/real-world application question\n- If partially right: acknowledge what's correct, guide toward what's missing\n- If wrong: ask a guiding question rather than giving the answer\n- 2–4 sentences, conversational, no bullet points`;
+  const system = p.system + `\n\nYour role:\n- Respond warmly and with Socratic engagement\n- Address the student's key point directly and stay on the concept at hand; do not follow them down off-topic tangents. If they raise something unrelated, give one brief honest sentence and steer straight back to what this simulation shows\n- Focus on the underlying idea, not the exact words. There are many valid ways to express a correct concept — if the student's reasoning is sound, credit it even if their terminology is loose or informal. Never withhold affirmation over phrasing, and never make them guess a specific word you have in mind\n- If right: affirm specifically, then follow up with a clinical/real-world application question\n- If partially right: acknowledge what's correct, then guide toward the one thing that's missing\n- If wrong: ask a single guiding question rather than giving the answer\n- Keep it to 2–3 sentences, conversational, no bullet points`;
 
   chatHistory.push({ role: 'user', content: text });
 
@@ -1454,7 +1454,7 @@ async function sendMessage() {
       }
     }
   } catch(e) {
-    const errMsg = error.message || '';
+    const errMsg = e.message || '';
     thinking.querySelector('.message-bubble').textContent = errMsg.includes('overload') ? 'The AI tutor is busy right now — please wait a moment and try again.' : 'Could not reach the tutor. Check your API key and try again.';
     chatHistory.pop();
   }
