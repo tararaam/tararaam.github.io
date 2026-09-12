@@ -1645,23 +1645,30 @@ Your role:
   chatHistory.push({ role: 'user', content: text });
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 300, system, messages: chatHistory.slice(-10) }),
-    });
-    const data = await res.json();
+    const reqBody = JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 300, system, messages: chatHistory.slice(-10) });
+    let res, data;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: reqBody,
+      });
+      data = await res.json();
+      const isBusy = data.error && (/overload|rate|429|529/i.test((data.error.type || '') + ' ' + (data.error.message || '')) || res.status === 429 || res.status === 529);
+      if (isBusy && attempt < 2) { await new Promise(r => setTimeout(r, 1500 * (attempt + 1))); continue; }
+      break;
+    }
     if (data.error) {
       const type = (data.error.type || '') + ' ' + (data.error.message || '');
       let msg;
       if (/overload|rate|429|529/i.test(type) || res.status === 429 || res.status === 529) {
         msg = 'The tutor is getting a lot of questions right now. Wait a few seconds and send that again.';
       } else if (/credit balance|billing|insufficient/i.test(type)) {
-        msg = 'Your Anthropic account is out of API credits. Add credits at console.anthropic.com (Settings → Billing) to keep using the tutor.';
+        msg = 'This tool has hit its usage limit for now. Let your instructor know, and try again in a few minutes.';
       } else if (/invalid.*key|authentication|401|permission/i.test(type) || res.status === 401 || res.status === 403) {
-        msg = 'Your API key was rejected. Double-check you pasted the full key correctly, or generate a new one at console.anthropic.com.';
+        msg = 'There’s a problem with the API key for this tool. Double-check you pasted it correctly — if it still fails, let your instructor know.';
       } else {
-        msg = 'Something went wrong reaching the tutor. Wait a moment and try again — if it keeps happening, check your API key and account credits at console.anthropic.com.';
+        msg = 'Something went wrong reaching the tutor. Wait a moment and try again — if it keeps happening, let your instructor know.';
       }
       thinking.classList.remove('thinking');
       thinking.querySelector('.message-bubble').textContent = msg;
