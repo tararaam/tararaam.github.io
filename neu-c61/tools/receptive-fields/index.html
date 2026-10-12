@@ -185,15 +185,16 @@
     </div>
 
     <div class="section-stepper">
-      <button class="section-btn active" onclick="goToSection(0)">Retinal<br>circuit</button>
-      <button class="section-btn" onclick="goToSection(1)" id="sec-btn-1" disabled>Center-surround<br>receptive fields</button>
-      <button class="section-btn" onclick="goToSection(2)" id="sec-btn-2" disabled>Orientation<br>selectivity in V1</button>
+      <button class="section-btn active" onclick="goToSection(0)">Rods &amp;<br>cones</button>
+      <button class="section-btn" onclick="goToSection(1)" id="sec-btn-1" disabled>Bipolar<br>cells</button>
+      <button class="section-btn" onclick="goToSection(2)" id="sec-btn-2" disabled>Retinal ganglion<br>cells</button>
+      <button class="section-btn" onclick="goToSection(3)" id="sec-btn-3" disabled>Orientation<br>selectivity in V1</button>
     </div>
 
     <div class="viz-area" id="viz-area">
 
-      <!-- SECTION 0: RETINAL CIRCUIT -->
-      <div id="sec0-content">
+      <!-- SECTIONS 0 AND 1: ROD/CONE AND BIPOLAR CELL VIEWS (shared schematic) -->
+      <div id="sec-circuit">
         <div class="viz-card">
           <div class="viz-card-label" id="circuit-card-label">Retina — photoreceptors</div>
           <canvas id="circuit-canvas"></canvas>
@@ -202,6 +203,7 @@
             <div class="legend-item"><div class="legend-dot" style="background:var(--off-color)"></div> Hyperpolarized (less excited)</div>
             <div class="legend-item"><div class="legend-dot" style="background:#34D399"></div> Glutamate</div>
             <div class="legend-item"><div class="legend-dot" style="background:#fffde7; border:1px solid #ccc;"></div> Light</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#F87171"></div> Recording site</div>
           </div>
           <div class="ctrl-row" id="circuit-ctrl-0" style="margin-top:0.75rem;">
             <button class="ctrl-btn" onclick="circuitLight('all')">Light on</button>
@@ -224,20 +226,10 @@
           <canvas id="circuit-trace-canvas"></canvas>
           <div class="readout" id="circuit-readout"></div>
         </div>
-
-        <div class="viz-card">
-          <div class="viz-card-label">Circuit step</div>
-          <div class="step-dots" id="circuit-step-dots"></div>
-          <div style="margin-top:0.75rem; display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap;">
-            <button class="ctrl-btn" id="circuit-prev-btn" onclick="retreatCircuitStep()" disabled>← Prev step</button>
-            <button class="ctrl-btn primary" id="circuit-next-btn" onclick="advanceCircuitStep()" disabled>Next step →</button>
-          </div>
-          <div id="circuit-step-nudge" style="font-size:11px; color:#A07000; font-style:italic; margin-top:4px; display:none;">Answer the tutor's question to continue</div>
-        </div>
       </div>
 
-      <!-- SECTION 1 -->
-      <div id="sec1-content" style="display:none;">
+      <!-- SECTION 2: RETINAL GANGLION CELLS -->
+      <div id="sec-rgc" style="display:none;">
         <div class="viz-card">
           <div class="viz-card-label">Retinal ganglion cell — receptive field</div>
           <canvas id="rf-canvas"></canvas>
@@ -263,8 +255,8 @@
         </div>
       </div>
 
-      <!-- SECTION 2 -->
-      <div id="sec2-content" style="display:none;">
+      <!-- SECTION 3: V1 -->
+      <div id="sec-v1" style="display:none;">
         <div class="viz-card">
           <div class="viz-card-label">How LGN receptive fields build a V1 receptive field</div>
           <canvas id="v1-canvas"></canvas>
@@ -366,41 +358,25 @@
 
 <script>
 // ── SECTION DATA ──────────────────────────────────────────────────────────────
-// ── RETINAL CIRCUIT STEP DATA ─────────────────────────────────────────────────
-const CIRCUIT_STEPS = [
-  {
-    label: 'Photoreceptors',
-    desc: `Rods and cones are the retina's light detectors. Click a photoreceptor, or use the buttons, to shine light on it, and watch the outlined cell's membrane potential. The green dots under each cell show glutamate being released onto the next cell in the circuit.`,
-    prediction: `Photoreceptors respond to light. Before you turn the light on: do you predict the photoreceptor will depolarize or hyperpolarize in response to light, and what would that mean for how much glutamate it releases?`,
-    context: `CURRENT STEP — photoreceptor. The student is recording from one photoreceptor and can turn light on and off. Target insight: light HYPERPOLARIZES the photoreceptor (about −40 mV in the dark down to about −65 mV in light), which REDUCES its glutamate release; in the dark it is relatively depolarized and releases more glutamate. This is the opposite of what students usually expect. Do not explain phototransduction (rhodopsin, cGMP, transducin).`
-  },
-  {
-    label: 'Bipolar cell',
-    desc: `Photoreceptors pass their signal to bipolar cells. Each bipolar cell collects input from a patch of photoreceptors and has a center-surround receptive field: an ON-center bipolar cell is excited by light in the center of its field and inhibited by light in the surround. Place light on the photoreceptors and watch the bipolar cell's membrane potential, then switch to an OFF-center cell to compare.`,
-    prediction: `Photoreceptors hyperpolarize in light, yet an ON-center bipolar cell is excited by light in its center. What does that tell you about what happens to the signal at the photoreceptor-to-bipolar synapse? Then predict: what will light in the surround do to this bipolar cell?`,
-    context: `CURRENT STEP — bipolar cell. The student sees seven photoreceptors converging on one bipolar cell; the middle three form its center and the outer four its surround. Target insight: because photoreceptors hyperpolarize to light, an ON-center bipolar cell that DEPOLARIZES to center light shows that the signal is flipped (sign-inverted) at the photoreceptor-to-bipolar synapse; light in the surround has the opposite effect on the bipolar cell, and lighting everything roughly cancels. An OFF-center bipolar cell is the mirror image (it hyperpolarizes to center light, so it keeps the same sign as the photoreceptor). The student does not need to know why the signal flips.`
-  },
-  {
-    label: 'Ganglion cell',
-    desc: `Bipolar cells synapse onto retinal ganglion cells, the output cells of the retina. A ganglion cell inherits its bipolar cell's center-surround field and ON/OFF type, and it converts that graded signal into action potentials that travel to the brain. Place light and watch its spikes.`,
-    prediction: `Before you place any light: what do you predict an ON-center ganglion cell will do when light falls only on the center of its field, and what about light only in the surround?`,
-    context: `CURRENT STEP — ganglion cell. The student sees the bipolar cell synapse onto a retinal ganglion cell and can watch its spikes. Target insight: the ganglion cell inherits the bipolar cell's center-surround field and ON/OFF type, and turns the graded potential into spikes that leave the eye toward the brain; ON-center cells speed up for center light and slow for surround light, OFF-center cells do the opposite, and diffuse light is a weak stimulus.`
-  }
-];
-
 // ── SECTION DATA ──────────────────────────────────────────────────────────────
 const SECTIONS = [
   {
-    title: 'The retinal circuit',
-    desc: CIRCUIT_STEPS[0].desc,
-    prediction: null, // handled per-step
-    system: `You are an AI tutor for an introductory neuroscience course. Topic: the retinal circuit — photoreceptors → bipolar cells → retinal ganglion cells (RGCs). Key concepts: (1) Rods and cones HYPERPOLARIZE in response to light; in the dark they are relatively depolarized and release more glutamate, and light reduces glutamate release. (2) Bipolar cells have center-surround receptive fields. ON-center bipolar cells depolarize to light in the center and hyperpolarize to light in the surround; OFF-center bipolar cells are the opposite. Because photoreceptors hyperpolarize to light, an ON-center bipolar cell's depolarization means the signal is flipped at the photoreceptor-to-bipolar synapse; the OFF-center bipolar cell keeps the same sign. Students are NOT expected to learn the molecular mechanism of the sign flip — if asked, say that different bipolar cell types respond differently to the same glutamate signal and the details are beyond this exercise. Do not name receptors (such as mGluR6), and do not bring up horizontal cells, amacrine cells, or lateral inhibition mechanisms; if asked what creates the surround, say it comes from neighboring photoreceptors' signals being combined with the opposite sign, with no further mechanism. (3) RGCs are the output cells of the retina: they inherit the bipolar cell's center-surround field and ON/OFF type and fire action potentials (spikes) that travel to the brain, whereas photoreceptors and bipolar cells use graded potentials. The student explores by clicking photoreceptors to place light and watching a recording of one cell's membrane potential (photoreceptor, bipolar cell) or spikes (ganglion cell). Do not bring up color vision, light/dark adaptation, the phototransduction cascade, or disease unless asked. Accept reasonable paraphrases. Prioritize reasoning quality over precise wording. After a correct or mostly correct answer, affirm it briefly (1-2 sentences) and cue the student to click 'Next step →' (on the last step: 'Next') to continue. Do NOT ask follow-up questions or go deeper — the next step poses the next question. If the student raises something unrelated, give one brief honest sentence and steer straight back to the circuit.`
+    title: 'Rods and cones',
+    desc: `Rods and cones are the retina's light detectors. Click a photoreceptor, or use the buttons, to shine light on it, and watch the membrane potential of the cell marked with the red dot. The green dots under each cell show glutamate being released onto the next cell in the circuit.`,
+    prediction: `Photoreceptors respond to light. Before you turn the light on: do you predict the photoreceptor will depolarize or hyperpolarize in response to light, and what would that mean for how much glutamate it releases?`,
+    system: `You are an AI tutor for an introductory neuroscience course. Topic: rod and cone photoreceptors. Key concepts: Rods and cones HYPERPOLARIZE in response to light (about −40 mV in the dark down to about −65 mV in light). In the dark they are relatively depolarized and release more glutamate; light reduces glutamate release. This is the opposite of what students usually expect. The student explores by turning light on and off, or clicking individual photoreceptors, and watching one photoreceptor's membrane potential and the glutamate dots. Do not explain phototransduction (rhodopsin, cGMP, transducin), color vision, or light/dark adaptation. Do not bring up bipolar cells or later stages unless the student asks — if they do, give a brief honest answer and redirect. Accept reasonable paraphrases. Prioritize reasoning quality over precise wording. After a correct or mostly correct answer, affirm it briefly (1-2 sentences) and let them know they can keep experimenting or click 'Next' to continue to bipolar cells. Do NOT ask follow-up questions or go deeper. If the student raises something unrelated, give one brief honest sentence and steer straight back to the photoreceptor.`
   },
   {
-    title: 'Center-surround receptive fields',
-    desc: 'Retinal ganglion cells respond to light falling within a specific region of the visual field — their receptive field. The field has two concentric zones: a center and a surround that respond oppositely to light.',
-    prediction: 'You\'re about to explore how a retinal ganglion cell responds to light. Before you click anywhere: what do you think it means for a cell to have a "receptive field"? What kind of information do you think this cell might be extracting from the visual scene?',
-    system: `You are an AI tutor for an introductory neuroscience course. Topic: retinal ganglion cell center-surround receptive fields. Key concepts: ON-center cells are excited by light in the center and suppressed by light in the surround. OFF-center cells are the opposite — suppressed by light in center, excited when light is removed from center (or hits surround). Both cell types are poor detectors of diffuse uniform light — they respond best to contrast (small spots). The student is exploring this by clicking on a receptive field diagram and watching a spike raster. Do not bring up concepts beyond what is shown here unless the student asks. Accept reasonable paraphrases. Prioritize reasoning quality over precise wording. After a correct answer, affirm briefly then cue them to keep exploring or answer their next question. Once they have discovered the ON vs OFF difference through exploration, affirm what they found and unlock the next section. Do not introduce surround suppression. Do not introduce complex cells, hypercolumns, or color processing unless asked.`
+    title: 'Bipolar cells',
+    desc: `Photoreceptors pass their signal to bipolar cells. Each bipolar cell collects input from a patch of photoreceptors, and its receptive field has a center and a surround (the shaded zones). An ON-center bipolar cell is excited by light in the center and inhibited by light in the surround. Place light on the photoreceptors and watch the bipolar cell's membrane potential, then switch to an OFF-center cell to compare.`,
+    prediction: `Photoreceptors hyperpolarize in light, yet an ON-center bipolar cell is excited by light in its center. What does that tell you about what happens to the signal at the photoreceptor-to-bipolar synapse? Then predict: what will light in the surround do to this bipolar cell?`,
+    system: `You are an AI tutor for an introductory neuroscience course. Topic: bipolar cells. Key concepts: Bipolar cells receive input from photoreceptors and have center-surround receptive fields. An ON-center bipolar cell depolarizes to light in the center of its field and hyperpolarizes to light in the surround; an OFF-center bipolar cell is the opposite. Photoreceptors hyperpolarize to light, so an ON-center bipolar cell's depolarization to center light means the signal is flipped (sign-inverted) at the photoreceptor-to-bipolar synapse; the OFF-center bipolar cell keeps the same sign as the photoreceptor. Lighting the whole field roughly cancels out. In the simulation, the middle three photoreceptors are the center and the outer four are the surround (the shaded zones). Bipolar cells use graded potentials, not spikes. Students are NOT expected to learn the molecular mechanism of the sign flip — if asked, say that different bipolar cell types respond differently to the same glutamate signal and the details are beyond this exercise. Do not name receptors (such as mGluR6), and do not bring up horizontal cells, amacrine cells, or lateral inhibition mechanisms; if asked what creates the surround, say it comes from neighboring photoreceptors' signals being combined with the opposite sign, with no further mechanism. Do not go into detail about ganglion cells — they come in the next section. Do not bring up color vision, adaptation, or disease unless asked. Accept reasonable paraphrases. Prioritize reasoning quality over precise wording. After a correct or mostly correct answer, affirm it briefly (1-2 sentences) and let them know they can keep experimenting or click 'Next' to continue to ganglion cells. Do NOT ask follow-up questions or go deeper. If the student raises something unrelated, give one brief honest sentence and steer straight back to the bipolar cell.`
+  },
+  {
+    title: 'Retinal ganglion cells',
+    desc: 'Bipolar cells pass their signal to retinal ganglion cells, the output cells of the retina. A ganglion cell inherits its bipolar cell\'s center-surround receptive field and fires action potentials that travel to the brain. The field has two concentric zones, a center and a surround, that respond oppositely to light.',
+    prediction: 'Bipolar cells pass their center-surround signal on to retinal ganglion cells. Before you click anywhere: what do you predict an ON-center ganglion cell will do when light falls only on the center of its field, only on the surround, or on the whole field at once?',
+    system: `You are an AI tutor for an introductory neuroscience course. Topic: retinal ganglion cell center-surround receptive fields. Context: the student has just seen photoreceptors and bipolar cells in the previous sections; ganglion cells receive input from bipolar cells, inherit their center-surround receptive field and ON/OFF type, and are the retina's output cells, firing action potentials (spikes) that travel to the brain. Key concepts: ON-center cells are excited by light in the center and suppressed by light in the surround. OFF-center cells are the opposite — suppressed by light in center, excited when light is removed from center (or hits surround). Both cell types are poor detectors of diffuse uniform light — they respond best to contrast (small spots). The student is exploring this by clicking on a receptive field diagram and watching a spike raster. Do not bring up concepts beyond what is shown here unless the student asks. Accept reasonable paraphrases. Prioritize reasoning quality over precise wording. After a correct answer, affirm briefly then cue them to keep exploring or answer their next question. Once they have discovered the ON vs OFF difference through exploration, affirm what they found and unlock the next section. Do not introduce surround suppression. Do not introduce complex cells, hypercolumns, or color processing unless asked.`
   },
   {
     title: 'Orientation selectivity in V1',
@@ -423,17 +399,13 @@ let firingRate = 0;
 let targetFiringRate = 0;
 let chatHistory = [];
 
-// Retinal circuit state
-let circuitStep = 0;
-let answeredCurrentStep = false;
-let circuitCellType = 'on';          // 'on' or 'off' (bipolar / ganglion type)
+// Retinal circuit state (sections 0 and 1 share one schematic)
+let circuitStep = 0;                  // 0 = photoreceptors view, 1 = bipolar view (set from currentSection)
+let circuitCellType = 'on';           // 'on' or 'off' bipolar cell type
 let prLit = new Array(7).fill(false); // which photoreceptors have light on them
 let prVm = new Array(7).fill(-40);    // photoreceptor membrane potentials (mV)
 let bipVm = -55;                      // bipolar cell membrane potential (mV)
-let circuitRate = 1.5;                // ganglion cell firing rate (spikes/s)
 let vmHistory = [];                   // {t, v} samples for the recording trace
-let circuitSpikeHistory = [];
-let lastCircuitSpike = -1e9;
 let lastReadout = '';
 let apiKey = sessionStorage.getItem('neuc64_api_key') || '';
 
@@ -1009,7 +981,7 @@ function resetOrientation() {
   v1TargetRate = computeV1Rate(0, 0);
 }
 
-// ── RETINAL CIRCUIT SECTION ───────────────────────────────────────────────────
+// ── RETINAL CIRCUIT (SECTIONS 0 AND 1) ────────────────────────────────────────
 const N_PR = 7;
 const PR_CENTER = [2, 3, 4];
 const PR_SURROUND = [0, 1, 5, 6];
@@ -1017,7 +989,7 @@ const RECORDED_PR = 3;
 const PR_DARK_VM = -40, PR_LIGHT_VM = -65;   // photoreceptor: depolarized in dark, hyperpolarized in light
 const BIP_REST_VM = -55, BIP_SWING = 22;     // bipolar cell: ±22 mV around rest
 const AMBER = [245, 158, 11], INDIGO = [99, 102, 241], REST_RGB = [130, 140, 170];
-const CIRCUIT_PAD_L = 64, CIRCUIT_PAD_R = 28;
+const CIRCUIT_PAD_L = 78, CIRCUIT_PAD_R = 34;
 
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function mixRGB(a, b, t) { t = clamp(t, 0, 1); return a.map((v, i) => Math.round(v + (b[i] - v) * t)); }
@@ -1048,23 +1020,16 @@ function updateCircuitDynamics(dt) {
     prVm[i] += ((prLit[i] ? PR_LIGHT_VM : PR_DARK_VM) - prVm[i]) * k;
   }
   bipVm += (circuitTargets().bipTarget - bipVm) * k;
-  // Ganglion cell rate follows the bipolar cell's depolarization (one more stage of lag)
-  const rateTarget = clamp(1.5 + (bipVm - BIP_REST_VM) * 3.6, 0, 100);
-  circuitRate += (rateTarget - circuitRate) * k;
   const focus = circuitStep === 0 ? prVm[RECORDED_PR] : bipVm;
   vmHistory.push({ t: rasterClock, v: focus });
   vmHistory = vmHistory.filter(s => rasterClock - s.t < RASTER_WINDOW + 200);
 }
 
-function drawRecordingRing(ctx, x, y, rx, ry, label, labelX, labelY, align) {
-  ctx.save();
-  ctx.setLineDash([4, 3]);
-  ctx.strokeStyle = 'rgba(255,255,255,0.65)'; ctx.lineWidth = 1.2;
-  ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '9px DM Sans'; ctx.textAlign = align;
-  ctx.fillText(label, labelX, labelY);
-  ctx.restore();
+function drawRecordingDot(ctx, x, y) {
+  ctx.beginPath(); ctx.arc(x, y, 6.5, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(248,113,113,0.28)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(x, y, 3.3, 0, Math.PI * 2);
+  ctx.fillStyle = '#F87171'; ctx.fill();
 }
 
 function drawCircuit() {
@@ -1078,10 +1043,10 @@ function drawCircuit() {
   const xs = [];
   for (let i = 0; i < N_PR; i++) xs.push(CIRCUIT_PAD_L + i * spacing);
   const cx = (xs[0] + xs[N_PR - 1]) / 2;
-  const yBip = 186, yRGC = 248;
+  const yBip = 190;
   const isOn = circuitCellType === 'on';
   const centerRGB = isOn ? AMBER : INDIGO, surrRGB = isOn ? INDIGO : AMBER;
-  const showBip = circuitStep >= 1, showRGC = circuitStep >= 2;
+  const showBip = circuitStep >= 1;
   const typeLabel = isOn ? 'ON' : 'OFF';
 
   // Row labels
@@ -1089,24 +1054,26 @@ function drawCircuit() {
   ctx.fillText('Light', 8, 44);
   ctx.fillText('Photo-', 8, 98); ctx.fillText('receptors', 8, 109);
   if (showBip) { ctx.fillText('Bipolar', 8, yBip - 2); ctx.fillText('cell', 8, yBip + 9); }
-  if (showRGC) { ctx.fillText('Ganglion', 8, yRGC - 2); ctx.fillText('cell', 8, yRGC + 9); }
 
-  // Receptive-field brackets (which photoreceptors form the bipolar cell's center vs surround)
+  // Receptive-field zones: shaded columns drawn directly over the photoreceptors that form
+  // the bipolar cell's center and surround, so the zones sit exactly where those cells are.
   if (showBip) {
-    const half = spacing * 0.42;
-    const bracket = (x1, x2, rgb, label) => {
-      ctx.strokeStyle = rgbStr(rgb, 0.85); ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(x1, 23); ctx.lineTo(x1, 18); ctx.lineTo(x2, 18); ctx.lineTo(x2, 23); ctx.stroke();
+    const edge = i => xs[0] + (i - 0.5) * spacing;   // boundary to the left of photoreceptor i
+    const zone = (i0, i1, rgb, label) => {
+      const x0 = Math.max(4, edge(i0)) + 2, x1 = Math.min(w - 4, edge(i1)) - 2;
+      ctx.beginPath(); rrect(ctx, x0, 4, x1 - x0, 136, 7);
+      ctx.fillStyle = rgbStr(rgb, 0.13); ctx.fill();
+      ctx.strokeStyle = rgbStr(rgb, 0.55); ctx.lineWidth = 1.2; ctx.stroke();
       ctx.fillStyle = rgbStr(rgb, 0.95); ctx.font = 'bold 9px DM Sans'; ctx.textAlign = 'center';
-      ctx.fillText(label, (x1 + x2) / 2, 13);
+      ctx.fillText(label, (x0 + x1) / 2, 17);
     };
-    bracket(xs[2] - half, xs[4] + half, centerRGB, 'CENTER');
-    bracket(xs[0] - half, xs[1] + half, surrRGB, 'SURROUND');
-    bracket(xs[5] - half, xs[6] + half, surrRGB, 'SURROUND');
+    zone(0, 2, surrRGB, 'SURROUND');
+    zone(2, 5, centerRGB, 'CENTER');
+    zone(5, 7, surrRGB, 'SURROUND');
     ctx.textAlign = 'left';
   }
 
-  // Bipolar dendrites, drawn first so photoreceptor terminals sit on top
+  // Bipolar dendrites (all solid; color shows which zone each photoreceptor belongs to)
   const d = clamp((bipVm - BIP_REST_VM) / BIP_SWING, -1, 1);
   const bcol = d >= 0 ? mixRGB(REST_RGB, AMBER, d) : mixRGB(REST_RGB, INDIGO, -d);
   if (showBip) {
@@ -1115,12 +1082,10 @@ function drawCircuit() {
       const ex = cx + (xs[i] - cx) * 0.3, ey = yBip - 11;
       ctx.beginPath();
       ctx.moveTo(xs[i], 127);
-      ctx.quadraticCurveTo(xs[i] + (ex - xs[i]) * 0.15, 156, ex, ey);
-      ctx.strokeStyle = rgbStr(isCenter ? centerRGB : surrRGB, isCenter ? 0.8 : 0.6);
-      ctx.lineWidth = isCenter ? 2.4 : 1.5;
-      ctx.setLineDash(isCenter ? [] : [4, 3]);
+      ctx.quadraticCurveTo(xs[i] + (ex - xs[i]) * 0.15, 160, ex, ey);
+      ctx.strokeStyle = rgbStr(isCenter ? centerRGB : surrRGB, 0.8);
+      ctx.lineWidth = 1.9;
       ctx.stroke();
-      ctx.setLineDash([]);
     }
   }
 
@@ -1166,74 +1131,42 @@ function drawCircuit() {
       ctx.beginPath(); ctx.arc(x + dx, 128 + phase * 14, 1.7, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(52,211,153,${0.9 - phase * 0.6})`; ctx.fill();
     }
+
+    if (circuitStep === 0 && i === RECORDED_PR) drawRecordingDot(ctx, x, 106);
   }
-  if (circuitStep === 0) {
-    drawRecordingRing(ctx, xs[RECORDED_PR], 96, 16, 38, 'recording', xs[RECORDED_PR], 158, 'center');
-  }
-  if (!showBip || !showRGC) {
+
+  if (!showBip) {
     ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.font = 'italic 10px DM Sans'; ctx.textAlign = 'center';
-    ctx.fillText(!showBip ? 'Bipolar cells and ganglion cells appear in the next steps' : 'Ganglion cell appears in the next step', cx, h - 36);
+    ctx.fillText('Photoreceptors pass their signal to bipolar cells in the next section', cx, h - 36);
     ctx.textAlign = 'left';
   }
 
   // Bipolar cell body + axon
   if (showBip) {
-    const axonEnd = showRGC ? yRGC - 21 : yBip + 44;
+    const axonEnd = yBip + 46;
     ctx.beginPath(); ctx.moveTo(cx, yBip + 12); ctx.lineTo(cx, axonEnd);
     ctx.strokeStyle = rgbStr(bcol, 0.9); ctx.lineWidth = 2.5; ctx.stroke();
     ctx.beginPath(); ctx.arc(cx, axonEnd, 4.5, 0, Math.PI * 2);
     ctx.fillStyle = rgbStr(bcol, 0.95); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = 'italic 9px DM Sans'; ctx.textAlign = 'left';
+    ctx.fillText('to ganglion cells', cx + 10, axonEnd + 3);
 
     ctx.beginPath(); ctx.ellipse(cx, yBip, 22, 13, 0, 0, Math.PI * 2);
     ctx.fillStyle = rgbStr(bcol, 0.55); ctx.fill();
     ctx.strokeStyle = rgbStr(bcol, 1); ctx.lineWidth = 2; ctx.stroke();
     ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.font = 'bold 10px DM Sans'; ctx.textAlign = 'center';
-    ctx.fillText(typeLabel, cx, yBip + 3.5);
+    ctx.fillText(typeLabel, cx + 3, yBip + 3.5);
+    drawRecordingDot(ctx, cx - 14, yBip - 1);
 
     const state = d > 0.15 ? 'depolarized' : d < -0.15 ? 'hyperpolarized' : 'at rest';
     ctx.textAlign = 'left'; ctx.font = '10px DM Sans';
     ctx.fillStyle = d > 0.15 ? '#FBBF24' : d < -0.15 ? '#A5B4FC' : 'rgba(255,255,255,0.6)';
     ctx.fillText(fmtMV(bipVm) + ' mV · ' + state, cx + 32, yBip + 4);
-    if (circuitStep === 1) drawRecordingRing(ctx, cx, yBip, 31, 21, 'recording', cx - 38, yBip + 3, 'right');
-  }
-
-  // Ganglion cell
-  if (showRGC) {
-    const rgcAge = circuitSpikeHistory.length ? rasterClock - circuitSpikeHistory[circuitSpikeHistory.length - 1].t : 1e9;
-    const flash = rgcAge < 120 ? 1 - rgcAge / 120 : 0;
-    const rcol = circuitRate >= 1.5
-      ? mixRGB(REST_RGB, AMBER, (circuitRate - 1.5) / 60)
-      : mixRGB(REST_RGB, INDIGO, (1.5 - circuitRate) / 1.5);
-    // axon leaving the eye
-    ctx.beginPath(); ctx.moveTo(cx, yRGC + 15); ctx.lineTo(cx, yRGC + 38);
-    ctx.strokeStyle = rgbStr(rcol, 0.9); ctx.lineWidth = 2.5; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx - 5, yRGC + 33); ctx.lineTo(cx, yRGC + 41); ctx.lineTo(cx + 5, yRGC + 33);
-    ctx.closePath(); ctx.fillStyle = rgbStr(rcol, 0.95); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '9px DM Sans'; ctx.textAlign = 'left';
-    ctx.fillText('to brain', cx + 9, yRGC + 40);
-
-    ctx.beginPath(); ctx.ellipse(cx, yRGC, 26, 15, 0, 0, Math.PI * 2);
-    ctx.fillStyle = rgbStr(rcol, 0.55); ctx.fill();
-    ctx.strokeStyle = rgbStr(rcol, 1); ctx.lineWidth = 2; ctx.stroke();
-    if (flash > 0) {
-      ctx.beginPath(); ctx.ellipse(cx, yRGC, 26 + 8 * (1 - flash), 15 + 6 * (1 - flash), 0, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(253,230,138,${flash})`; ctx.lineWidth = 2; ctx.stroke();
-    }
-    ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.font = 'bold 10px DM Sans'; ctx.textAlign = 'center';
-    ctx.fillText(typeLabel, cx, yRGC + 3.5);
-    ctx.textAlign = 'left'; ctx.font = '10px DM Sans';
-    ctx.fillStyle = circuitRate > 8 ? '#FBBF24' : circuitRate < 0.8 ? '#A5B4FC' : 'rgba(255,255,255,0.6)';
-    ctx.fillText(Math.round(circuitRate) + ' spikes/s', cx + 34, yRGC + 4);
-    if (circuitStep === 2) drawRecordingRing(ctx, cx, yRGC, 35, 23, 'recording', cx - 42, yRGC + 3, 'right');
   }
   ctx.textAlign = 'left';
 }
 
 function drawCircuitTrace() {
-  if (circuitStep >= 2) {
-    updateRaster(circuitSpikeHistory, circuitTraceCanvas, circuitTraceCtx, 'Ganglion cell — spikes');
-    return;
-  }
   const dpr = window.devicePixelRatio || 1;
   const w = circuitTraceCanvas.width / dpr, h = circuitTraceCanvas.height / dpr;
   const ctx = circuitTraceCtx;
@@ -1286,11 +1219,9 @@ function updateCircuitReadout() {
     const v = prVm[RECORDED_PR];
     const rel = v > -45 ? 'high' : v < -60 ? 'low' : 'reduced';
     txt = `Recorded photoreceptor: <strong>${fmtMV(v)} mV</strong> &nbsp;·&nbsp; Glutamate release: <strong>${rel}</strong>`;
-  } else if (circuitStep === 1) {
+  } else {
     const lit = prLit.some(Boolean);
     txt = `${lit ? 'Lit photoreceptors: <strong>' + fmtMV(PR_LIGHT_VM) + ' mV</strong> &nbsp;·&nbsp; ' : ''}${typ}-center bipolar cell: <strong>${fmtMV(bipVm)} mV</strong> (${bipState})`;
-  } else {
-    txt = `${typ}-center ganglion cell firing rate: <strong>${Math.round(circuitRate)}</strong> spikes/s`;
   }
   if (txt !== lastReadout) {
     document.getElementById('circuit-readout').innerHTML = txt;
@@ -1325,13 +1256,12 @@ function setCircuitType(type) {
 function circuitStateSummary() {
   const litC = PR_CENTER.filter(i => prLit[i]).length;
   const litS = PR_SURROUND.filter(i => prLit[i]).length;
-  return `Current simulation state: ${litC + litS} of 7 photoreceptors are lit (${litC} of 3 center, ${litS} of 4 surround); recorded photoreceptor ≈ ${fmtMV(prVm[RECORDED_PR])} mV; ${circuitCellType.toUpperCase()}-center bipolar cell ≈ ${fmtMV(bipVm)} mV; ganglion cell firing ≈ ${Math.round(circuitRate)} spikes/s. The student may not have tried anything yet — do not assume they have observed a particular result.`;
+  return `Current simulation state: ${litC + litS} of 7 photoreceptors are lit (${litC} of 3 center, ${litS} of 4 surround); recorded photoreceptor ≈ ${fmtMV(prVm[RECORDED_PR])} mV; ${circuitCellType.toUpperCase()}-center bipolar cell ≈ ${fmtMV(bipVm)} mV. The student may not have tried anything yet — do not assume they have observed a particular result.`;
 }
 
 function resetCircuitView() {
   prLit = prLit.map(() => false);
   vmHistory = [];
-  circuitSpikeHistory = [];
   lastReadout = '';
 }
 
@@ -1340,53 +1270,12 @@ function updateCircuitControls() {
   document.getElementById('circuit-ctrl-0').style.display = s === 0 ? 'flex' : 'none';
   document.getElementById('circuit-ctrl-12').style.display = s === 0 ? 'none' : 'flex';
   document.getElementById('circuit-card-label').textContent =
-    ['Retina — photoreceptors', 'Retina — photoreceptors → bipolar cell', 'Retina — photoreceptors → bipolar cell → ganglion cell'][s];
+    s === 0 ? 'Retina — photoreceptors' : 'Retina — photoreceptors → bipolar cell';
   document.getElementById('circuit-trace-label').textContent =
-    ['Recording — photoreceptor', 'Recording — bipolar cell', 'Recording — ganglion cell'][s];
+    s === 0 ? 'Recording — photoreceptor' : 'Recording — bipolar cell';
   document.getElementById('circuit-hint').textContent = s === 0
-    ? 'Click a photoreceptor (or use the buttons) to shine light on it. The outlined cell is the one being recorded.'
-    : s === 1
-      ? 'Click photoreceptors to place light — try the center, then the surround. Switch cell type to compare ON- and OFF-center bipolar cells.'
-      : 'Click photoreceptors to place light and watch the ganglion cell’s spikes. Switch cell type to compare ON- and OFF-center cells.';
-}
-
-function buildCircuitStepUI() {
-  const last = CIRCUIT_STEPS.length - 1;
-  const container = document.getElementById('circuit-step-dots');
-  container.innerHTML = '';
-  CIRCUIT_STEPS.forEach((_, i) => {
-    const dot = document.createElement('div');
-    dot.className = 'step-dot' + (i < circuitStep ? ' done' : i === circuitStep ? ' active' : '');
-    container.appendChild(dot);
-  });
-  const step = CIRCUIT_STEPS[circuitStep];
-  document.getElementById('section-desc').textContent = step.desc;
-  document.getElementById('circuit-prev-btn').disabled = circuitStep === 0;
-  updateCircuitControls();
-
-  if (!explorationMode) addPredictionPrompt(step.prediction);
-  const gated = !explorationMode && !freeExploration;
-  answeredCurrentStep = !gated;
-  document.getElementById('circuit-next-btn').disabled = gated ? true : circuitStep >= last;
-  document.getElementById('circuit-step-nudge').style.display = gated && circuitStep < last ? 'block' : 'none';
-  updateNavState();
-}
-
-function advanceCircuitStep() {
-  if (!answeredCurrentStep && !explorationMode && !freeExploration) return;
-  if (circuitStep < CIRCUIT_STEPS.length - 1) {
-    circuitStep++;
-    resetCircuitView();
-    buildCircuitStepUI();
-  }
-}
-
-function retreatCircuitStep() {
-  if (circuitStep > 0) {
-    circuitStep--;
-    resetCircuitView();
-    buildCircuitStepUI();
-  }
+    ? 'Click a photoreceptor (or use the buttons) to shine light on it. The red dot marks the cell being recorded.'
+    : 'Click photoreceptors to place light — try the center, then the surround. Switch cell type to compare ON- and OFF-center bipolar cells. The red dot marks the cell being recorded.';
 }
 
 // ── ANIMATION LOOP ────────────────────────────────────────────────────────────
@@ -1419,29 +1308,27 @@ function animate(ts) {
     return last;
   }
 
-  if (currentSection === 0) {
+  if (currentSection <= 1) {
     updateCircuitDynamics(dt);
-    if (circuitStep >= 2) lastCircuitSpike = genSpikes(circuitRate, circuitSpikeHistory, lastCircuitSpike);
   }
-  circuitSpikeHistory = circuitSpikeHistory.filter(s => rasterClock - s.t < RASTER_WINDOW + 200);
 
-  if (currentSection === 1) {
+  if (currentSection === 2) {
     lastSpikeTime = genSpikes(firingRate, spikeHistory, lastSpikeTime);
   }
   spikeHistory = spikeHistory.filter(s => rasterClock - s.t < RASTER_WINDOW + 200);
 
-  if (currentSection === 2) {
+  if (currentSection === 3) {
     const lastV1 = v1SpikeHistory.length ? v1SpikeHistory[v1SpikeHistory.length - 1].t : -1e9;
     genSpikes(v1FiringRate, v1SpikeHistory, lastV1);
   }
   v1SpikeHistory = v1SpikeHistory.filter(s => rasterClock - s.t < RASTER_WINDOW + 200);
 
   // Draw
-  if (currentSection === 0) {
+  if (currentSection <= 1) {
     drawCircuit();
     drawCircuitTrace();
     updateCircuitReadout();
-  } else if (currentSection === 1) {
+  } else if (currentSection === 2) {
     drawRF();
     updateRaster(spikeHistory, rasterCanvas, rasterCtx, 'RGC');
     document.getElementById('firing-rate-val').textContent = Math.round(firingRate);
@@ -1457,6 +1344,8 @@ function animate(ts) {
 
 // ── SECTION NAVIGATION ────────────────────────────────────────────────────────
 const NEXT_BTN_HTML = 'Next\n          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+// Sections 0 and 1 (rods/cones, bipolar cells) share one schematic
+const SECTION_CONTAINERS = ['sec-circuit', 'sec-circuit', 'sec-rgc', 'sec-v1'];
 
 function goToSection(s) {
   if (!explorationMode && !freeExploration && s > currentSection) return;
@@ -1480,12 +1369,7 @@ function updateNavState() {
   if (s === last) { nb.textContent = 'Done'; nb.disabled = false; nudge.style.display = 'none'; return; }
   nb.innerHTML = NEXT_BTN_HTML;
   if (explorationMode || freeExploration) { nb.disabled = false; nudge.style.display = 'none'; }
-  else {
-    nb.disabled = !answeredCurrentSection;
-    // In the retinal circuit, the per-step nudge covers every step except the last
-    const showNudge = !answeredCurrentSection && (s !== 0 || circuitStep === CIRCUIT_STEPS.length - 1);
-    nudge.style.display = showNudge ? 'block' : 'none';
-  }
+  else { nb.disabled = !answeredCurrentSection; nudge.style.display = answeredCurrentSection ? 'none' : 'block'; }
 }
 
 function updateUI(s) {
@@ -1499,13 +1383,13 @@ function updateUI(s) {
     else btn.disabled = false;
   });
 
-  for (let i = 0; i < SECTIONS.length; i++) {
-    document.getElementById('sec' + i + '-content').style.display = i === s ? 'block' : 'none';
-  }
+  SECTION_CONTAINERS.forEach(id => { document.getElementById(id).style.display = 'none'; });
+  document.getElementById(SECTION_CONTAINERS[s]).style.display = 'block';
 
-  if (s === 0) buildCircuitStepUI();           // adds the step's prediction prompt itself
-  else if (!explorationMode && sec.prediction) addPredictionPrompt(sec.prediction);
-  if (explorationMode) addTutorMessage('Explore freely — place light on the cells and ask me anything.');
+  if (s <= 1) { circuitStep = s; resetCircuitView(); updateCircuitControls(); }
+
+  if (!explorationMode && sec.prediction) addPredictionPrompt(sec.prediction);
+  else if (explorationMode) addTutorMessage('Explore freely — try the controls and ask me anything.');
 
   updateNavState();
   setTimeout(resizeCanvases, 50);
@@ -1567,9 +1451,7 @@ async function sendMessage() {
   document.getElementById('send-btn').disabled = true;
 
   const sec = SECTIONS[currentSection];
-  const stepCtx = currentSection === 0
-    ? '\n\n' + CIRCUIT_STEPS[circuitStep].context + '\n' + circuitStateSummary()
-    : '';
+  const stepCtx = currentSection <= 1 ? '\n\n' + circuitStateSummary() : '';
   const system = sec.system + stepCtx + `
 
 Your role:
@@ -1619,23 +1501,15 @@ Your role:
       thinking.querySelector('.message-bubble').textContent = reply;
       chatHistory.push({ role: 'assistant', content: reply });
       if (!freeExploration && !explorationMode) {
-        if (currentSection === 0 && circuitStep < CIRCUIT_STEPS.length - 1) {
-          // Mid-circuit: answering unlocks the next step, not the next section
-          answeredCurrentStep = true;
-          document.getElementById('circuit-next-btn').disabled = false;
-          document.getElementById('circuit-step-nudge').style.display = 'none';
-        } else {
-          answeredCurrentStep = true;
-          answeredCurrentSection = true;
-          document.getElementById('soft-nudge').style.display = 'none';
-          document.getElementById('next-btn').disabled = false;
-          document.querySelectorAll('.section-btn').forEach((btn, i) => {
-            if (i <= currentSection + 1) { btn.disabled = false; }
-          });
-          if (currentSection === SECTIONS.length - 1) {
-            freeExploration = true;
-            addTutorMessage("You've explored all three sections. Well done — you now understand how the visual system builds up feature detection, from light on photoreceptors through the retinal circuit to oriented edges in V1.");
-          }
+        answeredCurrentSection = true;
+        document.getElementById('soft-nudge').style.display = 'none';
+        document.getElementById('next-btn').disabled = false;
+        document.querySelectorAll('.section-btn').forEach((btn, i) => {
+          if (i <= currentSection + 1) { btn.disabled = false; }
+        });
+        if (currentSection === SECTIONS.length - 1) {
+          freeExploration = true;
+          addTutorMessage("You've explored all four sections. Well done — you now understand how the visual system builds up feature detection, from light on rods and cones through bipolar and ganglion cells to oriented edges in V1.");
         }
       }
     }
