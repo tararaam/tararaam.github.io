@@ -407,7 +407,9 @@ let prVm = new Array(7).fill(-40);    // photoreceptor membrane potentials (mV)
 let bipVm = -55;                      // bipolar cell membrane potential (mV)
 let vmHistory = [];                   // {t, v} samples for the recording trace
 let lastReadout = '';
-let apiKey = sessionStorage.getItem('neuc64_api_key') || '';
+function storeGet(k) { try { return sessionStorage.getItem(k) || ''; } catch (e) { return ''; } }
+function storeSet(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }
+let apiKey = storeGet('neuc64_api_key');
 
 // V1 state
 let showLGN = true;
@@ -900,7 +902,7 @@ function drawTuningCurve() {
   tuningCtx.fillStyle = '#f8f9fa'; tuningCtx.fillRect(0, 0, w, h);
 
   const cx = w / 2, cy = h / 2;
-  const maxR = Math.min(cx, cy) - 16;
+  const maxR = Math.max(1, Math.min(cx, cy) - 16);
 
   // Grid circles
   [0.25, 0.5, 0.75, 1].forEach(f => {
@@ -1323,7 +1325,8 @@ function animate(ts) {
   }
   v1SpikeHistory = v1SpikeHistory.filter(s => rasterClock - s.t < RASTER_WINDOW + 200);
 
-  // Draw
+  // Draw (guarded so one failed frame can never stop the animation loop)
+  try {
   if (currentSection <= 1) {
     drawCircuit();
     drawCircuitTrace();
@@ -1338,6 +1341,7 @@ function animate(ts) {
     drawTuningCurve();
     document.getElementById('v1-firing-val').textContent = Math.round(v1FiringRate);
   }
+  } catch (err) { console.error(err); }
 
   animFrame = requestAnimationFrame(animate);
 }
@@ -1530,7 +1534,7 @@ function closeModal() { document.getElementById('modal-overlay').classList.remov
 function saveApiKey() {
   const k = document.getElementById('api-key-input').value.trim();
   if (k) {
-    apiKey = k; sessionStorage.setItem('neuc64_api_key', k);
+    apiKey = k; storeSet('neuc64_api_key', k);
     document.getElementById('api-status-btn').textContent = 'Key saved ✓';
     document.getElementById('api-status-btn').style.color = '#0F6E56';
     closeModal();
