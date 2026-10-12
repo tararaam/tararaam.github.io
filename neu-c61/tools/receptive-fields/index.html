@@ -201,9 +201,8 @@
           <div class="legend-row">
             <div class="legend-item"><div class="legend-dot" style="background:var(--on-color)"></div> Depolarized (more excited)</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--off-color)"></div> Hyperpolarized (less excited)</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#34D399"></div> Glutamate</div>
+            <div class="legend-item" id="leg-glu"><div class="legend-dot" style="background:#34D399"></div> Glutamate</div>
             <div class="legend-item"><div class="legend-dot" style="background:#fffde7; border:1px solid #ccc;"></div> Light</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#F87171"></div> Recording site</div>
           </div>
           <div class="ctrl-row" id="circuit-ctrl-0" style="margin-top:0.75rem;">
             <button class="ctrl-btn" onclick="circuitLight('all')">Light on</button>
@@ -217,6 +216,11 @@
             <button class="ctrl-btn" onclick="circuitLight('surround')">Surround only</button>
             <button class="ctrl-btn" onclick="circuitLight('all')">All</button>
             <button class="ctrl-btn" onclick="circuitLight('none')">Clear</button>
+          </div>
+          <div class="ctrl-row" id="circuit-ctrl-int" style="margin-top:0.5rem; display:none;">
+            <span style="font-size:11px; font-weight:500; color:var(--text-secondary);">Light intensity:</span>
+            <input type="range" id="intensity-slider" min="10" max="100" value="100" style="flex:1; max-width:220px;" oninput="setLightIntensity(this.value)">
+            <span style="font-size:11px; color:var(--text-secondary); min-width:34px;" id="intensity-val">100%</span>
           </div>
           <div style="font-size:11px; color:var(--text-tertiary); margin-top:6px;" id="circuit-hint"></div>
         </div>
@@ -362,15 +366,17 @@
 const SECTIONS = [
   {
     title: 'Rods and cones',
-    desc: `Rods and cones are the retina's light detectors. Click a photoreceptor, or use the buttons, to shine light on it, and watch the membrane potential of the cell marked with the red dot. The green dots under each cell show glutamate being released onto the next cell in the circuit.`,
-    prediction: `Photoreceptors respond to light. Before you turn the light on: do you predict the photoreceptor will depolarize or hyperpolarize in response to light, and what would that mean for how much glutamate it releases?`,
-    system: `You are an AI tutor for an introductory neuroscience course. Topic: rod and cone photoreceptors. Key concepts: Rods and cones HYPERPOLARIZE in response to light (about −40 mV in the dark down to about −65 mV in light). In the dark they are relatively depolarized and release more glutamate; light reduces glutamate release. This is the opposite of what students usually expect. The student explores by turning light on and off, or clicking individual photoreceptors, and watching one photoreceptor's membrane potential and the glutamate dots. Do not explain phototransduction (rhodopsin, cGMP, transducin), color vision, or light/dark adaptation. Do not bring up bipolar cells or later stages unless the student asks — if they do, give a brief honest answer and redirect. Accept reasonable paraphrases. Prioritize reasoning quality over precise wording. After a correct or mostly correct answer, affirm it briefly (1-2 sentences) and let them know they can keep experimenting or click 'Next' to continue to bipolar cells. Do NOT ask follow-up questions or go deeper. If the student raises something unrelated, give one brief honest sentence and steer straight back to the photoreceptor.`
+    desc: `Rods and cones are the retina's light detectors. Click a photoreceptor, or use the buttons, to shine light on it, and watch the membrane potential of the cell labeled "Recording from this cell." The green dots under each cell show glutamate being released onto the next cell in the circuit.`,
+    prediction: `Every cell in the visual system has a "receptive field." Before you click anywhere: what do you think it means for a cell to have a receptive field? Then try the light and predict: will this photoreceptor depolarize or hyperpolarize when light hits it, and what would that mean for how much glutamate it releases?`,
+    system: `You are an AI tutor for an introductory neuroscience course. Topic: rod and cone photoreceptors. Key concepts: Rods and cones HYPERPOLARIZE in response to light (about −40 mV in the dark down to about −65 mV in light). In the dark they are relatively depolarized and release more glutamate; light reduces glutamate release. This is the opposite of what students usually expect. The student is first asked what it means for a cell to have a receptive field: the region of space (here, a tiny patch of the retina) where a stimulus changes that cell's response; a photoreceptor's receptive field is just the spot of light that lands on it, and the cell's response tells you something about that location. Credit any reasonable version of this idea. The student then explores by turning light on and off, or clicking individual photoreceptors, and watching the membrane potential of the cell labeled 'Recording from this cell' and the glutamate dots. The student may answer either or both questions; engage with whichever they address, and if they only answer one, briefly invite them to try the other as they experiment. Do not explain phototransduction (rhodopsin, cGMP, transducin), color vision, or light/dark adaptation. Do not bring up bipolar cells or later stages unless the student asks — if they do, give a brief honest answer and redirect. Accept reasonable paraphrases. Prioritize reasoning quality over precise wording. After a correct or mostly correct answer, affirm it briefly (1-2 sentences) and let them know they can keep experimenting or click 'Next' to continue to bipolar cells. Do NOT ask follow-up questions or go deeper. If the student raises something unrelated, give one brief honest sentence and steer straight back to the photoreceptor.`
   },
   {
     title: 'Bipolar cells',
-    desc: `Photoreceptors pass their signal to bipolar cells. Each bipolar cell collects input from a patch of photoreceptors, and its receptive field has a center and a surround (the shaded zones). An ON-center bipolar cell is excited by light in the center and inhibited by light in the surround. Place light on the photoreceptors and watch the bipolar cell's membrane potential, then switch to an OFF-center cell to compare.`,
-    prediction: `Photoreceptors hyperpolarize in light, yet an ON-center bipolar cell is excited by light in its center. What does that tell you about what happens to the signal at the photoreceptor-to-bipolar synapse? Then predict: what will light in the surround do to this bipolar cell?`,
-    system: `You are an AI tutor for an introductory neuroscience course. Topic: bipolar cells. Key concepts: Bipolar cells receive input from photoreceptors and have center-surround receptive fields. An ON-center bipolar cell depolarizes to light in the center of its field and hyperpolarizes to light in the surround; an OFF-center bipolar cell is the opposite. Photoreceptors hyperpolarize to light, so an ON-center bipolar cell's depolarization to center light means the signal is flipped (sign-inverted) at the photoreceptor-to-bipolar synapse; the OFF-center bipolar cell keeps the same sign as the photoreceptor. Lighting the whole field roughly cancels out. In the simulation, the middle three photoreceptors are the center and the outer four are the surround (the shaded zones). Bipolar cells use graded potentials, not spikes. Students are NOT expected to learn the molecular mechanism of the sign flip — if asked, say that different bipolar cell types respond differently to the same glutamate signal and the details are beyond this exercise. Do not name receptors (such as mGluR6), and do not bring up horizontal cells, amacrine cells, or lateral inhibition mechanisms; if asked what creates the surround, say it comes from neighboring photoreceptors' signals being combined with the opposite sign, with no further mechanism. Do not go into detail about ganglion cells — they come in the next section. Do not bring up color vision, adaptation, or disease unless asked. Accept reasonable paraphrases. Prioritize reasoning quality over precise wording. After a correct or mostly correct answer, affirm it briefly (1-2 sentences) and let them know they can keep experimenting or click 'Next' to continue to ganglion cells. Do NOT ask follow-up questions or go deeper. If the student raises something unrelated, give one brief honest sentence and steer straight back to the bipolar cell.`
+    desc: `Photoreceptors pass their signal to bipolar cells. Each bipolar cell collects input from a patch of photoreceptors, so its receptive field is a circle with a center and a surround. An ON-center bipolar cell is excited by light in the center and inhibited by light in the surround. Click the center or the surround to place light there, watch the bipolar cell's membrane potential, then switch to an OFF-center cell to compare.`,
+    prediction: `Photoreceptors hyperpolarize in light, yet an ON-center bipolar cell is excited by light in its center. What does that tell you about what happens to the signal at the photoreceptor-to-bipolar synapse? Then predict: what will light in the surround do to this bipolar cell? As you experiment, also watch the recording trace and try the intensity slider: what kind of signal is this cell producing?`,
+    system: `You are an AI tutor for an introductory neuroscience course. Topic: bipolar cells. Key concepts: Bipolar cells receive input from photoreceptors and have center-surround receptive fields. An ON-center bipolar cell depolarizes to light in the center of its field and hyperpolarizes to light in the surround; an OFF-center bipolar cell is the opposite. Photoreceptors hyperpolarize to light, so an ON-center bipolar cell's depolarization to center light means the signal is flipped (sign-inverted) at the photoreceptor-to-bipolar synapse; the OFF-center bipolar cell keeps the same sign as the photoreceptor. Lighting the whole field roughly cancels out. In the simulation the student sees only a circular receptive field (a center disc and a surround ring) feeding one large bipolar cell, plus a voltage trace and a light-intensity slider; the individual photoreceptors are not drawn in this section. Bipolar cells use graded potentials, not action potentials. Students are NOT expected to learn the molecular mechanism of the sign flip — if asked, say that different bipolar cell types respond differently to the same glutamate signal and the details are beyond this exercise. Do not name receptors (such as mGluR6), and do not bring up horizontal cells, amacrine cells, or lateral inhibition mechanisms; if asked what creates the surround, say it comes from neighboring photoreceptors' signals being combined with the opposite sign, with no further mechanism. Do not go into detail about ganglion cells beyond the one contrast below — they come in the next section.
+
+This section has TWO goals: (1) the sign inversion and the surround response, and (2) the student recognizing that the bipolar cell's signal is a GRADED POTENTIAL, not action potentials. Evidence they can see: the trace never shows spikes; the voltage moves smoothly and by different amounts depending on the input (try the intensity slider: dimmer light, smaller change; center plus surround partly cancel). Do NOT state the term 'graded potential' or tell them it is not spikes before they get there. If the student has addressed goal 1 but not goal 2, affirm what they got right in one sentence, then give ONE Socratic nudge pointing to the trace and the intensity slider (for example: does the voltage jump all-or-none like an action potential, or does it change by different amounts depending on the input, and what kind of signal does that suggest?). If they are still stuck after one nudge, tell them directly. Once the student says (in any paraphrase) that the signal is graded, continuous, proportional, analog or not spikes, confirm it in one sentence, name it as a graded potential, contrast it briefly with action potentials (all-or-none and able to travel long distances, which is what ganglion cells will fire in the next section), and tell them they can click 'Next'. ONLY in the reply where both goals have been met, end your reply with the exact token [[UNLOCK]] (it is hidden from the student). Never include [[UNLOCK]] otherwise. Do not bring up color vision, adaptation, or disease unless asked. Accept reasonable paraphrases. Prioritize reasoning quality over precise wording. Keep every reply to 2-3 sentences. If the student raises something unrelated, give one brief honest sentence and steer straight back to the bipolar cell.`
   },
   {
     title: 'Retinal ganglion cells',
@@ -407,6 +413,8 @@ let prVm = new Array(7).fill(-40);    // photoreceptor membrane potentials (mV)
 let bipVm = -55;                      // bipolar cell membrane potential (mV)
 let vmHistory = [];                   // {t, v} samples for the recording trace
 let lastReadout = '';
+let lightIntensity = 1;               // bipolar view: brightness of the light (0.1-1)
+let sectionTurns = 0;                 // student messages sent in the current section
 function storeGet(k) { try { return sessionStorage.getItem(k) || ''; } catch (e) { return ''; } }
 function storeSet(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }
 let apiKey = storeGet('neuc64_api_key');
@@ -1011,7 +1019,8 @@ function rrect(ctx, x, y, w, h, r) {
 function circuitTargets() {
   const cLit = PR_CENTER.filter(i => prLit[i]).length / PR_CENTER.length;
   const sLit = PR_SURROUND.filter(i => prLit[i]).length / PR_SURROUND.length;
-  const net = BIP_SWING * (cLit - sLit);
+  const inten = circuitStep >= 1 ? lightIntensity : 1;
+  const net = BIP_SWING * inten * (cLit - sLit);
   const bipTarget = BIP_REST_VM + (circuitCellType === 'on' ? net : -net);
   return { cLit, sLit, bipTarget };
 }
@@ -1027,11 +1036,79 @@ function updateCircuitDynamics(dt) {
   vmHistory = vmHistory.filter(s => rasterClock - s.t < RASTER_WINDOW + 200);
 }
 
-function drawRecordingDot(ctx, x, y) {
-  ctx.beginPath(); ctx.arc(x, y, 6.5, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(248,113,113,0.28)'; ctx.fill();
-  ctx.beginPath(); ctx.arc(x, y, 3.3, 0, Math.PI * 2);
-  ctx.fillStyle = '#F87171'; ctx.fill();
+function bipGeom(w, h) {
+  const R = Math.min(h * 0.38, w * 0.27);
+  const rfx = 14 + R, rfy = h * 0.5;
+  const space = w - rfx - R;
+  const cellx = rfx + R + space * 0.55;
+  const rx = clamp(space * 0.36, 26, 46);
+  return { R, r: R * 0.4, rfx, rfy, cellx, celly: h * 0.42, rx, ry: rx * 0.6 };
+}
+
+function drawBipolarView(ctx, w, h) {
+  const g = bipGeom(w, h);
+  const isOn = circuitCellType === 'on';
+  const centerRGB = isOn ? AMBER : INDIGO, surrRGB = isOn ? INDIGO : AMBER;
+  const cLit = PR_CENTER.some(i => prLit[i]), sLit = PR_SURROUND.some(i => prLit[i]);
+  const light = [255, 253, 225];
+
+  // Receptive field: surround ring + center disc (concentric circles)
+  ctx.beginPath(); ctx.arc(g.rfx, g.rfy, g.R, 0, Math.PI * 2);
+  ctx.fillStyle = rgbStr(surrRGB, 0.2); ctx.fill();
+  ctx.strokeStyle = rgbStr(surrRGB, 0.7); ctx.lineWidth = 1.6; ctx.stroke();
+  if (sLit) {
+    ctx.beginPath(); ctx.arc(g.rfx, g.rfy, g.R, 0, Math.PI * 2); ctx.arc(g.rfx, g.rfy, g.r, 0, Math.PI * 2, true);
+    ctx.fillStyle = rgbStr(light, 0.12 + 0.55 * lightIntensity); ctx.fill('evenodd');
+  }
+  ctx.beginPath(); ctx.arc(g.rfx, g.rfy, g.r, 0, Math.PI * 2);
+  ctx.fillStyle = rgbStr(centerRGB, 0.4); ctx.fill();
+  if (cLit) { ctx.fillStyle = rgbStr(light, 0.12 + 0.6 * lightIntensity); ctx.fill(); }
+  ctx.strokeStyle = rgbStr(centerRGB, 0.95); ctx.lineWidth = 2; ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 10px DM Sans'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(26,26,46,0.9)';
+  const lbl = (t, y, rgb) => { ctx.strokeText(t, g.rfx, y); ctx.fillStyle = rgbStr(mixRGB(rgb, [255, 255, 255], 0.35), 1); ctx.fillText(t, g.rfx, y); };
+  lbl('CENTER', g.rfy + 3.5, centerRGB);
+  lbl('SURROUND', g.rfy - (g.R + g.r) / 2 + 3.5, surrRGB);
+  ctx.font = '9px DM Sans'; ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.fillText('Receptive field', g.rfx, g.rfy + g.R + 16);
+
+  // Inputs converging onto the bipolar cell: center (solid) and surround (drawn from the ring)
+  const tx = g.cellx - g.rx - 2, ty = g.celly;
+  [[0, g.r, centerRGB], [-0.55, g.R, surrRGB], [0.55, g.R, surrRGB]].forEach(([ang, rad, rgb]) => {
+    const sx = g.rfx + Math.cos(ang) * rad, sy = g.rfy + Math.sin(ang) * rad;
+    ctx.beginPath(); ctx.moveTo(sx, sy);
+    ctx.bezierCurveTo(sx + (tx - sx) * 0.55, sy, tx - (tx - sx) * 0.3, ty, tx, ty + (ang * 6));
+    ctx.strokeStyle = rgbStr(rgb, 0.85); ctx.lineWidth = 2; ctx.stroke();
+  });
+
+  // Bipolar cell, state-colored
+  const d = clamp((bipVm - BIP_REST_VM) / BIP_SWING, -1, 1);
+  const bcol = d >= 0 ? mixRGB(REST_RGB, AMBER, d) : mixRGB(REST_RGB, INDIGO, -d);
+  const axonEnd = g.celly + g.ry + 46;
+  ctx.beginPath(); ctx.moveTo(g.cellx, g.celly + g.ry); ctx.lineTo(g.cellx, axonEnd);
+  ctx.strokeStyle = rgbStr(bcol, 0.9); ctx.lineWidth = 3; ctx.stroke();
+  ctx.beginPath(); ctx.arc(g.cellx, axonEnd, 5, 0, Math.PI * 2);
+  ctx.fillStyle = rgbStr(bcol, 0.95); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = 'italic 9px DM Sans';
+  ctx.fillText('to ganglion cells', g.cellx, axonEnd + 18);
+
+  ctx.beginPath(); ctx.ellipse(g.cellx, g.celly, g.rx, g.ry, 0, 0, Math.PI * 2);
+  ctx.fillStyle = rgbStr(bcol, 0.55); ctx.fill();
+  ctx.strokeStyle = rgbStr(bcol, 1); ctx.lineWidth = 2.5; ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.font = 'bold 13px DM Sans';
+  ctx.fillText(isOn ? 'ON' : 'OFF', g.cellx, g.celly + 4.5);
+
+  const state = d > 0.15 ? 'depolarized' : d < -0.15 ? 'hyperpolarized' : 'at rest';
+  ctx.font = 'bold 12px DM Sans';
+  ctx.fillStyle = d > 0.15 ? '#FBBF24' : d < -0.15 ? '#A5B4FC' : 'rgba(255,255,255,0.75)';
+  ctx.fillText(fmtMV(bipVm) + ' mV', g.cellx, g.celly - g.ry - 22);
+  ctx.font = '10px DM Sans';
+  ctx.fillText(state, g.cellx, g.celly - g.ry - 8);
+  ctx.textAlign = 'left';
+  ctx.font = '9px DM Sans'; ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillText('Bipolar cell', 8, 14);
 }
 
 function drawCircuit() {
@@ -1045,6 +1122,7 @@ function drawCircuit() {
   const xs = [];
   for (let i = 0; i < N_PR; i++) xs.push(CIRCUIT_PAD_L + i * spacing);
   const cx = (xs[0] + xs[N_PR - 1]) / 2;
+  if (circuitStep >= 1) { drawBipolarView(ctx, w, h); return; }
   const yBip = 190;
   const isOn = circuitCellType === 'on';
   const centerRGB = isOn ? AMBER : INDIGO, surrRGB = isOn ? INDIGO : AMBER;
@@ -1134,7 +1212,13 @@ function drawCircuit() {
       ctx.fillStyle = `rgba(52,211,153,${0.9 - phase * 0.6})`; ctx.fill();
     }
 
-    if (circuitStep === 0 && i === RECORDED_PR) drawRecordingDot(ctx, x, 106);
+    if (i === RECORDED_PR) {
+      ctx.beginPath(); ctx.moveTo(x, 148); ctx.lineTo(x - 4, 155); ctx.lineTo(x + 4, 155); ctx.closePath();
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fill();
+      ctx.font = '10px DM Sans'; ctx.textAlign = 'center';
+      ctx.fillText('Recording from this cell', x, 169);
+      ctx.textAlign = 'left';
+    }
   }
 
   if (!showBip) {
@@ -1158,7 +1242,6 @@ function drawCircuit() {
     ctx.strokeStyle = rgbStr(bcol, 1); ctx.lineWidth = 2; ctx.stroke();
     ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.font = 'bold 10px DM Sans'; ctx.textAlign = 'center';
     ctx.fillText(typeLabel, cx + 3, yBip + 3.5);
-    drawRecordingDot(ctx, cx - 14, yBip - 1);
 
     const state = d > 0.15 ? 'depolarized' : d < -0.15 ? 'hyperpolarized' : 'at rest';
     ctx.textAlign = 'left'; ctx.font = '10px DM Sans';
@@ -1222,8 +1305,9 @@ function updateCircuitReadout() {
     const rel = v > -45 ? 'high' : v < -60 ? 'low' : 'reduced';
     txt = `Recorded photoreceptor: <strong>${fmtMV(v)} mV</strong> &nbsp;·&nbsp; Glutamate release: <strong>${rel}</strong>`;
   } else {
-    const lit = prLit.some(Boolean);
-    txt = `${lit ? 'Lit photoreceptors: <strong>' + fmtMV(PR_LIGHT_VM) + ' mV</strong> &nbsp;·&nbsp; ' : ''}${typ}-center bipolar cell: <strong>${fmtMV(bipVm)} mV</strong> (${bipState})`;
+    const c = PR_CENTER.some(i => prLit[i]), sr = PR_SURROUND.some(i => prLit[i]);
+    const where = c && sr ? 'center and surround' : c ? 'center only' : sr ? 'surround only' : 'none';
+    txt = `Light: <strong>${where}</strong> &nbsp;·&nbsp; ${typ}-center bipolar cell: <strong>${fmtMV(bipVm)} mV</strong> (${bipState})`;
   }
   if (txt !== lastReadout) {
     document.getElementById('circuit-readout').innerHTML = txt;
@@ -1234,6 +1318,13 @@ function updateCircuitReadout() {
 circuitCanvas.addEventListener('click', e => {
   const rect = circuitCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  if (circuitStep >= 1) {
+    const g = bipGeom(rect.width, rect.height);
+    const dist = Math.hypot(x - g.rfx, y - g.rfy);
+    if (dist <= g.r) { const on = !PR_CENTER.every(i => prLit[i]); PR_CENTER.forEach(i => prLit[i] = on); }
+    else if (dist <= g.R) { const on = !PR_SURROUND.every(i => prLit[i]); PR_SURROUND.forEach(i => prLit[i] = on); }
+    return;
+  }
   if (y > 135) return;
   const spacing = (rect.width - CIRCUIT_PAD_L - CIRCUIT_PAD_R) / (N_PR - 1);
   const i = Math.round((x - CIRCUIT_PAD_L) / spacing);
@@ -1256,9 +1347,18 @@ function setCircuitType(type) {
 }
 
 function circuitStateSummary() {
+  if (circuitStep >= 1) {
+    const c = PR_CENTER.some(i => prLit[i]), sr = PR_SURROUND.some(i => prLit[i]);
+    return `Current simulation state: light on the ${c && sr ? 'center and surround' : c ? 'center only' : sr ? 'surround only' : 'receptive field: none yet'}; light intensity ${Math.round(lightIntensity * 100)}%; ${circuitCellType.toUpperCase()}-center bipolar cell ≈ ${fmtMV(bipVm)} mV (rest is −55 mV). The student may not have tried anything yet — do not assume they have observed a particular result.`;
+  }
   const litC = PR_CENTER.filter(i => prLit[i]).length;
   const litS = PR_SURROUND.filter(i => prLit[i]).length;
   return `Current simulation state: ${litC + litS} of 7 photoreceptors are lit (${litC} of 3 center, ${litS} of 4 surround); recorded photoreceptor ≈ ${fmtMV(prVm[RECORDED_PR])} mV; ${circuitCellType.toUpperCase()}-center bipolar cell ≈ ${fmtMV(bipVm)} mV. The student may not have tried anything yet — do not assume they have observed a particular result.`;
+}
+
+function setLightIntensity(v) {
+  lightIntensity = clamp(parseInt(v, 10) / 100, 0.1, 1);
+  document.getElementById('intensity-val').textContent = Math.round(lightIntensity * 100) + '%';
 }
 
 function resetCircuitView() {
@@ -1271,13 +1371,15 @@ function updateCircuitControls() {
   const s = circuitStep;
   document.getElementById('circuit-ctrl-0').style.display = s === 0 ? 'flex' : 'none';
   document.getElementById('circuit-ctrl-12').style.display = s === 0 ? 'none' : 'flex';
+  document.getElementById('circuit-ctrl-int').style.display = s === 0 ? 'none' : 'flex';
+  document.getElementById('leg-glu').style.display = s === 0 ? '' : 'none';
   document.getElementById('circuit-card-label').textContent =
-    s === 0 ? 'Retina — photoreceptors' : 'Retina — photoreceptors → bipolar cell';
+    s === 0 ? 'Retina — photoreceptors' : 'Retina — bipolar cell receptive field';
   document.getElementById('circuit-trace-label').textContent =
     s === 0 ? 'Recording — photoreceptor' : 'Recording — bipolar cell';
   document.getElementById('circuit-hint').textContent = s === 0
-    ? 'Click a photoreceptor (or use the buttons) to shine light on it. The red dot marks the cell being recorded.'
-    : 'Click photoreceptors to place light — try the center, then the surround. Switch cell type to compare ON- and OFF-center bipolar cells. The red dot marks the cell being recorded.';
+    ? 'Click a photoreceptor (or use the buttons) to shine light on it.'
+    : 'Click the center or the surround of the receptive field to place light there. Try each, then both, and use the slider to change the brightness. Switch cell type to compare ON- and OFF-center bipolar cells.';
 }
 
 // ── ANIMATION LOOP ────────────────────────────────────────────────────────────
@@ -1378,6 +1480,7 @@ function updateNavState() {
 
 function updateUI(s) {
   const sec = SECTIONS[s];
+  sectionTurns = 0;
   document.getElementById('section-title').textContent = sec.title;
   document.getElementById('section-desc').textContent = sec.desc;
 
@@ -1451,6 +1554,7 @@ async function sendMessage() {
   if (!apiKey) { openModal(); return; }
   input.value = ''; autoResize(input);
   addStudentMessage(text);
+  sectionTurns++;
   const thinking = addTutorMessage('Thinking…', true);
   document.getElementById('send-btn').disabled = true;
 
@@ -1500,11 +1604,15 @@ Your role:
       thinking.querySelector('.message-bubble').textContent = msg;
       chatHistory.pop();
     } else {
-      const reply = data.content[0].text;
+      const rawReply = data.content[0].text;
+      const unlockTag = /\[\[UNLOCK\]\]/.test(rawReply);
+      const reply = rawReply.replace(/\s*\[\[UNLOCK\]\]\s*/g, '').trim();
       thinking.classList.remove('thinking');
       thinking.querySelector('.message-bubble').textContent = reply;
       chatHistory.push({ role: 'assistant', content: reply });
-      if (!freeExploration && !explorationMode) {
+      // The bipolar section holds Next until the tutor confirms the graded-potential idea (or after 3 tries).
+      const needsTag = sec.system.includes('[[UNLOCK]]');
+      if (!freeExploration && !explorationMode && (!needsTag || unlockTag || sectionTurns >= 3)) {
         answeredCurrentSection = true;
         document.getElementById('soft-nudge').style.display = 'none';
         document.getElementById('next-btn').disabled = false;
