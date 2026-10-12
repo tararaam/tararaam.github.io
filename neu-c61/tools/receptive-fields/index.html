@@ -367,8 +367,9 @@ const SECTIONS = [
   {
     title: 'Rods and cones',
     desc: `Rods and cones are the retina's light detectors. Click a photoreceptor, or use the buttons, to shine light on it, and watch the membrane potential of the cell labeled "Recording from this cell." The green dots under each cell show glutamate being released onto the next cell in the circuit.`,
-    prediction: `Every cell in the visual system has a "receptive field." Before you click anywhere: what do you think it means for a cell to have a receptive field? Then try the light and predict: will this photoreceptor depolarize or hyperpolarize when light hits it, and what would that mean for how much glutamate it releases?`,
-    system: `You are an AI tutor for an introductory neuroscience course. Topic: rod and cone photoreceptors. Key concepts: Rods and cones HYPERPOLARIZE in response to light (about −40 mV in the dark down to about −65 mV in light). In the dark they are relatively depolarized and release more glutamate; light reduces glutamate release. This is the opposite of what students usually expect. The student is first asked what it means for a cell to have a receptive field: the region of space (here, a tiny patch of the retina) where a stimulus changes that cell's response; a photoreceptor's receptive field is just the spot of light that lands on it, and the cell's response tells you something about that location. Credit any reasonable version of this idea. The student then explores by turning light on and off, or clicking individual photoreceptors, and watching the membrane potential of the cell labeled 'Recording from this cell' and the glutamate dots. The student may answer either or both questions; engage with whichever they address, and if they only answer one, briefly invite them to try the other as they experiment. Do not explain phototransduction (rhodopsin, cGMP, transducin), color vision, or light/dark adaptation. Do not bring up bipolar cells or later stages unless the student asks — if they do, give a brief honest answer and redirect. Accept reasonable paraphrases. Prioritize reasoning quality over precise wording. After a correct or mostly correct answer, affirm it briefly (1-2 sentences) and let them know they can keep experimenting or click 'Next' to continue to bipolar cells. Do NOT ask follow-up questions or go deeper. If the student raises something unrelated, give one brief honest sentence and steer straight back to the photoreceptor.`
+    prediction: `Every cell in the visual system has a "receptive field." Before you click anywhere: what do you think it means for a cell to have a receptive field?`,
+    followUp: `Now try the light. Before you turn it on: will this photoreceptor depolarize or hyperpolarize when light hits it, and what would that mean for how much glutamate it releases?`,
+    system: `You are an AI tutor for an introductory neuroscience course. Topic: rod and cone photoreceptors. Key concepts: Rods and cones HYPERPOLARIZE in response to light (about −40 mV in the dark down to about −65 mV in light). In the dark they are relatively depolarized and release more glutamate; light reduces glutamate release. This is the opposite of what students usually expect. The student is first asked what it means for a cell to have a receptive field: the region of space (here, a tiny patch of the retina) where a stimulus changes that cell's response; a photoreceptor's receptive field is just the spot of light that lands on it, and the cell's response tells you something about that location. Credit any reasonable version of this idea. The student is asked two questions in sequence, and the interface (not you) asks the second one after your reply to the first, so never ask or paraphrase the photoreceptor question yourself. Each message includes a note saying which question the student is answering. Question 1 (receptive field): affirm or gently guide, in 1-2 sentences, and do not discuss depolarization, hyperpolarization or glutamate. Question 2 (photoreceptor response): the student explores by turning light on and off, or clicking individual photoreceptors, and watching the membrane potential of the cell labeled 'Recording from this cell' and the glutamate dots. Do not explain phototransduction (rhodopsin, cGMP, transducin), color vision, or light/dark adaptation. Do not bring up bipolar cells or later stages unless the student asks — if they do, give a brief honest answer and redirect. Accept reasonable paraphrases. Prioritize reasoning quality over precise wording. After a correct or mostly correct answer, affirm it briefly (1-2 sentences) and let them know they can keep experimenting or click 'Next' to continue to bipolar cells. Do NOT ask follow-up questions or go deeper. If the student raises something unrelated, give one brief honest sentence and steer straight back to the photoreceptor.`
   },
   {
     title: 'Bipolar cells',
@@ -1037,12 +1038,12 @@ function updateCircuitDynamics(dt) {
 }
 
 function bipGeom(w, h) {
-  const R = Math.min(h * 0.38, w * 0.27);
+  const R = Math.min(h * 0.36, w * 0.25);
   const rfx = 14 + R, rfy = h * 0.5;
   const space = w - rfx - R;
-  const cellx = rfx + R + space * 0.55;
-  const rx = clamp(space * 0.36, 26, 46);
-  return { R, r: R * 0.4, rfx, rfy, cellx, celly: h * 0.42, rx, ry: rx * 0.6 };
+  const cellx = rfx + R + space * 0.6;
+  const rx = clamp(space * 0.3, 26, 46);
+  return { R, r: R * 0.4, rfx, rfy, cellx, celly: h * 0.4, rx, ry: rx * 0.6 };
 }
 
 function drawBipolarView(ctx, w, h) {
@@ -1074,19 +1075,19 @@ function drawBipolarView(ctx, w, h) {
   ctx.font = '9px DM Sans'; ctx.fillStyle = 'rgba(255,255,255,0.4)';
   ctx.fillText('Receptive field', g.rfx, g.rfy + g.R + 16);
 
-  // Inputs converging onto the bipolar cell: center (solid) and surround (drawn from the ring)
-  const tx = g.cellx - g.rx - 2, ty = g.celly;
-  [[0, g.r, centerRGB], [-0.55, g.R, surrRGB], [0.55, g.R, surrRGB]].forEach(([ang, rad, rgb]) => {
-    const sx = g.rfx + Math.cos(ang) * rad, sy = g.rfy + Math.sin(ang) * rad;
-    ctx.beginPath(); ctx.moveTo(sx, sy);
-    ctx.bezierCurveTo(sx + (tx - sx) * 0.55, sy, tx - (tx - sx) * 0.3, ty, tx, ty + (ang * 6));
-    ctx.strokeStyle = rgbStr(rgb, 0.85); ctx.lineWidth = 2; ctx.stroke();
-  });
+  // Input arrow: a separate, gapped arrow so the field is not drawn as part of the cell
+  const ax0 = g.rfx + g.R + 9, ax1 = g.cellx - g.rx - 9, ay = g.celly;
+  ctx.beginPath(); ctx.moveTo(ax0, ay); ctx.lineTo(ax1 - 2, ay);
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ax1, ay); ctx.lineTo(ax1 - 7, ay - 4); ctx.lineTo(ax1 - 7, ay + 4); ctx.closePath();
+  ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.fill();
+  ctx.textAlign = 'center'; ctx.font = 'italic 9px DM Sans'; ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.fillText('input', (ax0 + ax1) / 2, ay - 7);
 
   // Bipolar cell, state-colored
   const d = clamp((bipVm - BIP_REST_VM) / BIP_SWING, -1, 1);
   const bcol = d >= 0 ? mixRGB(REST_RGB, AMBER, d) : mixRGB(REST_RGB, INDIGO, -d);
-  const axonEnd = g.celly + g.ry + 46;
+  const axonEnd = g.celly + g.ry + 62;
   ctx.beginPath(); ctx.moveTo(g.cellx, g.celly + g.ry); ctx.lineTo(g.cellx, axonEnd);
   ctx.strokeStyle = rgbStr(bcol, 0.9); ctx.lineWidth = 3; ctx.stroke();
   ctx.beginPath(); ctx.arc(g.cellx, axonEnd, 5, 0, Math.PI * 2);
@@ -1100,15 +1101,23 @@ function drawBipolarView(ctx, w, h) {
   ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.font = 'bold 13px DM Sans';
   ctx.fillText(isOn ? 'ON' : 'OFF', g.cellx, g.celly + 4.5);
 
-  const state = d > 0.15 ? 'depolarized' : d < -0.15 ? 'hyperpolarized' : 'at rest';
-  ctx.font = 'bold 12px DM Sans';
-  ctx.fillStyle = d > 0.15 ? '#FBBF24' : d < -0.15 ? '#A5B4FC' : 'rgba(255,255,255,0.75)';
-  ctx.fillText(fmtMV(bipVm) + ' mV', g.cellx, g.celly - g.ry - 22);
-  ctx.font = '10px DM Sans';
-  ctx.fillText(state, g.cellx, g.celly - g.ry - 8);
+  // Label under the cell (the axon passes behind a dark backing so the text stays readable)
+  ctx.font = '9px DM Sans';
+  const lw = ctx.measureText('Bipolar cell').width + 10;
+  ctx.fillStyle = '#1a1a2e'; ctx.fillRect(g.cellx - lw / 2, g.celly + g.ry + 4, lw, 16);
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.fillText('Bipolar cell', g.cellx, g.celly + g.ry + 16);
+
+  // Membrane potential readout above the cell; nothing is shown while the cell is at rest
+  if (Math.abs(d) > 0.15) {
+    const state = d > 0 ? 'depolarized' : 'hyperpolarized';
+    ctx.font = 'bold 12px DM Sans';
+    ctx.fillStyle = d > 0 ? '#FBBF24' : '#A5B4FC';
+    ctx.fillText(fmtMV(bipVm) + ' mV', g.cellx, g.celly - g.ry - 22);
+    ctx.font = '10px DM Sans';
+    ctx.fillText(state, g.cellx, g.celly - g.ry - 8);
+  }
   ctx.textAlign = 'left';
-  ctx.font = '9px DM Sans'; ctx.fillStyle = 'rgba(255,255,255,0.45)';
-  ctx.fillText('Bipolar cell', 8, 14);
 }
 
 function drawCircuit() {
@@ -1559,7 +1568,10 @@ async function sendMessage() {
   document.getElementById('send-btn').disabled = true;
 
   const sec = SECTIONS[currentSection];
-  const stepCtx = currentSection <= 1 ? '\n\n' + circuitStateSummary() : '';
+  let stepCtx = currentSection <= 1 ? '\n\n' + circuitStateSummary() : '';
+  if (sec.followUp) stepCtx += sectionTurns <= 1
+    ? '\n\nThe student is answering QUESTION 1 (what a receptive field is). Do not discuss the photoreceptor question.'
+    : '\n\nThe student has moved on to QUESTION 2 (how the photoreceptor responds to light and what that means for glutamate).';
   const system = sec.system + stepCtx + `
 
 Your role:
@@ -1612,7 +1624,15 @@ Your role:
       chatHistory.push({ role: 'assistant', content: reply });
       // The bipolar section holds Next until the tutor confirms the graded-potential idea (or after 3 tries).
       const needsTag = sec.system.includes('[[UNLOCK]]');
-      if (!freeExploration && !explorationMode && (!needsTag || unlockTag || sectionTurns >= 3)) {
+      const askFollowUp = sec.followUp && sectionTurns === 1;
+      if (askFollowUp) {
+        const c = document.getElementById('chat-messages');
+        const el = document.createElement('div');
+        el.className = 'prediction-prompt';
+        el.innerHTML = `<strong>Predict</strong>${sec.followUp}`;
+        c.appendChild(el); c.scrollTop = c.scrollHeight;
+      }
+      if (!freeExploration && !explorationMode && !askFollowUp && (!needsTag || unlockTag || sectionTurns >= 3)) {
         answeredCurrentSection = true;
         document.getElementById('soft-nudge').style.display = 'none';
         document.getElementById('next-btn').disabled = false;
