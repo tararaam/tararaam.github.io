@@ -1108,15 +1108,13 @@ function drawBipolarView(ctx, w, h) {
   ctx.fillStyle = 'rgba(255,255,255,0.55)';
   ctx.fillText('Bipolar cell', g.cellx, g.celly + g.ry + 16);
 
-  // Membrane potential readout above the cell; nothing is shown while the cell is at rest
-  if (Math.abs(d) > 0.15) {
-    const state = d > 0 ? 'depolarized' : 'hyperpolarized';
-    ctx.font = 'bold 12px DM Sans';
-    ctx.fillStyle = d > 0 ? '#FBBF24' : '#A5B4FC';
-    ctx.fillText(fmtMV(bipVm) + ' mV', g.cellx, g.celly - g.ry - 22);
-    ctx.font = '10px DM Sans';
-    ctx.fillText(state, g.cellx, g.celly - g.ry - 8);
-  }
+  // Membrane potential readout above the cell
+  const state = d > 0.15 ? 'depolarized' : d < -0.15 ? 'hyperpolarized' : 'at rest';
+  ctx.font = 'bold 12px DM Sans';
+  ctx.fillStyle = d > 0.15 ? '#FBBF24' : d < -0.15 ? '#A5B4FC' : 'rgba(255,255,255,0.75)';
+  ctx.fillText(fmtMV(bipVm) + ' mV', g.cellx, g.celly - g.ry - 22);
+  ctx.font = '10px DM Sans';
+  ctx.fillText(state, g.cellx, g.celly - g.ry - 8);
   ctx.textAlign = 'left';
 }
 
